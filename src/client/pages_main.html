@@ -1,0 +1,247 @@
+<script>
+/* ============================== DASHBOARD ============================== */
+Pages.dashboard = {
+  render: function () {
+    return API.call('dashboard').then(function (d) {
+      Store.dashboard = d;
+      Nav.foot();
+      var c = d.counts;
+      var hour = new Date().getHours();
+      var greet = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+      var today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+      var html = '<div class="page-head"><div><div class="eyebrow">' + esc(today) + '</div><h1>' + greet + '.</h1>' +
+        '<p class="sub">' + (c.tastings ? 'Seu caderno de degustação tem ' + plural(c.tastings, 'sessão revelada', 'sessões reveladas') + '.' : 'Seu laboratório está pronto para a primeira degustação às cegas.') + '</p></div>' +
+        '<div class="btn-row"><a class="btn primary" href="#/degustacao/nova">Nova degustação às cegas</a></div></div>';
+
+      if (d.in_progress.length) {
+        var t = d.in_progress[0];
+        html += '<div class="callout" style="margin-bottom:22px">Degustação em andamento: <b>' + esc(t.title) + '</b> · ' + fmtDate(t.date) +
+          ' — <a href="#/degustacao/' + t.id + '">continuar</a></div>';
+      }
+
+      html += '<div class="stats">' +
+        stat(c.wines, 'vinhos estudados') +
+        stat(c.grapes, 'uvas no caderno') +
+        stat(c.regions, 'regiões estudadas') +
+        stat(c.tastings, 'degustações') +
+        stat(d.avg_score === null ? '—' : fmtNum(d.avg_score, 0) + '<small>%</small>', 'precisão média') +
+        stat(c.bottles_available, 'garrafinhas disponíveis') +
+        '</div>';
+
+      html += '<div class="grid two" style="margin-top:34px">';
+      html += '<section><h2 style="margin-top:0">Onde você está</h2>';
+      if (d.groups.length) {
+        var G = { identificacao: 'Identificação (uva, região, país, safra)', nariz: 'Aromas', estrutura: 'Estrutura em boca', visual: 'Visual' };
+        html += '<div class="grid two" style="margin-bottom:18px">' +
+          '<div><div class="eyebrow">Melhor categoria</div><div class="serif" style="font-size:1.6rem">' + esc(G[d.best.group] || d.best.group) + '</div><div class="muted small">' + fmtNum(d.best.rate, 0) + '% de aproveitamento</div></div>' +
+          (d.worst ? '<div><div class="eyebrow">Preciso estudar</div><div class="serif" style="font-size:1.6rem">' + esc(G[d.worst.group] || d.worst.group) + '</div><div class="muted small">' + fmtNum(d.worst.rate, 0) + '% de aproveitamento</div></div>' : '') +
+          '</div>';
+        html += '<div class="scales">' + d.criteria.map(function (a) {
+          return '<div class="scale-row"><div class="name">' + esc(a.label) + '</div>' + Components.meter(a.rate) + '<div class="val">' + fmtNum(a.rate, 0) + '% · ' + a.total + '</div></div>';
+        }).join('') + '</div>';
+      } else {
+        html += '<p class="muted">Seus pontos fortes e fracos aparecem aqui depois da primeira degustação revelada. ' +
+          'Eles são calculados a partir de cada critério corrigido — uva, região, acidez, aromas…</p>';
+      }
+      html += '</section>';
+
+      html += '<section><h2 style="margin-top:0">Evolução</h2>';
+      if (d.series.length >= 2) html += Components.sparkline(d.series) + '<div class="muted small">Pontuação por degustação (0–100), em ordem cronológica.</div>';
+      else html += '<p class="muted">O gráfico de evolução aparece a partir da segunda degustação revelada.</p>';
+      html += '<h3>Últimas degustações</h3>';
+      if (d.recent.length) {
+        html += '<div class="list">' + d.recent.map(function (t) {
+          var href = t.status === 'revelada' ? '#/degustacao/' + t.id + '/resultado' : '#/degustacao/' + t.id;
+          return '<a class="row" href="' + href + '"><div><div class="t">' + esc(t.title) + '</div><div class="m">' + fmtDate(t.date) + ' · ' + plural(t.count, 'vinho', 'vinhos') + '</div></div>' +
+            '<div class="serif" style="font-size:1.4rem">' + (t.status === 'revelada' ? fmtNum(t.score, 0) : '<span class="small muted">' + statusLabel(t.status) + '</span>') + '</div></a>';
+        }).join('') + '</div>';
+      } else {
+        html += '<p class="muted">Nenhuma degustação ainda.</p>';
+      }
+      html += '</section></div>';
+
+      if (!c.wines) {
+        html += '<div class="callout warn" style="margin-top:30px">Ainda não há vinhos no sistema. Vá em <a href="#/config">Configurações</a> e clique em <b>Sincronizar</b> para importar sua planilha.</div>';
+      }
+      return html;
+    });
+
+    function stat(v, l) { return '<div class="stat"><div class="v">' + v + '</div><div class="l">' + esc(l) + '</div></div>'; }
+  }
+};
+
+function statusLabel(s) {
+  return { em_andamento: 'em andamento', aguardando_revelacao: 'aguardando revelação', revelada: 'revelada', cancelada: 'cancelada' }[s] || s;
+}
+
+/* ============================== BUSCA ============================== */
+Pages.search = {
+  render: function (p) {
+    var q = p.query.q || '';
+    document.querySelector('.nav .search input').value = q;
+    return API.call('search', { q: q }).then(function (hits) {
+      var TYPES = { grape: ['Uvas', '#/uvas/'], wine: ['Vinhos', '#/vinhos/'], region: ['Regiões', null], country: ['Países', null],
+        producer: ['Produtores', null], appellation: ['Denominações', null], aroma: ['Aromas', null], note: ['Notas', '#/caderno?id='], tasting: ['Degustações', '#/degustacao/'] };
+      var html = '<div class="page-head"><div><div class="eyebrow">Busca</div><h1>“' + esc(q) + '”</h1><p class="sub">' + plural(hits.length, 'resultado', 'resultados') + '</p></div></div>';
+      if (!hits.length) return html + Components.empty('Nada encontrado.', 'Tente outro termo — a busca ignora acentos e maiúsculas.');
+      var by = {};
+      hits.forEach(function (h) { (by[h.type] = by[h.type] || []).push(h); });
+      Object.keys(TYPES).forEach(function (t) {
+        if (!by[t]) return;
+        html += '<h2>' + TYPES[t][0] + '</h2><div class="list">' + by[t].map(function (h) {
+          var inner = '<div><div class="t">' + esc(h.title) + '</div><div class="m">' + esc(h.why) + '</div></div><div></div>';
+          return TYPES[t][1] ? '<a class="row" href="' + TYPES[t][1] + h.id + '">' + inner + '</a>' : '<div class="row">' + inner + '</div>';
+        }).join('') + '</div>';
+      });
+      return html;
+    });
+  }
+};
+
+/* ============================== CONFIGURAÇÕES ============================== */
+Pages.settings = {
+  render: function () {
+    return Promise.all([API.call('settings.get'), API.call('ai.status')]).then(function (res) {
+      var s = res[0], ai = res[1];
+      var st = {};
+      s.settings.forEach(function (x) { st[x.key] = x.value; });
+      var total = s.rules.filter(function (r) { return r.active; }).reduce(function (a, r) { return a + Number(r.weight || 0); }, 0);
+      var html = '<div class="page-head"><div><div class="eyebrow">Sistema</div><h1>Configurações</h1>' +
+        '<p class="sub">Pesos da pontuação, regras de “próximo” e sincronização com a planilha.</p></div></div>';
+
+      html += '<section class="panel"><h2 style="margin-top:0">Sincronizar com a planilha</h2>' +
+        '<p class="muted">Lê as abas VINHOS, UVAS e NOTAS e atualiza o sistema. Nada é apagado, e o que você editou aqui não é sobrescrito.</p>' +
+        '<div class="btn-row"><button class="btn primary" data-action="sync">Sincronizar agora</button>' +
+        '<span class="muted small">' + (st.last_sync_at ? 'Última: ' + fmtDate(st.last_sync_at, true) : 'Nunca sincronizado') + '</span></div>';
+      if (s.last_log.length) {
+        html += '<h3>Relatório da última sincronização</h3><div class="tbl-wrap"><table class="tbl"><tbody>' + s.last_log.map(function (l) {
+          return '<tr><td class="nowrap"><span class="src ' + (l.level === 'aviso' ? 'ia' : l.level === 'ok' ? 'usuario' : 'sistema') + '">' + esc(l.level) + '</span></td><td>' + esc(l.message) +
+            (l.level === 'ok' && l.details ? '<div class="small muted">' + Object.keys(l.details).map(function (k) { return esc(k) + ': ' + l.details[k]; }).join(' · ') + '</div>' : '') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+      }
+      html += '</section>';
+
+      var enc = Store.lookups.encyclopedia || {};
+      html += '<section class="panel"><h2 style="margin-top:0">Enciclopédia de uvas</h2>' +
+        '<p class="muted">' + (enc.grapes || 0) + ' uvas pesquisadas (versão ' + (enc.version || '—') + '), com genealogia por DNA e pares que costumam ser confundidos. ' +
+        'Fontes: Wikipedia (origem, DNA, viticultura) e Wine Folly (perfil de degustação). Cada dado mostra o link da fonte. ' +
+        'A importação roda sozinha quando a versão muda e nunca sobrescreve o que você editou.</p>' +
+        '<button class="btn" data-action="seed-grapes">Reimportar enciclopédia</button>' +
+        '<p class="muted" style="margin-top:14px">Regiões: ' + (enc.region_packs || []).map(function (p) { return esc(p.country) + ' (' + p.regions + ' regiões, v' + p.version + ')'; }).join(' · ') +
+        ' — com sub-regiões, castas, produtores e mapas. Fontes: Wikipedia, contornos ISTAT/openpolis (Itália), IGN/Etalab (França, aproximados por departamento), click_that_hood (Espanha, Áustria; Portugal aproximado por distrito), GADM (Alemanha, aproximada por distrito), Natural Earth (demais países, por província), pontos do OpenStreetMap.</p>' +
+        '<button class="btn" data-action="seed-regions">Reimportar regiões</button></section>';
+
+      html += '<section class="panel"><h2 style="margin-top:0">Pontuação da degustação</h2>' +
+        '<p class="muted">A nota de cada garrafinha é a soma dos pontos dividida pelo máximo possível entre os critérios <b>com gabarito</b>. ' +
+        'Critérios com peso 0 não entram na nota, mas aparecem no relatório e na sua evolução.</p>' +
+        '<form data-action="save-rules"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Critério</th><th>Grupo</th><th>Comparação</th><th style="width:110px">Peso</th><th>Ativo</th></tr></thead><tbody>' +
+        s.rules.map(function (r) {
+          return '<tr><td>' + esc(r.label) + '</td><td class="muted">' + esc(r.group) + '</td><td class="muted small">' + esc(compareLabel(r)) + '</td>' +
+            '<td><input class="in" type="number" min="0" max="1000" step="1" name="w_' + r.id + '" value="' + esc(r.weight) + '" data-input="sum-weights"></td>' +
+            '<td><input type="checkbox" name="a_' + r.id + '"' + (r.active ? ' checked' : '') + ' data-change="sum-weights"></td></tr>';
+        }).join('') +
+        '</tbody><tfoot><tr><td colspan="3" style="text-align:right" class="muted">Total dos critérios ativos</td><td><b id="w-total">' + total + '</b></td><td></td></tr></tfoot></table></div>' +
+        '<div class="btn-row" style="margin-top:14px"><button class="btn primary">Salvar pesos</button></div></form></section>';
+
+      html += '<section class="panel"><h2 style="margin-top:0">Regras de acerto</h2><div class="form-grid">' +
+        setting('near_credit', 'Crédito para PRÓXIMO (0 a 1)', st.near_credit, 'Ex.: 0,5 = metade dos pontos.') +
+        setting('aroma_subcategory_credit', 'Crédito para aroma “parente” (0 a 1)', st.aroma_subcategory_credit, 'Ex.: disse framboesa, o gabarito tem cereja.') +
+        setting('alcohol_thresholds', 'Limites de álcool (baixo,alto)', st.alcohol_thresholds, 'Padrão WSET: 11,14 → <11% baixo, ≥14% alto.') +
+        '</div></section>';
+
+      html += '<section class="panel"><h2 style="margin-top:0">Escalas</h2><p class="muted">Níveis usados nas respostas e nos gabaritos. Para mudar, edite a aba <code>db_scales</code> (os sinônimos servem para a importação).</p>' +
+        '<div class="fields">' + Object.keys(s.scales).map(function (k) {
+          return Components.field(k, s.scales[k].map(function (l) { return l.label; }).join(' · '));
+        }).join('') + '</div></section>';
+      html += '<details style="margin-top:16px"><summary class="muted" style="cursor:pointer">Opcional: pesquisa com IA (Claude)</summary>' + AiUI.panel(ai) + '</details>';
+      return html;
+    });
+
+    function setting(key, label, value, hint) {
+      return '<form data-action="save-setting"><input type="hidden" name="key" value="' + key + '"><label class="f">' + esc(label) + '</label>' +
+        '<div class="btn-row"><input class="in" name="value" value="' + esc(value || '') + '" style="max-width:140px"><button class="btn small">Salvar</button></div>' +
+        '<div class="small muted" style="margin-top:4px">' + esc(hint) + '</div></form>';
+    }
+    function compareLabel(r) {
+      var p = r.params || {};
+      switch (r.compare) {
+        case 'hypothesis': return '1º palpite = acerto; palpite secundário = próximo';
+        case 'hierarchical': return 'mesma região = acerto; mesmo país = próximo';
+        case 'exact': return 'exato';
+        case 'numeric': return '±' + fmtNum(p.hit) + ' acerto; ±' + fmtNum(p.near) + ' próximo';
+        case 'ordinal': return 'mesmo nível = acerto; ' + (p.near || 1) + ' nível = próximo';
+        case 'set_overlap': return '≥' + Math.round((p.hit || .6) * 100) + '% acerto; ≥' + Math.round((p.near || .3) * 100) + '% próximo';
+      }
+      return r.compare;
+    }
+  },
+  actions: {
+    'sync': function (btn) {
+      UI.busy(btn, true);
+      return API.call('sync.run').then(function (r) {
+        UI.toast('Sincronizado: ' + r.stats.wines_new + ' vinhos novos, ' + r.stats.bottles_new + ' garrafinhas novas.');
+        return Store.refreshLookups();
+      }).then(Router.render).catch(function (e) { UI.busy(btn, false); UI.error(e); });
+    },
+    'sum-weights': function () {
+      var f = document.querySelector('form[data-action="save-rules"]');
+      var t = 0;
+      f.querySelectorAll('input[type=number]').forEach(function (i) {
+        var id = i.name.slice(2);
+        if (f.querySelector('[name="a_' + id + '"]').checked) t += Number(i.value || 0);
+      });
+      document.getElementById('w-total').textContent = t;
+    },
+    'save-rules': function (form) {
+      var rules = [];
+      form.querySelectorAll('input[type=number]').forEach(function (i) {
+        var id = i.name.slice(2);
+        rules.push({ id: id, weight: i.value, active: form.querySelector('[name="a_' + id + '"]').checked });
+      });
+      return API.call('settings.saveRules', { rules: rules }).then(function () {
+        UI.toast('Pesos salvos. Degustações já reveladas mantêm os pesos da época.');
+        return Store.refreshLookups();
+      });
+    },
+    'seed-regions': function (btn) {
+      UI.busy(btn, true);
+      var sum = { regions_new: 0, subregions_new: 0, producers_new: 0 };
+      function step(resume) {
+        return API.call('seed.regions', { resume: resume }).then(function (r) {
+          Object.keys(sum).forEach(function (k) { sum[k] += r[k] || 0; });
+          if (r.remaining > 0) { UI.toast('Importando… faltam ' + r.remaining + ' países.'); return step(true); }
+          Store.lookups = r.lookups;
+          UI.toast('Regiões: ' + sum.regions_new + ' novas, ' + sum.subregions_new + ' sub-regiões novas, ' + sum.producers_new + ' produtores novos.');
+          UI.busy(btn, false);
+        });
+      }
+      return step(false).catch(function (e) { UI.busy(btn, false); throw e; });
+    },
+    'seed-grapes': function (btn) {
+      UI.busy(btn, true);
+      return API.call('seed.grapes').then(function (r) {
+        Store.lookups = r.lookups;
+        UI.toast('Enciclopédia: ' + r.grapes_new + ' uvas novas, ' + r.grapes_updated + ' atualizadas, ' + r.relations + ' relações novas.');
+        UI.busy(btn, false);
+      }).catch(function (e) { UI.busy(btn, false); throw e; });
+    },
+    'ai-set-key': function (form) {
+      return API.call('ai.setKey', { key: form.key.value }).then(function () { UI.toast('Chave salva.'); Router.render(); });
+    },
+    'ai-remove-key': function () {
+      return UI.confirm('Remover a chave?', 'As pesquisas com IA deixam de funcionar até você cadastrar outra.', 'Remover').then(function (ok) {
+        if (ok) return API.call('ai.removeKey').then(function () { Router.render(); });
+      });
+    },
+    'ai-config': function (form) {
+      return API.call('ai.setConfig', formData(form)).then(function () { UI.toast('Configuração da IA salva.'); });
+    },
+    'save-setting': function (form) {
+      var d = formData(form);
+      return API.call('settings.set', { key: d.key, value: d.value.replace(',', d.key === 'alcohol_thresholds' ? ',' : '.') })
+        .then(function () { UI.toast('Configuração salva.'); });
+    }
+  }
+};
+</script>

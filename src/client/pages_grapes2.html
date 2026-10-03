@@ -1,0 +1,251 @@
+<script>
+/* ============================================================
+   Uvas — Fase 2: comparação lado a lado e genealogia.
+   Tudo é derivado dos dados cadastrados; o que falta aparece como "—".
+   ============================================================ */
+var GrapeCompare = {
+  SCALES: [['acidity', 'Acidez'], ['tannin', 'Tanino'], ['body', 'Corpo'], ['alcohol', 'Álcool'], ['intensity', 'Intensidade'], ['finish', 'Persistência']],
+
+  /** Posição média de um valor de escala ("media..alta" → 4). */
+  pos: function (scale, v) {
+    if (blank(v)) return null;
+    var levels = Store.scale(scale), parts = String(v).split('..'), ps = [];
+    parts.forEach(function (k) { levels.forEach(function (l) { if (l.key === k) ps.push(l.position); }); });
+    return ps.length ? ps.reduce(function (a, b) { return a + b; }, 0) / ps.length : null;
+  },
+
+  scaleText: function (scale, v) {
+    return blank(v) ? '' : String(v).split('..').map(function (k) { return Store.scaleLabel(scale, k); }).join(' a ');
+  },
+
+  fruit: function (g) {
+    var c = {};
+    g.aromas.forEach(function (a) { if (a.category === 'Frutas') c[a.subcategory] = (c[a.subcategory] || 0) + 1; });
+    var keys = Object.keys(c).sort(function (a, b) { return c[b] - c[a]; });
+    return keys.slice(0, 2).join(' / ');
+  },
+
+  /** Diferenças calculadas: escalas com 2+ níveis de distância e aromas exclusivos. */
+  differences: function (data) {
+    var G = data.grapes, out = [];
+    GrapeCompare.SCALES.forEach(function (s) {
+      var vals = G.map(function (g) { return { g: g, p: GrapeCompare.pos(s[0], g.profile && g.profile[s[0]]) }; }).filter(function (x) { return x.p !== null; });
+      if (vals.length < 2) return;
+      var levels = Store.scale(s[0]).length;
+      var gap = levels >= 5 ? 2 : 1;
+      vals.sort(function (a, b) { return b.p - a.p; });
+      if (vals[0].p - vals[vals.length - 1].p >= gap) {
+        out.push('<b>' + esc(s[1]) + '</b>: ' + vals.map(function (x) { return esc(x.g.name) + ' (' + esc(GrapeCompare.scaleText(s[0], x.g.profile[s[0]])) + ')'; }).join(' › '));
+      }
+    });
+    if (G.every(function (g) { return g.aromas.length; })) {
+      G.forEach(function (g) {
+        var others = {};
+        G.forEach(function (o) { if (o !== g) o.aromas.forEach(function (a) { others[a.id] = true; }); });
+        var only = g.aromas.filter(function (a) { return !others[a.id]; });
+        if (only.length) out.push('<b>Só em ' + esc(g.name) + '</b>: ' + esc(only.map(function (a) { return a.name; }).join(', ')));
+      });
+    }
+    return out;
+  },
+
+  table: function (data, opts) {
+    opts = opts || {};
+    var G = data.grapes;
+    var shared = {};
+    if (G.length > 1) {
+      G[0].aromas.forEach(function (a) { if (G.every(function (g) { return g.aromas.some(function (x) { return x.id === a.id; }); })) shared[a.id] = true; });
+    }
+    function cell(v) { return blank(v) ? '<span class="missing">—</span>' : esc(v); }
+    function row(label, fn) { return '<tr><td class="muted nowrap">' + esc(label) + '</td>' + G.map(function (g) { return '<td>' + fn(g) + '</td>'; }).join('') + '</tr>'; }
+    var html = '<div class="tbl-wrap"><table class="tbl cmp"><thead><tr><th>Característica</th>' +
+      G.map(function (g) { return '<th><a href="#/uvas/' + g.id + '">' + esc(g.name) + '</a></th>'; }).join('') + '</tr></thead><tbody>';
+    if (!opts.compact) {
+      html += row('Cor', function (g) { return cell(g.color); }) + row('Origem', function (g) { return cell(g.origin); }) +
+        row('Regiões principais', function (g) { return cell(g.main_regions); }) + row('Clima', function (g) { return cell(g.climate); });
+    }
+    GrapeCompare.SCALES.forEach(function (s) {
+      var vals = G.map(function (g) { return GrapeCompare.pos(s[0], g.profile && g.profile[s[0]]); });
+      var known = vals.filter(function (v) { return v !== null; });
+      var spread = known.length > 1 ? Math.max.apply(null, known) - Math.min.apply(null, known) : 0;
+      html += '<tr><td class="muted nowrap">' + esc(s[1]) + '</td>' + G.map(function (g, i) {
+        var v = g.profile && g.profile[s[0]];
+        var hl = spread >= (Store.scale(s[0]).length >= 5 ? 2 : 1) && (vals[i] === Math.max.apply(null, known) || vals[i] === Math.min.apply(null, known));
+        return '<td class="' + (hl ? 'hl' : '') + '">' + (blank(v) ? '<span class="missing">—</span>' :
+          '<div class="bar" style="max-width:120px;margin-bottom:4px">' + Store.scale(s[0]).map(function (l) {
+            var p = GrapeCompare.pos(s[0], v);
+            var parts = String(v).split('..');
+            var on = parts.some(function (k) { return k === l.key; }) || (parts.length === 2 && l.position > GrapeCompare.pos(s[0], parts[0]) && l.position < GrapeCompare.pos(s[0], parts[1]));
+            return '<i class="' + (on ? 'on' : '') + '"></i>';
+          }).join('') + '</div>' + esc(GrapeCompare.scaleText(s[0], v))) + '</td>';
+      }).join('') + '</tr>';
+    });
+    html += row('Fruta', function (g) { return cell(GrapeCompare.fruit(g)); });
+    html += row('Aromas', function (g) {
+      return g.aromas.length ? '<div class="chips">' + g.aromas.map(function (a) {
+        return '<span class="chip"' + (shared[a.id] ? ' style="border-color:var(--wine);color:var(--wine)" title="Em comum"' : '') + '>' + esc(a.name) + '</span>';
+      }).join('') + '</div>' : '<span class="missing">—</span>';
+    });
+    if (!opts.compact) html += row('Como reconhecer', function (g) { return '<span class="small">' + cell(g.how_to_recognize) + '</span>'; });
+    html += '</tbody></table></div>';
+    return html;
+  },
+
+  howTo: function (data) {
+    if (!data.pairs.length) return '';
+    return '<h3>Como diferenciar</h3><div class="list">' + data.pairs.map(function (p) {
+      return '<div class="row"><div><div class="t" style="font-size:1.05rem">' + esc(p.a) + ' × ' + esc(p.b) + ' ' + Components.src(p.source) + '</div>' +
+        '<div class="m" style="color:var(--ink-2)">' + (p.how ? esc(p.how) : Components.missing('Não cadastrado')) + '</div></div><div></div></div>';
+    }).join('') + '</div>';
+  }
+};
+
+Pages.grapeCompare = {
+  render: function (p) {
+    var ids = (p.query.ids || '').split(',').filter(Boolean);
+    var grapes = Store.lookups.grapes;
+    var html = '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>Comparar uvas</h1>' +
+      '<p class="sub">Escolha de 2 a 4 uvas. As diferenças são calculadas a partir dos perfis cadastrados.</p></div></div>' +
+      '<form class="panel" data-action="compare"><div class="form-grid">' + [0, 1, 2, 3].map(function (i) {
+        return '<div><label class="f">Uva ' + (i + 1) + (i > 1 ? ' (opcional)' : '') + '</label><select class="in" name="g' + i + '">' + Components.options(grapes, ids[i] || '', '—') + '</select></div>';
+      }).join('') + '</div><div class="btn-row" style="justify-content:flex-end;margin-top:12px"><button class="btn primary">Comparar</button></div></form>';
+    if (ids.length < 2) return html + Components.empty('Escolha pelo menos duas uvas.', 'Dica: compare uvas que você costuma confundir na degustação às cegas.');
+    return API.call('grapes.compare', { ids: ids }).then(function (data) {
+      var diffs = GrapeCompare.differences(data);
+      var missing = data.grapes.filter(function (g) { return !g.profile; });
+      html += '<section class="panel" style="margin-top:16px">' + GrapeCompare.table(data) + '</section>';
+      html += '<div class="grid two" style="margin-top:16px"><section class="panel"><h3 style="margin-top:0">Principais diferenças</h3>' +
+        (diffs.length ? '<ul style="margin:0;padding-left:18px">' + diffs.map(function (d) { return '<li style="margin:6px 0">' + d + '</li>'; }).join('') + '</ul>'
+          : '<p class="muted">Nenhuma diferença marcante nos dados cadastrados.</p>') +
+        (missing.length ? '<p class="small muted" style="margin-top:12px">Sem perfil sensorial: ' + esc(missing.map(function (g) { return g.name; }).join(', ')) +
+          '. Use “Pesquisar com IA” na página da uva para completar.</p>' : '') + '</section>' +
+        '<section class="panel">' + (GrapeCompare.howTo(data) || '<h3 style="margin-top:0">Como diferenciar</h3><p class="muted">Nenhuma relação “pode ser confundida” cadastrada entre estas uvas.</p>') + '</section></div>';
+      return html;
+    });
+  },
+  actions: {
+    compare: function (form) {
+      var d = formData(form);
+      var ids = [d.g0, d.g1, d.g2, d.g3].filter(function (x, i, arr) { return x && arr.indexOf(x) === i; });
+      Router.go('/uvas/comparar?ids=' + ids.join(','));
+    }
+  }
+};
+
+/* ============================== GENEALOGIA ============================== */
+Pages.genealogy = {
+  render: function (p) {
+    return API.call('grapes.genealogy').then(function (data) {
+      Pages.genealogy.data = data;
+      var html = '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>Genealogia das uvas</h1>' +
+        '<p class="sub">Somente relações de parentesco cadastradas, cada uma com a sua fonte.</p></div></div>';
+      if (!data.edges.length) {
+        return html + Components.empty('Nenhuma relação genética cadastrada ainda.',
+          'Use “Pesquisar com IA” na página de uma uva: os pais confirmados por DNA chegam com fonte e passam pela sua revisão.', '<a class="btn" href="#/uvas">Ir para Uvas</a>');
+      }
+      var degree = {};
+      data.edges.forEach(function (e) { degree[e.parent] = (degree[e.parent] || 0) + 1; degree[e.child] = (degree[e.child] || 0) + 1; });
+      var focus = p.query.id && degree[p.query.id] ? p.query.id : Object.keys(degree).sort(function (a, b) { return degree[b] - degree[a]; })[0];
+      Pages.genealogy.focus = focus;
+      html += '<div class="grid" style="grid-template-columns:minmax(0,1fr) 300px;align-items:start" id="gen-grid">' +
+        '<section class="panel" style="padding:10px"><div id="gen-svg"></div></section>' +
+        '<aside><div class="panel" id="gen-info"></div>' +
+        '<div class="panel"><label class="f">Ir para</label><select class="in" data-change="focus">' +
+        Components.options(data.nodes.slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'pt'); }), focus) + '</select>' +
+        '<p class="small muted" style="margin-top:10px">' + plural(data.nodes.length, 'uva', 'uvas') + ' · ' + plural(data.edges.length, 'relação', 'relações') + '</p></div></aside></div>';
+      return html;
+    });
+  },
+  mount: function () {
+    if (!Pages.genealogy.data || !Pages.genealogy.data.edges.length) return;
+    if (window.innerWidth < 900) document.getElementById('gen-grid').style.gridTemplateColumns = '1fr';
+    Pages.genealogy.draw();
+  },
+  draw: function () {
+    var D = Pages.genealogy.data, f = Pages.genealogy.focus;
+    var byId = {};
+    D.nodes.forEach(function (n) { byId[n.id] = n; });
+    function parentsOf(id) { return D.edges.filter(function (e) { return e.child === id; }).map(function (e) { return e.parent; }); }
+    function childrenOf(id) { return D.edges.filter(function (e) { return e.parent === id; }).map(function (e) { return e.child; }); }
+
+    var parents = parentsOf(f);
+    var grand = [];
+    parents.forEach(function (pId) { parentsOf(pId).forEach(function (g) { grand.push({ id: g, of: pId }); }); });
+    var kids = childrenOf(f).sort(function (a, b) { return byId[a].name.localeCompare(byId[b].name, 'pt'); });
+
+    var host = document.getElementById('gen-svg');
+    var W = Math.max(340, host.clientWidth || 760), nodeW = W < 520 ? 112 : 132, nodeH = 40, rowH = 100;
+    var perRow = Math.max(2, Math.floor(W / (nodeW + 24)));
+    var kidRows = Math.max(1, Math.ceil(kids.length / perRow));
+    var levels = (grand.length ? 1 : 0) + (parents.length ? 1 : 0) + 1 + (kids.length ? kidRows : 0);
+    var H = levels * rowH + 20;
+    var y = 20, pos = {};
+    function place(list, yy, keyFn) {
+      var n = list.length, gap = Math.min(nodeW + 40, (W - 20) / Math.max(n, 1));
+      var x0 = W / 2 - gap * (n - 1) / 2;
+      list.forEach(function (item, i) { pos[keyFn ? keyFn(item) : item] = { x: x0 + i * gap, y: yy }; });
+    }
+    if (grand.length) { place(grand, y, function (g) { return 'g:' + g.id + ':' + g.of; }); y += rowH; }
+    if (parents.length) { place(parents, y); y += rowH; }
+    pos[f] = { x: W / 2, y: y };
+    var focusY = y;
+    y += rowH;
+    for (var r = 0; r < kidRows; r++) { place(kids.slice(r * perRow, (r + 1) * perRow), y); y += rowH; }
+
+    function node(id, key, isFocus) {
+      var n = byId[id], p = pos[key || id];
+      if (!n || !p) return '';
+      var dot = n.color === 'branca' ? 'var(--gold)' : n.color === 'tinta' ? 'var(--wine)' : n.color === 'rosada' ? '#c98b8b' : 'var(--line-2)';
+      var label = n.name.length > 18 ? n.name.slice(0, 17) + '…' : n.name;
+      return '<g class="gen-node" data-id="' + id + '" style="cursor:pointer" transform="translate(' + (p.x - nodeW / 2) + ',' + p.y + ')">' +
+        '<rect width="' + nodeW + '" height="' + nodeH + '" rx="20" fill="' + (isFocus ? 'var(--wine)' : 'var(--paper)') + '" stroke="' + (isFocus ? 'var(--wine)' : 'var(--line-2)') + '"/>' +
+        '<circle cx="18" cy="' + nodeH / 2 + '" r="5" fill="' + dot + '" stroke="' + (isFocus ? '#fff' : 'none') + '"/>' +
+        '<text x="' + (nodeW / 2 + 6) + '" y="' + (nodeH / 2 + 5) + '" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="16" fill="' + (isFocus ? '#fff' : 'var(--ink)') + '">' + esc(label) + '<title>' + esc(n.name) + '</title></text></g>';
+    }
+    function link(a, b) {
+      var x1 = a.x, y1 = a.y + nodeH, x2 = b.x, y2 = b.y, my = (y1 + y2) / 2;
+      return '<path d="M' + x1 + ' ' + y1 + ' C' + x1 + ' ' + my + ' ' + x2 + ' ' + my + ' ' + x2 + ' ' + y2 + '" fill="none" stroke="var(--line-2)" stroke-width="1.5"/>';
+    }
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block" role="img" aria-label="Árvore genealógica">';
+    grand.forEach(function (g) { svg += link(pos['g:' + g.id + ':' + g.of], pos[g.of]); });
+    parents.forEach(function (pId) { svg += link(pos[pId], pos[f]); });
+    kids.forEach(function (k) { svg += link(pos[f], pos[k]); });
+    if (parents.length === 2) {
+      var a = pos[parents[0]], b = pos[parents[1]];
+      svg += '<text x="' + (a.x + b.x) / 2 + '" y="' + (a.y + nodeH / 2 + 6) + '" text-anchor="middle" font-size="18" fill="var(--muted)">×</text>';
+    }
+    grand.forEach(function (g) { svg += node(g.id, 'g:' + g.id + ':' + g.of); });
+    parents.forEach(function (pId) { svg += node(pId); });
+    kids.forEach(function (k) { svg += node(k); });
+    svg += node(f, null, true);
+    [['Avós', grand.length ? 20 : null], ['Pais', parents.length ? (grand.length ? 20 + rowH : 20) : null], ['Descendentes', kids.length ? focusY + rowH : null]].forEach(function (l) {
+      if (l[1] !== null) svg += '<text x="4" y="' + (l[1] - 4) + '" font-size="10" letter-spacing="1.5" fill="var(--muted)">' + l[0].toUpperCase() + '</text>';
+    });
+    svg += '</svg>';
+    host.innerHTML = svg;
+    host.querySelectorAll('.gen-node').forEach(function (g) {
+      g.addEventListener('click', function () { Pages.genealogy.focus = g.getAttribute('data-id'); Pages.genealogy.draw(); });
+    });
+
+    var n = byId[f];
+    var edges = D.edges.filter(function (e) { return e.child === f || e.parent === f; });
+    document.getElementById('gen-info').innerHTML = '<div class="eyebrow">' + esc(n.color || 'uva') + '</div>' +
+      '<div class="serif" style="font-size:1.8rem;line-height:1.1;margin:4px 0">' + esc(n.name) + '</div>' +
+      (n.origin ? '<div class="small muted" style="margin-bottom:10px">' + esc(n.origin) + '</div>' : '') +
+      '<div class="fields" style="grid-template-columns:1fr;gap:10px">' +
+      Components.field('Pais', parents.map(function (x) { return byId[x].name; }).join(' × ')) +
+      Components.field('Descendentes cadastrados', kids.length ? kids.map(function (x) { return byId[x].name; }).join(', ') : '') + '</div>' +
+      '<h3 style="font-size:1rem">Fontes</h3><div class="small">' + edges.map(function (e) {
+        var ref = e.source_ref || '';
+        return '<div style="margin:4px 0">' + esc(byId[e.parent].name) + ' → ' + esc(byId[e.child].name) + ' ' + Components.src(e.source) +
+          (/^https?:/.test(ref) ? ' <a href="' + esc(ref) + '" target="_blank" rel="noopener noreferrer">fonte ↗</a>' : (ref ? ' <span class="muted">' + esc(ref) + '</span>' : '')) + '</div>';
+      }).join('') + '</div>' +
+      '<div class="btn-row" style="margin-top:14px"><a class="btn small" href="#/uvas/' + f + '">Abrir ficha</a></div>';
+    var sel = document.querySelector('[data-change="focus"]');
+    if (sel) sel.value = f;
+  },
+  actions: {
+    focus: function (sel) { Pages.genealogy.focus = sel.value; Pages.genealogy.draw(); }
+  }
+};
+</script>

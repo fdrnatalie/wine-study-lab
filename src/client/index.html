@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <?!= include('client/styles'); ?>
+</head>
+<body>
+  <div class="topbar">
+    <button class="btn ghost small" data-action="nav-toggle" aria-label="Menu">☰</button>
+    <span class="serif" style="font-size:1.2rem">Wine Study Lab</span>
+    <span style="width:40px"></span>
+  </div>
+  <div class="shell">
+    <nav class="nav" id="nav">
+      <div class="brand">
+        <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 3h14c0 7-2 12-7 13-5-1-7-6-7-13Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.2 8h11.6c-.5 4.3-2.4 6.7-5.8 7.3-3.4-.6-5.3-3-5.8-7.3Z" fill="var(--wine)"/><path d="M16 16v10M11 28h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <div class="name">Wine Study Lab<small>laboratório de degustação</small></div>
+      </div>
+      <form class="search search-in" data-action="global-search">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="9" r="6"/><path d="m14 14 4 4" stroke-linecap="round"/></svg>
+        <input class="in" name="q" placeholder="Buscar uva, vinho, região…" autocomplete="off">
+      </form>
+      <div id="nav-items"></div>
+      <div class="foot" id="nav-foot"></div>
+    </nav>
+    <div class="scrim" data-action="nav-toggle"></div>
+    <main class="view" id="view"><div class="loading">Abrindo a adega…</div></main>
+  </div>
+  <div id="layer"></div>
+
+  <?!= include('client/core'); ?>
+  <?!= include('client/components'); ?>
+  <?!= include('client/pages_main'); ?>
+  <?!= include('client/pages_study'); ?>
+  <?!= include('client/pages_cellar'); ?>
+  <?!= include('client/pages_tasting'); ?>
+  <?!= include('client/pages_ai'); ?>
+  <?!= include('client/pages_grapes2'); ?>
+  <?!= include('client/pages_regions'); ?>
+  <script>App.start();</script>
+</body>
+</html>

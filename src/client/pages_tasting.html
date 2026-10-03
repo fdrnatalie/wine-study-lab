@@ -1,0 +1,368 @@
+<script>
+/* ============================== NOVA DEGUSTAÇÃO ============================== */
+var DIFFICULTY = {
+  facil: ['Fácil', 'Na hipótese, a lista de uvas traz as uvas desta sessão misturadas a algumas outras.'],
+  medio: ['Médio', 'A lista de uvas traz todas as uvas que existem na sua adega.'],
+  dificil: ['Difícil', 'A lista de uvas traz todas as uvas cadastradas no sistema.']
+};
+
+Pages.tastingNew = {
+  render: function () {
+    return Promise.all([API.call('bottles.list'), API.call('wines.list')]).then(function (r) {
+      var bottles = r[0].filter(function (b) { return b.status === 'disponivel'; });
+      var wines = r[1].filter(function (w) { return w.bottles_available > 0; });
+      Pages.tastingNew.wines = wines;
+      var L = Store.lookups;
+      var html = '<div class="page-head"><div><div class="eyebrow">Degustação</div><h1>Nova degustação às cegas</h1>' +
+        '<p class="sub">' + plural(bottles.length, 'garrafinha disponível', 'garrafinhas disponíveis') + ' de ' + plural(wines.length, 'vinho', 'vinhos') + '.</p></div></div>';
+      if (!bottles.length) return html + Components.empty('Não há garrafinhas disponíveis.', 'Fracione uma garrafa para começar.', '<a class="btn primary" href="#/adega/fracionar">Fracionar garrafa</a>');
+      var usedGrapes = L.grapes.filter(function (g) { return wines.some(function (w) { return w.grapes.some(function (x) { return x.id === g.id; }); }); });
+      var usedCountries = L.countries.filter(function (c) { return wines.some(function (w) { return w.country_id === c.id; }); });
+      var usedRegions = L.regions.filter(function (c) { return wines.some(function (w) { return w.region_id === c.id; }); });
+
+      html += '<form class="panel" data-action="create">' +
+        '<h3 style="margin-top:0">Quantos vinhos?</h3><div class="seg" data-seg="count">' + [1, 2, 3, 4, 5, 6].map(function (n) {
+          return '<button type="button" data-action="seg-pick" data-v="' + n + '" class="' + (n === Math.min(3, wines.length) ? 'on' : '') + '">' + n + '</button>';
+        }).join('') + '</div>' +
+        '<h3>Dificuldade</h3><div class="grid three">' + Object.keys(DIFFICULTY).map(function (k) {
+          return '<label class="panel" style="cursor:pointer;padding:14px 16px"><input type="radio" name="difficulty" value="' + k + '"' + (k === 'medio' ? ' checked' : '') + '> <b>' + DIFFICULTY[k][0] + '</b><div class="small muted" style="margin-top:4px">' + DIFFICULTY[k][1] + '</div></label>';
+        }).join('') + '</div>' +
+        '<h3>Tema (opcional)</h3><p class="muted small">Sem filtros = sorteio entre todas as garrafinhas disponíveis.</p><div class="form-grid">' +
+        '<div><label class="f">Cor</label><select class="in" name="color">' + Components.options(Object.keys(COLOR_LABELS).map(function (k) { return { v: k, t: COLOR_LABELS[k] }; }), '', 'Qualquer') + '</select></div>' +
+        '<div><label class="f">Uvas</label><select class="in" name="grape_ids" multiple size="4">' + Components.options(usedGrapes, []) + '</select></div>' +
+        '<div><label class="f">Países</label><select class="in" name="country_ids" multiple size="4">' + Components.options(usedCountries, []) + '</select></div>' +
+        '<div><label class="f">Regiões</label><select class="in" name="region_ids" multiple size="4">' + Components.options(usedRegions, []) + '</select></div>' +
+        '<div class="wide"><label class="f">Título (opcional)</label><input class="in" name="title" placeholder="Degustação às cegas — 3 vinhos"></div>' +
+        '<div class="wide"><label><input type="checkbox" name="allow_repeat"> Permitir o mesmo vinho mais de uma vez (útil para treinar consistência)</label></div>' +
+        '</div><p class="small muted">Dica: segure Ctrl/⌘ para selecionar várias uvas, países ou regiões.</p>' +
+        '<div class="btn-row" style="justify-content:flex-end;margin-top:10px"><button class="btn primary">Sortear garrafinhas e começar</button></div></form>';
+      return html;
+    });
+  },
+  actions: {
+    create: function (form) {
+      var d = formData(form);
+      var count = Components.readSeg(form, 'count') || '3';
+      var btn = form.querySelector('button.primary');
+      UI.busy(btn, true);
+      return API.call('tastings.create', {
+        count: count, difficulty: d.difficulty, title: d.title, allow_repeat: d.allow_repeat,
+        filters: { color: d.color, grape_ids: d.grape_ids, country_ids: d.country_ids, region_ids: d.region_ids }
+      }).then(function (r) { Router.go('/degustacao/' + r.id); })
+        .catch(function (e) { UI.busy(btn, false); throw e; });
+    }
+  }
+};
+
+/* ============================== MODO JOGO ============================== */
+var STEPS = [
+  { key: 'visual', t: 'Visual', lead: 'Incline a taça contra um fundo branco.' },
+  { key: 'nose', t: 'Nariz', lead: 'Primeiro sem girar. Depois, gire e cheire de novo.' },
+  { key: 'palate', t: 'Boca', lead: 'Um gole generoso. Percorra toda a boca.' },
+  { key: 'structure', t: 'Estrutura', lead: 'Intensidade, persistência e textura.' },
+  { key: 'hypothesis', t: 'Hipótese', lead: 'Junte as pistas. O que é este vinho?' },
+  { key: 'confirm', t: 'Confirmação', lead: 'Revise sua análise antes de seguir.' }
+];
+
+Pages.tastingPlay = {
+  fullscreen: true,
+  render: function (p) {
+    return API.call('tastings.play', { id: p.id }).then(function (d) {
+      if (d.revealed) { setTimeout(function () { Router.go('/degustacao/' + p.id + '/resultado'); }, 0); return ''; }
+      var S = Pages.tastingPlay.state = { data: d, idx: 0, step: 0, answers: {}, saving: null };
+      d.samples.forEach(function (s) { S.answers[s.id] = s.answers || {}; });
+      var firstOpen = d.samples.findIndex(function (s) { return !s.completed; });
+      S.idx = firstOpen < 0 ? 0 : firstOpen;
+      return '<div class="tasting-mode" id="tm"><div class="t-wrap">' +
+        '<div class="t-top"><div><div class="eyebrow">Blind tasting</div><div class="serif" style="font-size:1.2rem">' + esc(d.title) + '</div></div>' +
+        '<div class="btn-row"><span class="small muted" id="t-saved"></span><button class="t-exit" data-action="exit">Sair e continuar depois</button></div></div>' +
+        '<div class="t-rail" id="t-rail"></div><div id="t-hero"></div><div class="t-steps" id="t-steps"></div><div id="t-card"></div><div id="t-reveal"></div>' +
+        '</div></div>';
+    });
+  },
+  mount: function () {
+    var S = Pages.tastingPlay.state;
+    if (!S) return;
+    Pages.tastingPlay.drawAll();
+  },
+  sample: function () { var S = Pages.tastingPlay.state; return S.data.samples[S.idx]; },
+  drawAll: function () {
+    var P = Pages.tastingPlay;
+    P.drawRail(); P.drawHero(); P.drawSteps(); P.drawCard(); P.drawReveal();
+  },
+  drawRail: function () {
+    var S = Pages.tastingPlay.state;
+    document.getElementById('t-rail').innerHTML = S.data.samples.map(function (s, i) {
+      return '<button class="' + (i === S.idx ? 'cur ' : '') + (s.completed ? 'done' : '') + '" data-action="sample" data-i="' + i + '" title="Garrafa #' + s.number + '">' +
+        Components.bottle(s.number, { fill: s.completed ? '#d4b07a' : '#c24d5f', stroke: '#a8958c', label: '', uid: 'r' }) + '#' + s.number + '</button>';
+    }).join('');
+  },
+  drawHero: function () {
+    var S = Pages.tastingPlay.state, s = Pages.tastingPlay.sample();
+    document.getElementById('t-hero').innerHTML = '<div class="t-hero">' +
+      '<svg class="big" viewBox="0 0 40 92"><defs><linearGradient id="gl" x1="0" x2="1"><stop offset="0" stop-color="#5a1522"/><stop offset=".45" stop-color="#9b2c3f"/><stop offset="1" stop-color="#3d0e17"/></linearGradient></defs>' +
+      '<path d="M16 3h8v14c0 3 8 6 8 16v52a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V33c0-10 8-13 8-16z" fill="url(#gl)" stroke="#d4b07a" stroke-width=".6"/>' +
+      '<rect x="15" y="0" width="10" height="5" rx="1.5" fill="#d4b07a"/><rect x="11" y="46" width="18" height="26" rx="1.5" fill="#f3e9e1"/>' +
+      '<text x="20" y="63" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="11" fill="#2b1f20">' + s.number + '</text>' +
+      '<path d="M13 22c2-2 3-3 3-6" stroke="#fff" stroke-opacity=".25" stroke-width="1.2" fill="none"/></svg>' +
+      '<div class="round">Rodada ' + String(S.idx + 1).padStart(2, '0') + ' de ' + String(S.data.samples.length).padStart(2, '0') + '</div>' +
+      '<div class="num">Garrafa #' + s.number + '</div><div class="motto">Observe. Cheire. Prove.</div></div>';
+  },
+  drawSteps: function () {
+    var S = Pages.tastingPlay.state;
+    document.getElementById('t-steps').innerHTML = STEPS.map(function (st, i) {
+      return '<button class="' + (i === S.step ? 'cur' : '') + '" data-action="step" data-i="' + i + '"><span class="i">' + (i + 1) + '</span>' + st.t + '</button>';
+    }).join('');
+  },
+  val: function (c) { var a = Pages.tastingPlay.state.answers[Pages.tastingPlay.sample().id][c]; return a ? a.value : ''; },
+  list: function (c) { var a = Pages.tastingPlay.state.answers[Pages.tastingPlay.sample().id][c]; return a && a.value_json ? a.value_json : []; },
+  drawCard: function () {
+    var P = Pages.tastingPlay, S = P.state, st = STEPS[S.step], v = P.val, L = P.list, s = P.sample();
+    function q(label, inner) { return '<div class="t-q"><div class="l">' + esc(label) + '</div>' + inner + '</div>'; }
+    function seg(c, scale) { return Components.seg(c, scale || c, v(c)); }
+    function text(c, ph) { return '<textarea class="in" data-q="' + c + '" placeholder="' + esc(ph || '') + '">' + esc(v(c)) + '</textarea>'; }
+    var body = '';
+    switch (st.key) {
+      case 'visual':
+        body = q('Limpidez', seg('clarity')) + q('Intensidade da cor', seg('color_intensity')) + q('Tonalidade', seg('color_hue')) +
+          q('Descreva o visual', text('visual_text', 'Reflexos, halo, lágrimas…'));
+        break;
+      case 'nose':
+        body = q('Aromas', Components.aromaPicker('aromas', L('aromas'))) + q('Descreva o nariz', text('nose_text', 'Intensidade, evolução, o que vem primeiro…'));
+        break;
+      case 'palate':
+        body = q('Dulçor', seg('sweetness')) + q('Acidez', seg('acidity')) + q('Tanino', seg('tannin')) + q('Álcool', seg('alcohol')) + q('Corpo', seg('body'));
+        break;
+      case 'structure':
+        body = q('Intensidade de sabor', seg('intensity')) + q('Persistência', seg('finish')) +
+          q('Textura', Components.seg('texture', 'texture', L('texture'), { multi: true })) + q('Descreva a boca', text('palate_text', 'Sabores, equilíbrio, final…'));
+        break;
+      case 'hypothesis':
+        var grapes = S.data.options.grapes;
+        var gl = L('grape');
+        var countries = Store.lookups.countries;
+        var country = v('country');
+        body = (S.data.options.grapes_restricted ? '<div class="callout small" style="margin-bottom:10px">Dificuldade ' + esc(DIFFICULTY[S.data.difficulty][0].toLowerCase()) + ': a lista de uvas é limitada. ' + esc(DIFFICULTY[S.data.difficulty][1]) + '</div>' : '') +
+          '<div class="form-grid">' +
+          '<div><label class="f">Uva — hipótese principal</label><select class="in" data-grape="0">' + Components.options(grapes, gl[0] || '', '—') + '</select></div>' +
+          '<div><label class="f">Alternativa 1</label><select class="in" data-grape="1">' + Components.options(grapes, gl[1] || '', '—') + '</select></div>' +
+          '<div><label class="f">Alternativa 2</label><select class="in" data-grape="2">' + Components.options(grapes, gl[2] || '', '—') + '</select></div>' +
+          '<div><label class="f">País</label><select class="in" data-q="country" id="t-country">' + Components.options(countries, country, '—') + '</select></div>' +
+          '<div><label class="f">Região</label><select class="in" data-q="region" id="t-region">' + regionOptions(country, v('region')) + '</select></div>' +
+          '<div><label class="f">Safra</label><input class="in" type="number" data-q="vintage" value="' + esc(v('vintage')) + '" placeholder="ex.: 2021"></div>' +
+          '<div><label class="f">Teor alcoólico estimado (%)</label><input class="in" type="number" step="0.5" data-q="abv" value="' + esc(v('abv')) + '" placeholder="ex.: 13,5"></div>' +
+          '<div><label class="f">Estilo</label><input class="in" data-q="style" value="' + esc(v('style')) + '" placeholder="ex.: tinto jovem, sem madeira"></div>' +
+          '<div><label class="f">Produtor (opcional)</label><input class="in" data-q="producer" value="' + esc(v('producer')) + '"></div>' +
+          '</div><p class="small muted" style="margin-top:12px">O 1º palpite de uva vale ACERTO; um palpite alternativo certo vale PRÓXIMO.</p>';
+        break;
+      case 'confirm':
+        body = '<div class="t-summary">' + summary() + '</div>' +
+          q('Conclusão', text('conclusion', 'Por que você chegou a essa hipótese?'));
+        break;
+    }
+    var last = S.step === STEPS.length - 1;
+    document.getElementById('t-card').innerHTML = '<div class="t-card" id="t-form"><h2>' + esc(st.t) + '</h2><p class="lead">' + esc(st.lead) + '</p>' + body +
+      '<div class="t-nav"><button class="btn" data-action="prev"' + (S.step === 0 ? ' disabled' : '') + '>← Anterior</button>' +
+      (last ? '<button class="btn primary" data-action="complete">' + (s.completed ? 'Salvar' : 'Concluir garrafa #' + s.number) + '</button>'
+        : '<button class="btn primary" data-action="next">Próximo →</button>') + '</div></div>';
+    var c = document.getElementById('t-country');
+    if (c) c.addEventListener('change', function () { document.getElementById('t-region').innerHTML = regionOptions(c.value, ''); });
+
+    function regionOptions(countryId, sel) {
+      var regs = Store.lookups.regions.filter(function (r) { return !countryId || r.country_id === countryId; });
+      return Components.options(regs.map(function (r) { return { id: r.id, name: r.name + (countryId ? '' : ' (' + Store.name('countries', r.country_id) + ')') }; }), sel, regs.length ? '—' : 'Nenhuma região cadastrada');
+    }
+    function summary() {
+      var a = S.answers[s.id];
+      function lab(c, scale) { return a[c] && a[c].value ? Store.scaleLabel(scale || c, a[c].value) : '—'; }
+      function item(k, val) { return '<div><div class="k">' + esc(k) + '</div><div class="v">' + (val || '—') + '</div></div>'; }
+      var aro = (a.aromas && a.aromas.value_json || []).map(function (id) { return Store.name('aromas', id); }).join(', ');
+      var gr = (a.grape && a.grape.value_json || []).map(function (id) { return Store.name('grapes', id); });
+      return item('Cor', [lab('color_intensity'), lab('color_hue')].filter(function (x) { return x !== '—'; }).join(', ')) +
+        item('Aromas', esc(aro)) + item('Acidez', lab('acidity')) + item('Tanino', lab('tannin')) + item('Corpo', lab('body')) +
+        item('Álcool', lab('alcohol')) + item('Dulçor', lab('sweetness')) + item('Persistência', lab('finish')) +
+        item('Uva', esc(gr.length ? gr[0] + (gr.length > 1 ? ' (ou ' + gr.slice(1).join(', ') + ')' : '') : '')) +
+        item('Origem', esc([a.region && Store.name('regions', a.region.value), a.country && Store.name('countries', a.country.value)].filter(Boolean).join(', '))) +
+        item('Safra', esc(a.vintage && a.vintage.value)) + item('Álcool estimado', a.abv && a.abv.value ? esc(a.abv.value) + '%' : '');
+    }
+  },
+  drawReveal: function () {
+    var S = Pages.tastingPlay.state;
+    var pending = S.data.samples.filter(function (s) { return !s.completed; }).length;
+    document.getElementById('t-reveal').innerHTML = '<div class="t-reveal">' + (pending
+      ? '<p class="muted">' + (pending === 1 ? 'Falta 1 garrafa' : 'Faltam ' + pending + ' garrafas') + ' para concluir a sessão.</p><button class="btn small" data-action="reveal">Revelar mesmo assim</button>'
+      : '<div class="serif" style="font-size:1.6rem;margin-bottom:6px">Todas as garrafas foram analisadas.</div><p class="muted">Quando estiver pronta, revele os vinhos e compare com suas respostas.</p><button class="btn gold" data-action="reveal">Revelar vinhos</button>') +
+      '<div style="margin-top:22px"><button class="t-exit" data-action="cancel">Cancelar degustação</button></div></div>';
+  },
+  /** Lê o passo atual para a memória. */
+  collect: function () {
+    var P = Pages.tastingPlay, S = P.state, form = document.getElementById('t-form');
+    if (!form) return;
+    var a = S.answers[P.sample().id];
+    form.querySelectorAll('[data-seg]').forEach(function (seg) {
+      var name = seg.getAttribute('data-seg'), v = Components.readSeg(form, name);
+      a[name] = Array.isArray(v) ? { value: '', value_json: v } : { value: v, value_json: null };
+    });
+    form.querySelectorAll('[data-q]').forEach(function (el) { a[el.getAttribute('data-q')] = { value: el.value.trim(), value_json: null }; });
+    if (form.querySelector('.aroma-picker')) a.aromas = { value: '', value_json: Components.readAromas(form) };
+    var gs = form.querySelectorAll('[data-grape]');
+    if (gs.length) {
+      var list = [];
+      gs.forEach(function (g) { if (g.value && list.indexOf(g.value) < 0) list.push(g.value); });
+      a.grape = { value: '', value_json: list };
+    }
+  },
+  save: function (completed) {
+    var P = Pages.tastingPlay, S = P.state, s = P.sample();
+    P.collect();
+    var el = document.getElementById('t-saved');
+    if (el) el.textContent = 'salvando…';
+    var args = { sample_id: s.id, answers: S.answers[s.id] };
+    if (completed !== undefined) args.completed = completed;
+    S.saving = API.call('tastings.saveAnswers', args).then(function () {
+      if (completed !== undefined) s.completed = completed;
+      if (el) el.textContent = 'salvo ✓';
+    }).catch(function (e) { if (el) el.textContent = ''; UI.error(e); throw e; });
+    return S.saving;
+  },
+  actions: {
+    step: function (btn) {
+      var P = Pages.tastingPlay;
+      P.save();
+      P.state.step = +btn.getAttribute('data-i');
+      P.drawSteps(); P.drawCard();
+    },
+    next: function () { var P = Pages.tastingPlay; P.save(); P.state.step++; P.drawSteps(); P.drawCard(); document.getElementById('t-steps').scrollIntoView({ behavior: 'smooth' }); },
+    prev: function () { var P = Pages.tastingPlay; P.save(); P.state.step--; P.drawSteps(); P.drawCard(); },
+    sample: function (btn) {
+      var P = Pages.tastingPlay;
+      P.save();
+      P.state.idx = +btn.getAttribute('data-i');
+      P.state.step = 0;
+      P.drawAll();
+      document.getElementById('tm').scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    complete: function () {
+      var P = Pages.tastingPlay, S = P.state;
+      return P.save(true).then(function () {
+        var next = S.data.samples.findIndex(function (s, i) { return i !== S.idx && !s.completed; });
+        if (next >= 0) {
+          UI.toast('Garrafa #' + P.sample().number + ' concluída.');
+          S.idx = next; S.step = 0;
+          P.drawAll();
+          document.getElementById('tm').scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          P.drawRail(); P.drawCard(); P.drawReveal();
+          document.getElementById('t-reveal').scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    },
+    reveal: function () {
+      var P = Pages.tastingPlay, S = P.state;
+      return P.save().then(function () {
+        return UI.confirm('Você deseja revelar os vinhos?', 'Depois de revelar, as respostas ficam travadas e as garrafinhas são marcadas como utilizadas.', 'Revelar');
+      }).then(function (ok) {
+        if (!ok) return;
+        document.getElementById('t-reveal').innerHTML = '<div class="t-reveal"><div class="serif" style="font-size:1.6rem;font-style:italic">Tirando as etiquetas…</div></div>';
+        return API.call('tastings.reveal', { id: S.data.id }).then(function () {
+          return Store.refreshLookups();
+        }).then(function () { Router.go('/degustacao/' + S.data.id + '/resultado'); });
+      });
+    },
+    exit: function () {
+      var P = Pages.tastingPlay;
+      return P.save().then(function () { Router.go('/degustacao/historico'); }, function () { Router.go('/degustacao/historico'); });
+    },
+    cancel: function () {
+      var S = Pages.tastingPlay.state;
+      return UI.confirm('Cancelar a degustação?', 'As garrafinhas voltam a ficar disponíveis e as respostas desta sessão são descartadas do histórico.', 'Cancelar degustação').then(function (ok) {
+        if (!ok) return;
+        return API.call('tastings.cancel', { id: S.data.id }).then(function () { UI.toast('Degustação cancelada.'); Router.go('/degustacao/historico'); });
+      });
+    }
+  }
+};
+
+/* ============================== RELATÓRIO ============================== */
+Pages.tastingReport = {
+  render: function (p) {
+    return API.call('tastings.report', { id: p.id }).then(function (r) {
+      var agg = {};
+      r.aggregate.forEach(function (a) { agg[a.criterion] = a; });
+      function tally(icon, label, c) {
+        var a = agg[c];
+        if (!a) return '';
+        return '<div>' + icon + ' ' + esc(label) + ': <b>' + a.hit + '/' + a.total + '</b>' + (a.near ? ' <span class="muted small">(+' + a.near + ' próx.)</span>' : '') + '</div>';
+      }
+      var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/degustacao/historico">Histórico</a> · ' + fmtDate(r.date) + ' · ' + esc(DIFFICULTY[r.difficulty] ? DIFFICULTY[r.difficulty][0] : '') + '</div>' +
+        '<h1>Resultado da degustação</h1><p class="sub">' + esc(r.title) + '</p></div><div class="btn-row"><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>';
+
+      html += '<section class="panel score-hero"><div class="eyebrow">' + plural(r.samples.length, 'vinho analisado', 'vinhos analisados') + '</div>' +
+        '<div class="big">' + (r.score === '' || r.score === null ? '—' : fmtNum(r.score, 0)) + '<small>/100</small></div>' +
+        '<div class="tally">' + tally('🍇', 'Uvas', 'grape') + tally('🌎', 'Regiões', 'region') + tally('🏳️', 'Países', 'country') + tally('👃', 'Aromas', 'aromas') +
+        tally('👅', 'Acidez', 'acidity') + tally('🍂', 'Tanino', 'tannin') + tally('⚖️', 'Corpo', 'body') + '</div>';
+      html += '<div class="grid two" style="text-align:left;margin-top:22px;border-top:1px solid var(--line);padding-top:18px">' +
+        '<div><div class="eyebrow">Seus pontos fortes</div><div class="serif" style="font-size:1.35rem">' + (r.strengths.length ? esc(r.strengths.join(' · ')) : '<span class="muted">—</span>') + '</div></div>' +
+        '<div><div class="eyebrow">Para estudar</div><div class="serif" style="font-size:1.35rem">' + (r.weaknesses.concat(r.to_study).length ? esc(r.weaknesses.concat(r.to_study).join(' · ')) : '<span class="muted">—</span>') + '</div></div></div>';
+      var weighted = {};
+      (Store.lookups.rules || []).forEach(function (x) { if (x.active && Number(x.weight) > 0) weighted[x.criterion] = true; });
+      var noRef = r.samples.some(function (s) { return s.results.some(function (x) { return x.state === 'no_ref' && weighted[x.criterion]; }); });
+      if (noRef) html += '<div class="callout" style="text-align:left;margin-top:18px">Alguns critérios aparecem como <b>sem gabarito</b>: o vinho ainda não tem um perfil de referência verificado. ' +
+        'Eles não entraram na nota. Cadastre o perfil na página do vinho para que passem a contar.</div>';
+      html += '</section>';
+
+      r.samples.forEach(function (s) {
+        var w = s.wine;
+        html += '<article class="reveal-card"><div class="hd">' + Components.bottle(s.number, { status: 'disponivel', uid: 'rv' }) +
+          '<div><div class="eyebrow">Garrafa #' + s.number + '</div><div class="serif" style="font-size:1.6rem;line-height:1.1"><a href="#/vinhos/' + w.id + '">' + esc(w.name) + '</a> <span class="muted">' + esc(w.vintage || '') + '</span></div>' +
+          '<div class="small muted">' + esc([w.producer, w.region, w.country].filter(Boolean).join(' · ')) + (w.grapes.length ? ' — ' + esc(w.grapes.map(function (g) { return g.name; }).join(', ')) : '') + (w.abv ? ' · ' + fmtNum(w.abv) + '%' : '') + '</div></div>' +
+          '<div class="serif" style="font-size:2.2rem">' + (s.score === '' || s.score === null ? '—' : fmtNum(s.score, 0)) + '</div></div>' +
+          '<div class="bd"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Critério</th><th>Seu palpite</th><th>Resposta</th><th></th><th style="text-align:right">Pontos</th></tr></thead><tbody>' +
+          s.results.filter(function (x) { return !(x.state === 'no_ref' && !x.given); }).map(function (x) {
+            return '<tr' + (x.state === 'no_ref' ? ' class="muted"' : '') + '><td>' + esc(x.label) + '</td><td>' + (esc(x.given) || '<span class="missing">sem resposta</span>') + '</td>' +
+              '<td>' + (x.state === 'no_ref' ? '<span class="missing">sem gabarito</span>' : esc(x.expected)) + '</td><td>' + Components.state(x.state) + '</td>' +
+              '<td style="text-align:right" class="nowrap">' + (x.max_points ? fmtNum(x.points) + ' / ' + x.max_points : '—') + '</td></tr>';
+          }).join('') + '</tbody></table></div>' +
+          (s.free.conclusion ? '<p class="small"><b>Sua conclusão:</b> ' + esc(s.free.conclusion) + '</p>' : '') + '</div></article>';
+      });
+
+      if (r.samples.length > 1) {
+        var rows = [['Uva', function (w) { return w.grapes.map(function (g) { return g.name; }).join(', '); }],
+          ['Acidez', prof('acidity')], ['Tanino', prof('tannin')], ['Corpo', prof('body')],
+          ['Aromas', function (w) { return w.aromas.slice(0, 5).join(', '); }],
+          ['Álcool', function (w) { return w.abv ? fmtNum(w.abv) + '%' : ''; }]];
+        html += '<h2>Comparação entre os vinhos</h2><div class="panel tbl-wrap"><table class="tbl cmp"><thead><tr><th></th>' +
+          r.samples.map(function (s) { return '<th>#' + s.number + ' · ' + esc(s.wine.name) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+          rows.map(function (row) {
+            var vals = r.samples.map(function (s) { return row[1](s.wine) || ''; });
+            var differ = vals.some(function (v) { return v !== vals[0]; });
+            return '<tr><td class="muted">' + row[0] + '</td>' + vals.map(function (v) { return '<td class="' + (differ ? 'hl' : '') + '">' + (v ? esc(v) : '<span class="missing">—</span>') + '</td>'; }).join('') + '</tr>';
+          }).join('') + '</tbody></table>' +
+          '<p class="small muted">Em negrito: características que diferem entre os vinhos. Valores vêm do perfil de referência de cada vinho' +
+          (r.samples.some(function (s) { return s.wine.profile && !s.wine.profile_trusted; }) ? ' (alguns ainda <b>não verificados</b>)' : '') + '.</p></div>';
+      }
+      return html;
+      function prof(k) { return function (w) { return w.profile && w.profile[k] ? Store.scaleLabel(k, w.profile[k]) + (w.profile_trusted ? '' : ' *') : ''; }; }
+    });
+  }
+};
+
+/* ============================== HISTÓRICO ============================== */
+Pages.tastingHistory = {
+  render: function () {
+    return API.call('tastings.list').then(function (list) {
+      var html = '<div class="page-head"><div><div class="eyebrow">Degustação</div><h1>Histórico</h1><p class="sub">' + plural(list.length, 'sessão', 'sessões') + '.</p></div>' +
+        '<a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div>';
+      if (!list.length) return html + Components.empty('Nenhuma degustação ainda.', 'Sua primeira degustação às cegas aparece aqui.');
+      html += '<div class="list">' + list.map(function (t) {
+        var href = t.status === 'revelada' ? '#/degustacao/' + t.id + '/resultado' : t.status === 'cancelada' ? null : '#/degustacao/' + t.id;
+        var inner = '<div><div class="t">' + esc(t.title) + '</div><div class="m">' + fmtDate(t.date, true) + ' · ' + plural(t.count, 'vinho', 'vinhos') + ' · ' +
+          esc(DIFFICULTY[t.difficulty] ? DIFFICULTY[t.difficulty][0] : '') + ' · ' + statusLabel(t.status) + '</div></div>' +
+          '<div class="serif" style="font-size:1.6rem">' + (t.status === 'revelada' && t.score !== '' ? fmtNum(t.score, 0) : '') + '</div>';
+        return href ? '<a class="row" href="' + href + '">' + inner + '</a>' : '<div class="row muted">' + inner + '</div>';
+      }).join('') + '</div>';
+      return html;
+    });
+  }
+};
+</script>

@@ -1,0 +1,185 @@
+<script>
+/* ============================================================
+   IA: pesquisa com fontes + fila de revisão.
+   Nada da IA entra no sistema sem passar por Pages.review.
+   ============================================================ */
+var FIELD_LABELS = {
+  color: 'cor', origin: 'origem', synonyms: 'sinônimos', main_countries: 'países principais', main_regions: 'regiões principais',
+  general_profile: 'perfil geral', ripening: 'ciclo de maturação', skin_thickness: 'espessura da casca', bunch_size: 'tamanho do cacho',
+  berry_size: 'tamanho da baga', vigor: 'vigor / produtividade', disease_sensitivity: 'sensibilidade a doenças', climate: 'clima',
+  soils: 'solos', how_to_recognize: 'como reconhecer', description: 'descrição', confusions_text: 'uvas parecidas',
+  type: 'tipo', classification: 'classificação', production_method: 'método de produção', aging: 'estágio / maturação',
+  oak: 'madeira', aging_time: 'tempo de envelhecimento', abv: 'teor alcoólico', residual_sugar: 'açúcar residual',
+  acidity_gl: 'acidez total', serving_temp: 'temperatura de serviço', pairing: 'harmonização', curiosities: 'curiosidades'
+};
+var SCALE_LABELS = { acidity: 'Acidez', tannin: 'Tanino', body: 'Corpo', alcohol: 'Álcool', sweetness: 'Dulçor', intensity: 'Intensidade', finish: 'Persistência' };
+
+var AiUI = {
+  /** Roda uma pesquisa mostrando progresso; ao final oferece ir para a revisão. */
+  run: function (method, args, what) {
+    var m = UI.modal('<div class="eyebrow">Pesquisa com IA</div><h2>' + esc(what) + '</h2>' +
+      '<p class="serif" style="font-size:1.2rem;font-style:italic" id="ai-progress">Buscando fontes de referência…</p>' +
+      '<p class="muted small">A pesquisa consulta a web e costuma levar de 30 segundos a 2 minutos. Nada é gravado sem a sua revisão.</p>', { sticky: true });
+    var msgs = ['Buscando fontes de referência…', 'Lendo as páginas encontradas…', 'Conferindo cada dado com a fonte…', 'Organizando as propostas…'];
+    var i = 0;
+    var timer = setInterval(function () { var el = document.getElementById('ai-progress'); if (el) el.textContent = msgs[Math.min(++i, msgs.length - 1)]; }, 12000);
+    return API.call(method, args).then(function (r) {
+      clearInterval(timer);
+      AiUI.setBadge(null);
+      m.querySelector('.modal').innerHTML = '<div class="eyebrow">Pesquisa concluída</div><h2>' + plural(r.proposals, 'proposta', 'propostas') + ' para revisar</h2>' +
+        '<p class="muted small">' + plural(r.searches || 0, 'busca', 'buscas') + ' · custo estimado US$ ' + fmtNum(r.cost_usd, 2) + '</p>' +
+        (r.not_found ? '<div class="callout" style="margin:12px 0"><b>Sem fonte encontrada:</b> ' + esc(r.not_found) + '</div>' : '') +
+        '<div class="btn-row" style="justify-content:flex-end;margin-top:18px"><button class="btn" data-action="close-modal">Fechar</button>' +
+        (r.proposals ? '<button class="btn primary" data-action="close-modal-go" data-to="/revisao">Revisar agora</button>' : '') + '</div>';
+      return r;
+    }).catch(function (e) {
+      clearInterval(timer);
+      UI.closeModal();
+      throw e;
+    });
+  },
+  setBadge: function (n) {
+    var apply = function (count) {
+      var a = document.querySelector('.nav a.item[href="#/revisao"]');
+      if (!a) return;
+      var b = a.querySelector('.badge');
+      if (!b) { b = document.createElement('span'); b.className = 'badge'; a.appendChild(b); }
+      b.textContent = count || '';
+      b.style.display = count ? '' : 'none';
+    };
+    if (n !== null && n !== undefined) return apply(n);
+    API.call('ai.pending').then(function (list) { apply(list.length); }).catch(function () {});
+  },
+  /** Painel de configuração (usado em Pages.settings). */
+  panel: function (s) {
+    return '<section class="panel" id="ai-panel"><h2 style="margin-top:0">Inteligência artificial</h2>' +
+      '<p class="muted">O Claude pesquisa na web e propõe dados com o link da fonte. Nada é gravado sem a sua revisão em <a href="#/revisao">Revisão da IA</a>.</p>' +
+      (s.has_key
+        ? '<p><span class="src usuario">chave configurada</span> <button class="btn small ghost" data-action="ai-remove-key">remover chave</button></p>'
+        : '<form data-action="ai-set-key" class="btn-row" style="margin-bottom:10px"><input class="in" type="password" name="key" placeholder="sk-ant-…" autocomplete="off" style="max-width:360px">' +
+          '<button class="btn primary small">Salvar chave</button></form><p class="small muted">Crie a chave em console.anthropic.com → API Keys. Ela fica guardada nas propriedades do script, nunca na planilha, e não volta para o navegador.</p>') +
+      '<form data-action="ai-config" class="form-grid" style="margin-top:14px">' +
+      '<div><label class="f">Modelo</label><select class="in" name="model">' + Components.options(s.models.map(function (m) { return { v: m, t: m }; }), s.model) + '</select></div>' +
+      '<div><label class="f">Profundidade</label><select class="in" name="effort">' + Components.options([{ v: 'low', t: 'Rápida (recomendada)' }, { v: 'medium', t: 'Média' }, { v: 'high', t: 'Profunda (mais lenta e cara)' }], s.effort) + '</select></div>' +
+      '<div><label class="f">Buscas por pesquisa</label><input class="in" type="number" min="1" max="10" name="max_searches" value="' + s.max_searches + '"></div>' +
+      '<div><label class="f">&nbsp;</label><button class="btn small">Salvar</button></div></form>' +
+      '<p class="small muted" style="margin-top:10px">' + plural(s.calls, 'pesquisa feita', 'pesquisas feitas') + ' · custo estimado total US$ ' + fmtNum(s.total_cost_usd, 2) + '</p>' +
+      (s.recent.length ? '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Quando</th><th>Tarefa</th><th>Propostas</th><th>Custo</th><th></th></tr></thead><tbody>' + s.recent.map(function (c) {
+        return '<tr><td class="nowrap">' + fmtDate(c.run_at, true) + '</td><td>' + esc(c.task) + '</td><td>' + (c.proposals || 0) + '</td><td>US$ ' + fmtNum(c.cost_usd, 3) + '</td>' +
+          '<td>' + (c.status === 'erro' ? '<span class="src ia" title="' + esc(c.error) + '">erro</span>' : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : '') +
+      '</section>';
+  }
+};
+
+GlobalActions['close-modal-go'] = function (el) { UI.closeModal(); Router.go(el.getAttribute('data-to')); };
+
+/* ============================== REVISÃO ============================== */
+Pages.review = {
+  render: function () {
+    return API.call('ai.pending').then(function (rows) {
+      Pages.review.rows = rows;
+      AiUI.setBadge(rows.length);
+      var html = '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>Revisão da IA</h1>' +
+        '<p class="sub">' + (rows.length ? plural(rows.length, 'proposta aguardando', 'propostas aguardando') + ' a sua revisão.' : 'Nenhuma proposta pendente.') + '</p></div></div>';
+      if (!rows.length) {
+        return html + Components.empty('Tudo revisado.', 'Use “Pesquisar com IA” na página de uma uva ou de um vinho, ou “Catalogar uvas” na lista de uvas.',
+          '<a class="btn" href="#/uvas">Ir para Uvas</a>');
+      }
+      html += '<div class="callout" style="margin-bottom:18px">Leia cada proposta e abra a fonte quando tiver dúvida. ' +
+        '<b>✓ fonte consultada</b> = a página apareceu nas buscas desta pesquisa. <b>⚠ fonte não confirmada</b> = o link não apareceu nas buscas; confira antes de aprovar. ' +
+        'Textos podem ser editados antes de aprovar.</div>';
+      var groups = [], by = {};
+      rows.forEach(function (r) {
+        var k = r.entity_type + '|' + (r.entity_id || r.run_id);
+        if (!by[k]) { by[k] = []; groups.push(k); }
+        by[k].push(r);
+      });
+      groups.forEach(function (k) {
+        var list = by[k], first = list[0];
+        var title = first.entity_type === 'catalog' ? 'Novas uvas — “' + esc(first.entity_name && list.length === 1 ? first.entity_name : 'catálogo') + '”'
+          : (first.entity_type === 'grape' ? 'Uva · ' : 'Vinho · ') + '<a href="#/' + (first.entity_type === 'grape' ? 'uvas/' : 'vinhos/') + first.entity_id + '">' + esc(first.entity_name) + '</a>';
+        if (first.entity_type === 'catalog') title = 'Novas uvas para o catálogo';
+        html += '<section class="panel" data-group="' + esc(k) + '"><div class="page-head" style="margin-bottom:8px"><h3 style="margin:0">' + title + '</h3>' +
+          '<div class="btn-row"><button class="btn small" data-action="group" data-a="descartar">Descartar tudo</button><button class="btn small primary" data-action="group" data-a="aprovar">Aprovar tudo</button></div></div>' +
+          '<div class="list">' + list.map(Pages.review.row).join('') + '</div></section>';
+      });
+      return html;
+    });
+  },
+  row: function (r) {
+    var proposed, editable = false;
+    var val;
+    try { val = r.kind === 'field' ? r.proposed_value : JSON.parse(r.proposed_value); } catch (e) { val = r.proposed_value; }
+    switch (r.kind) {
+      case 'field':
+        editable = true;
+        proposed = '<textarea class="in" data-edit rows="' + Math.min(6, Math.max(1, Math.ceil(String(val).length / 70))) + '">' + esc(val) + '</textarea>';
+        break;
+      case 'profile':
+        proposed = '<div class="chips">' + Object.keys(val).map(function (k) {
+          return '<span class="chip">' + esc(SCALE_LABELS[k] || k) + ': ' + esc(String(val[k]).split('..').map(function (x) { return Store.scaleLabel(k, x); }).join(' a ')) + '</span>';
+        }).join('') + '</div>';
+        break;
+      case 'aromas':
+        proposed = '<div class="chips">' + val.map(function (n) { return '<span class="chip">' + esc(n) + '</span>'; }).join('') + '</div>';
+        break;
+      case 'parent':
+        proposed = '<b>' + esc(val.name) + '</b> é pai/mãe de ' + esc(r.entity_name);
+        break;
+      case 'confused_with':
+        editable = true;
+        proposed = '<b>' + esc(val.name) + '</b><div class="small muted" style="margin:4px 0">Como diferenciar:</div><textarea class="in" data-edit rows="3">' + esc(val.how || '') + '</textarea>';
+        break;
+      case 'new_grape':
+        proposed = '<b>' + esc(val.name) + '</b> · ' + esc(val.color || '') + (val.origin ? ' · ' + esc(val.origin) : '');
+        break;
+    }
+    var current = r.current_value;
+    if (r.kind === 'profile' && current) {
+      try { var cv = JSON.parse(current); current = Object.keys(cv).map(function (k) { return (SCALE_LABELS[k] || k) + ': ' + cv[k]; }).join(' · '); } catch (e) { /* texto */ }
+    }
+    var label = r.kind === 'field' ? (FIELD_LABELS[r.field] || r.field) : r.field;
+    var src = r.source_url
+      ? '<a href="' + esc(r.source_url) + '" target="_blank" rel="noopener noreferrer">' + esc(r.source_title || r.source_url.replace(/^https?:\/\//, '').split('/')[0]) + '</a> ' +
+        (r.url_verified ? '<span class="src usuario">✓ fonte consultada</span>' : '<span class="src ia">⚠ fonte não confirmada</span>')
+      : '<span class="src ia">sem fonte</span>';
+    return '<div class="row" data-id="' + r.id + '" data-editable="' + (editable ? '1' : '') + '" style="grid-template-columns:1fr auto;align-items:start">' +
+      '<div><div class="eyebrow" style="margin-bottom:4px">' + esc(label) + '</div>' +
+      (current ? '<div class="small muted" style="margin-bottom:6px">Atual: ' + esc(current) + '</div>' : '') +
+      proposed + '<div class="small" style="margin-top:6px">' + src + '</div></div>' +
+      '<div class="btn-row" style="flex-direction:column;align-items:stretch"><button class="btn small primary" data-action="one" data-a="aprovar">Aprovar</button>' +
+      '<button class="btn small" data-action="one" data-a="descartar">Descartar</button></div></div>';
+  },
+  submit: function (rowEls, action) {
+    var ids = [], edits = {};
+    rowEls.forEach(function (el) {
+      var id = el.getAttribute('data-id');
+      ids.push(id);
+      var t = el.querySelector('[data-edit]');
+      if (t && el.getAttribute('data-editable')) edits[id] = t.value;
+    });
+    rowEls.forEach(function (el) { el.style.opacity = .4; });
+    return API.call('ai.review', { ids: ids, action: action, edits: edits }).then(function (r) {
+      Store.lookups = r.lookups;
+      if (r.errors.length) UI.toast('Algumas não puderam ser aplicadas: ' + r.errors.join(' | '), true);
+      else UI.toast(plural(r.done, 'proposta', 'propostas') + ' ' + (action === 'aprovar' ? 'aprovada(s)' : 'descartada(s)') + '.');
+      rowEls.forEach(function (el) { el.remove(); });
+      document.querySelectorAll('section[data-group]').forEach(function (s) { if (!s.querySelector('.row')) s.remove(); });
+      Pages.review.rows = Pages.review.rows.filter(function (x) { return ids.indexOf(x.id) < 0; });
+      AiUI.setBadge(Pages.review.rows.length);
+      if (!Pages.review.rows.length) Router.render();
+    });
+  },
+  actions: {
+    one: function (btn) { return Pages.review.submit([btn.closest('.row')], btn.getAttribute('data-a')); },
+    group: function (btn) {
+      var sec = btn.closest('section');
+      var a = btn.getAttribute('data-a');
+      var rows = Array.prototype.slice.call(sec.querySelectorAll('.row[data-id]'));
+      return UI.confirm(a === 'aprovar' ? 'Aprovar todas?' : 'Descartar todas?', plural(rows.length, 'proposta', 'propostas') + ' deste grupo.', a === 'aprovar' ? 'Aprovar' : 'Descartar')
+        .then(function (ok) { if (ok) return Pages.review.submit(rows, a); });
+    }
+  }
+};
+</script>

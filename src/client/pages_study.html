@@ -1,0 +1,554 @@
+<script>
+/* ============================== VINHOS ============================== */
+var COLOR_LABELS = { tinto: 'Tinto', branco: 'Branco', rose: 'Rosé', laranja: 'Laranja' };
+var TYPE_LABELS = { tranquilo: 'Tranquilo', espumante: 'Espumante', fortificado: 'Fortificado', sobremesa: 'Sobremesa' };
+
+Pages.wines = {
+  render: function (p) {
+    return API.call('wines.list').then(function (list) {
+      Pages.wines.data = list;
+      var L = Store.lookups;
+      var html = '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>Vinhos</h1><p class="sub">' + plural(list.length, 'rótulo', 'rótulos') + ' no seu estudo.</p></div>' +
+        '<a class="btn primary" href="#/vinhos/novo">Cadastrar vinho</a></div>';
+      if (!list.length) return html + Components.empty('Nenhum vinho ainda.', 'Sincronize a planilha em Configurações ou cadastre o primeiro rótulo.');
+      html += '<div class="form-grid" style="margin-bottom:18px">' +
+        '<div class="search-in"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="9" r="6"/><path d="m14 14 4 4"/></svg><input class="in" placeholder="Filtrar por nome, produtor…" data-input="filter" id="wf-q"></div>' +
+        '<select class="in" data-change="filter" id="wf-country">' + Components.options(L.countries.filter(used('country_id')), '', 'Todos os países') + '</select>' +
+        '<select class="in" data-change="filter" id="wf-grape">' + Components.options(L.grapes.filter(function (g) { return list.some(function (w) { return w.grapes.some(function (x) { return x.id === g.id; }); }); }), '', 'Todas as uvas') + '</select>' +
+        '<select class="in" data-change="filter" id="wf-color">' + Components.options(Object.keys(COLOR_LABELS).map(function (k) { return { v: k, t: COLOR_LABELS[k] }; }), '', 'Todas as cores') + '</select>' +
+        '</div><div class="list" id="wine-list"></div>';
+      return html;
+      function used(field) { return function (c) { return list.some(function (w) { return w[field] === c.id; }); }; }
+    });
+  },
+  mount: function () { Pages.wines.actions.filter(); },
+  actions: {
+    filter: function () {
+      var q = (document.getElementById('wf-q').value || '').toLowerCase();
+      var c = document.getElementById('wf-country').value, g = document.getElementById('wf-grape').value, col = document.getElementById('wf-color').value;
+      var rows = Pages.wines.data.filter(function (w) {
+        var text = [w.name, w.producer, w.region, w.country, w.vintage].concat(w.grapes.map(function (x) { return x.name; })).join(' ').toLowerCase();
+        return (!q || text.indexOf(q) >= 0) && (!c || w.country_id === c) && (!col || w.color === col) &&
+          (!g || w.grapes.some(function (x) { return x.id === g; }));
+      });
+      document.getElementById('wine-list').innerHTML = rows.length ? rows.map(function (w) {
+        return '<a class="row" href="#/vinhos/' + w.id + '"><div><div class="t">' + esc(w.name) + (w.vintage ? ' <span class="muted">' + w.vintage + '</span>' : '') + '</div>' +
+          '<div class="m">' + esc([w.producer, w.region, w.country].filter(Boolean).join(' · ')) + (w.grapes.length ? ' — ' + esc(w.grapes.map(function (x) { return x.name; }).join(', ')) : '') + '</div></div>' +
+          '<div class="m nowrap" title="Garrafinhas disponíveis">' + (w.bottles_total ? w.bottles_available + ' / ' + w.bottles_total + ' garrafinhas' : '') + '</div></a>';
+      }).join('') : Components.empty('Nenhum vinho com esses filtros.');
+    }
+  }
+};
+
+Pages.wine = {
+  render: function (p) {
+    return API.call('wines.get', { id: p.id }).then(function (w) {
+      Pages.wine.data = w;
+      var fs = w.field_sources || {};
+      var rf = w.field_refs || {};
+      var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/vinhos">Vinhos</a></div>' +
+        '<h1>' + esc(w.name) + (w.vintage ? ' <span class="muted">' + w.vintage + '</span>' : '') + '</h1>' +
+        '<p class="sub">' + esc([w.producer, w.subregion, w.region, w.country].filter(Boolean).join(' · ')) + ' ' + Components.src(w.source) + '</p>' +
+        (w.grapes.length ? '<div class="chips" style="margin-top:10px">' + w.grapes.map(function (g) {
+          return '<a class="chip" href="#/uvas/' + g.id + '">' + esc(g.name) + (g.percent ? ' · ' + fmtNum(g.percent, 0) + '%' : '') + '</a>';
+        }).join('') + '</div>' : '') +
+        '</div><div class="btn-row">' + (Store.lookups.ai_enabled ? '<button class="btn" data-action="ai-research">✦ Pesquisar com IA</button>' : '') + '<a class="btn" href="#/vinhos/' + w.id + '/editar">Editar</a></div></div>';
+
+      html += '<div class="grid two"><section class="panel"><h3 style="margin-top:0">Identidade</h3><div class="fields">' +
+        Components.field('Produtor', w.producer, { source: fs.producer_id }) +
+        Components.field('País', w.country, { source: fs.country_id }) +
+        Components.field('Região', w.region, { source: fs.region_id }) +
+        Components.field('Sub-região', w.subregion) +
+        Components.field('Denominação', w.appellation) +
+        Components.field('Safra', w.vintage, { source: fs.vintage }) +
+        Components.field('Cor', COLOR_LABELS[w.color] || w.color, { source: fs.color, ref: rf.color }) +
+        Components.field('Tipo', TYPE_LABELS[w.type] || w.type, { source: fs.type, ref: rf.type }) +
+        Components.field('Classificação', w.classification, { source: fs.classification, ref: rf.classification }) +
+        Components.field('Faixa de preço', w.price ? (w.price_currency || '') + ' ' + fmtNum(w.price, 2) : '', { source: fs.price }) +
+        '</div></section>';
+      html += '<section class="panel"><h3 style="margin-top:0">Produção e técnica</h3><div class="fields">' +
+        Components.field('Teor alcoólico', w.abv ? fmtNum(w.abv) + '%' : '', { source: fs.abv, ref: rf.abv }) +
+        Components.field('Açúcar residual', w.residual_sugar, { source: fs.residual_sugar, ref: rf.residual_sugar }) +
+        Components.field('Acidez total', w.acidity_gl, { source: fs.acidity_gl, ref: rf.acidity_gl }) +
+        Components.field('Método de produção', w.production_method, { source: fs.production_method, ref: rf.production_method }) +
+        Components.field('Estágio / maturação', w.aging, { source: fs.aging, ref: rf.aging }) +
+        Components.field('Madeira', w.oak, { source: fs.oak, ref: rf.oak }) +
+        Components.field('Tempo de envelhecimento', w.aging_time, { source: fs.aging_time, ref: rf.aging_time }) +
+        Components.field('Temperatura de serviço', w.serving_temp, { source: fs.serving_temp, ref: rf.serving_temp }) +
+        '</div></section></div>';
+
+      // Perfil de referência (gabarito)
+      var pr = w.profile;
+      html += '<section class="panel" style="margin-top:16px"><div class="page-head" style="margin-bottom:12px"><div><h3 style="margin:0">Perfil de referência</h3>' +
+        '<div class="muted small">É o gabarito usado para corrigir acidez, tanino, corpo, aromas… nas degustações às cegas.</div></div>' +
+        '<button class="btn small" data-action="edit-profile">' + (pr ? 'Editar perfil' : 'Cadastrar perfil') + '</button></div>';
+      if (pr && !w.profile_trusted) {
+        html += '<div class="callout warn" style="margin-bottom:16px">Este perfil veio de uma fonte <b>não verificada</b> (' + esc(Components.SOURCE_LABELS[pr.source] || pr.source) + '). ' +
+          'Ele não é usado como gabarito. Revise os valores e salve com a origem correta (ficha técnica, pesquisa ou sua avaliação) para ativá-lo.</div>';
+      }
+      html += '<div class="grid two"><div>' + Components.palate(pr) + '</div><div>' +
+        (pr ? '<div class="fields">' +
+          Components.field('Visual', pr.visual_text, { wide: true }) + Components.field('Nariz', pr.nose_text, { wide: true }) + Components.field('Boca', pr.palate_text, { wide: true }) +
+          '</div>' : '') +
+        '<h3>Aromas</h3>' + Components.aromaGroups(w.aromas) + '</div></div>' +
+        (pr ? '<div class="small muted" style="margin-top:12px">Origem: ' + Components.src(pr.source) + (pr.source_ref ? ' · ' + esc(pr.source_ref) : '') + '</div>' : '') +
+        '</section>';
+
+      html += '<div class="grid two" style="margin-top:16px"><section class="panel"><h3 style="margin-top:0">Estudo</h3><div class="fields">' +
+        Components.field('Harmonização', w.pairing, { source: fs.pairing, ref: rf.pairing, wide: true }) +
+        Components.field('Curiosidades', w.curiosities, { source: fs.curiosities, ref: rf.curiosities, wide: true }) +
+        Components.field('Notas técnicas', w.technical_notes, { wide: true }) +
+        Components.field('Minhas notas', w.my_notes, { wide: true }) +
+        '</div></section>';
+
+      html += '<section class="panel"><h3 style="margin-top:0">Garrafinhas</h3>';
+      if (w.bottles.length) {
+        var avail = w.bottles.filter(function (b) { return b.status === 'disponivel'; }).length;
+        html += '<p class="muted small">' + avail + ' disponível(is) de ' + w.bottles.length + '.</p><div class="cellar">' + w.bottles.map(function (b) {
+          return '<div class="btl' + (b.status === 'disponivel' ? '' : ' dim') + '" title="' + esc(b.status) + '">' + Components.bottle(b.number, { status: b.status }) + '<span class="n">#' + b.number + '</span></div>';
+        }).join('') + '</div>';
+      } else {
+        html += '<p class="muted">Nenhuma garrafinha. <a href="#/adega/fracionar?wine=' + w.id + '">Fracionar uma garrafa</a>.</p>';
+      }
+      html += '<h3>Meu desempenho com este vinho</h3>';
+      if (w.my_results.length) {
+        html += '<p class="muted small">Degustado às cegas ' + plural(w.times_tasted, 'vez', 'vezes') + '.</p><div class="scales">' + w.my_results.map(function (a) {
+          return '<div class="scale-row"><div class="name">' + esc(ruleLabel(a.criterion)) + '</div>' + Components.meter(a.rate) + '<div class="val">' + fmtNum(a.rate, 0) + '%</div></div>';
+        }).join('') + '</div>';
+      } else html += '<p class="muted">Ainda não degustado às cegas.</p>';
+      html += '</section></div>';
+      return html;
+    });
+  },
+  actions: {
+    'ai-research': function () {
+      var w = Pages.wine.data;
+      return AiUI.run('ai.wine', { id: w.id }, w.name + (w.vintage ? ' ' + w.vintage : ''));
+    },
+    'edit-profile': function () {
+      var w = Pages.wine.data;
+      ProfileEditor.open('wine', w.id, w.profile, w.aromas, function () { Router.render(); });
+    }
+  }
+};
+
+function ruleLabel(criterion) {
+  var r = (Store.lookups.rules || []).filter(function (x) { return x.criterion === criterion; })[0];
+  return r ? r.label : criterion;
+}
+
+/** Editor de perfil sensorial (vinho = gabarito; uva = perfil típico, aceita faixas). */
+var ProfileEditor = {
+  open: function (entityType, entityId, profile, aromas, done) {
+    profile = profile || {};
+    var isGrape = entityType === 'grape';
+    var fields = Components.PALATE.concat([['color_intensity', 'Intensidade da cor'], ['color_hue', 'Tonalidade']]);
+    var html = '<h2>' + (isGrape ? 'Perfil típico da uva' : 'Perfil de referência (gabarito)') + '</h2>' +
+      '<p class="muted small">' + (isGrape ? 'Selecione um nível, ou dois para indicar uma faixa (ex.: média a alta).' : 'Selecione um nível por característica. Deixe em branco o que você não souber.') + '</p>' +
+      '<form data-profile>' + fields.map(function (f) {
+        var v = profile[f[0]] || '';
+        var sel = String(v).split('..').filter(Boolean);
+        return '<div style="margin:12px 0"><label class="f">' + esc(f[1]) + '</label>' +
+          Components.seg(f[0], f[0], isGrape ? sel : sel[0], { multi: isGrape }) + '</div>';
+      }).join('') +
+      '<div class="form-grid" style="margin-top:16px">' +
+      '<div class="wide"><label class="f">Visual</label><textarea class="in" name="visual_text">' + esc(profile.visual_text || '') + '</textarea></div>' +
+      '<div class="wide"><label class="f">Nariz</label><textarea class="in" name="nose_text">' + esc(profile.nose_text || '') + '</textarea></div>' +
+      '<div class="wide"><label class="f">Boca</label><textarea class="in" name="palate_text">' + esc(profile.palate_text || '') + '</textarea></div>' +
+      '</div><h3>Aromas</h3>' + Components.aromaPicker('aromas', (aromas || []).map(function (a) { return a.id; })) +
+      '<div class="form-grid" style="margin-top:18px">' +
+      '<div><label class="f">Origem destes dados</label><select class="in" name="source">' +
+      Components.options([{ v: 'usuario', t: 'Minha avaliação' }, { v: 'rotulo', t: 'Rótulo / ficha técnica do produtor' }, { v: 'pesquisado', t: 'Pesquisado (fonte citada)' }, { v: 'ia_revisada', t: 'IA, revisado por mim' }, { v: 'ia_nao_verificada', t: 'Não verificado' }],
+        profile.source && profile.source !== 'ia_nao_verificada' ? profile.source : 'usuario') + '</select></div>' +
+      '<div><label class="f">Referência (link, livro, ficha…)</label><input class="in" name="source_ref" value="' + esc(profile.source_ref || '') + '"></div>' +
+      '</div><div class="btn-row" style="justify-content:flex-end;margin-top:22px"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn primary">Salvar perfil</button></div></form>';
+    var m = UI.modal(html, { sticky: true });
+    // Nas uvas, no máximo 2 níveis por escala (faixa).
+    m.addEventListener('segchange', function (e) {
+      var seg = e.target;
+      if (!isGrape) return;
+      var on = seg.querySelectorAll('button.on');
+      if (on.length > 2) on[0].classList.remove('on');
+    });
+    m.querySelector('form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var form = e.target;
+      var data = formData(form);
+      fields.forEach(function (f) {
+        var v = Components.readSeg(form, f[0]);
+        if (Array.isArray(v)) {
+          var levels = Store.scale(f[0]).map(function (l) { return l.key; });
+          v.sort(function (a, b) { return levels.indexOf(a) - levels.indexOf(b); });
+          data[f[0]] = v.length === 2 ? v[0] + '..' + v[1] : (v[0] || '');
+        } else data[f[0]] = v;
+      });
+      data.aroma_ids = Components.readAromas(form);
+      var btn = form.querySelector('button.primary');
+      UI.busy(btn, true);
+      API.call('profiles.save', { entity_type: entityType, entity_id: entityId, profile: data }).then(function () {
+        UI.closeModal();
+        UI.toast('Perfil salvo.');
+        done && done();
+      }).catch(function (err) { UI.busy(btn, false); UI.error(err); });
+    });
+  }
+};
+
+Pages.wineEdit = {
+  render: function (p) {
+    var load = p.id ? API.call('wines.get', { id: p.id }) : Promise.resolve({ grapes: [] });
+    return load.then(function (w) {
+      var L = Store.lookups;
+      var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/vinhos">Vinhos</a></div><h1>' + (p.id ? 'Editar ' + esc(w.name) : 'Novo vinho') + '</h1>' +
+        '<p class="sub">Preencha só o que você sabe. Campos vazios aparecem como “Informação não cadastrada”.</p></div></div>' +
+        '<form data-action="save" class="panel">' +
+        '<datalist id="dl-countries">' + L.countries.map(o).join('') + '</datalist>' +
+        '<datalist id="dl-regions">' + L.regions.map(o).join('') + '</datalist>' +
+        '<datalist id="dl-producers">' + L.producers.map(o).join('') + '</datalist>' +
+        '<datalist id="dl-grapes">' + L.grapes.map(o).join('') + '</datalist>' +
+        '<h3 style="margin-top:0">Identidade</h3><div class="form-grid">' +
+        inp('name', 'Nome do vinho *', w.name, 'wide') + inp('producer', 'Produtor', w.producer, '', 'dl-producers') +
+        inp('country', 'País', w.country, '', 'dl-countries') + inp('region', 'Região', w.region, '', 'dl-regions') +
+        inp('subregion', 'Sub-região', w.subregion, '', 'dl-regions') + inp('appellation', 'Denominação', w.appellation) +
+        inp('vintage', 'Safra', w.vintage, '', null, 'number') + inp('classification', 'Classificação', w.classification) +
+        sel('color', 'Cor', COLOR_LABELS, w.color) + sel('type', 'Tipo', TYPE_LABELS, w.type) +
+        inp('price', 'Preço', w.price, '', null, 'number') + inp('price_currency', 'Moeda (BRL, USD…)', w.price_currency) +
+        '</div><h3>Uvas</h3><div id="grape-rows">' + (w.grapes.length ? w.grapes : [{}]).map(grapeRow).join('') + '</div>' +
+        '<button type="button" class="btn small" data-action="add-grape">+ uva</button>' +
+        '<h3>Produção</h3><div class="form-grid">' +
+        inp('abv', 'Teor alcoólico (%)', w.abv, '', null, 'number') + inp('residual_sugar', 'Açúcar residual', w.residual_sugar) +
+        inp('acidity_gl', 'Acidez total', w.acidity_gl) + inp('production_method', 'Método de produção', w.production_method) +
+        inp('aging', 'Estágio / maturação', w.aging) + inp('oak', 'Madeira', w.oak) + inp('aging_time', 'Tempo de envelhecimento', w.aging_time) +
+        inp('serving_temp', 'Temperatura de serviço', w.serving_temp) +
+        '</div><h3>Estudo</h3><div class="form-grid">' +
+        area('pairing', 'Harmonização', w.pairing) + area('curiosities', 'Curiosidades', w.curiosities) +
+        area('technical_notes', 'Notas técnicas', w.technical_notes) + area('my_notes', 'Minhas notas', w.my_notes) +
+        '</div><input type="hidden" name="id" value="' + esc(w.id || '') + '">' +
+        '<div class="btn-row" style="margin-top:22px;justify-content:flex-end"><a class="btn" href="' + (p.id ? '#/vinhos/' + p.id : '#/vinhos') + '">Cancelar</a><button class="btn primary">Salvar</button></div></form>';
+      return html;
+    });
+    function o(x) { return '<option value="' + esc(x.name) + '">'; }
+    function inp(n, l, v, cls, list, type) {
+      return '<div class="' + (cls || '') + '"><label class="f">' + esc(l) + '</label><input class="in" name="' + n + '"' + (type ? ' type="' + type + '" step="any"' : '') +
+        (list ? ' list="' + list + '"' : '') + ' value="' + esc(v === undefined || v === null ? '' : v) + '"></div>';
+    }
+    function area(n, l, v) { return '<div class="wide"><label class="f">' + esc(l) + '</label><textarea class="in" name="' + n + '">' + esc(v || '') + '</textarea></div>'; }
+    function sel(n, l, map, v) {
+      return '<div><label class="f">' + esc(l) + '</label><select class="in" name="' + n + '">' +
+        Components.options(Object.keys(map).map(function (k) { return { v: k, t: map[k] }; }), v || '', '—') + '</select></div>';
+    }
+  },
+  actions: {
+    'add-grape': function () { document.getElementById('grape-rows').insertAdjacentHTML('beforeend', grapeRow({})); },
+    'remove-grape': function (btn) { btn.closest('.grape-row').remove(); },
+    'save': function (form) {
+      var d = formData(form);
+      var grapes = [];
+      form.querySelectorAll('.grape-row').forEach(function (r) {
+        var name = r.querySelector('[data-g=name]').value.trim();
+        if (name) grapes.push({ name: name, percent: r.querySelector('[data-g=percent]').value });
+      });
+      Object.keys(d).forEach(function (k) { if (/^g_/.test(k)) delete d[k]; });
+      d.grapes = grapes;
+      if (!d.id) delete d.id;
+      var btn = form.querySelector('button.primary');
+      UI.busy(btn, true);
+      return API.call('wines.save', { wine: d }).then(function (w) {
+        UI.toast('Vinho salvo.');
+        return Store.refreshLookups().then(function () { Router.go('/vinhos/' + w.id); });
+      }).catch(function (e) { UI.busy(btn, false); throw e; });
+    }
+  }
+};
+
+function grapeRow(g) {
+  return '<div class="grape-row btn-row" style="margin-bottom:8px">' +
+    '<input class="in" data-g="name" name="g_name" list="dl-grapes" placeholder="Uva" value="' + esc(g.name || '') + '" style="max-width:280px">' +
+    '<input class="in" data-g="percent" name="g_pct" type="number" min="0" max="100" placeholder="%" value="' + esc(g.percent || '') + '" style="max-width:90px">' +
+    '<button type="button" class="btn ghost small" data-action="remove-grape">remover</button></div>';
+}
+
+/* ============================== UVAS ============================== */
+Pages.grapes = {
+  actions: {
+    'ai-catalog': function () {
+      var m = UI.modal('<h2>Catalogar uvas com IA</h2><p class="muted">Descreva o que você quer estudar. A IA propõe uvas novas (com fonte) e você escolhe quais entram.</p>' +
+        '<form><input class="in" name="q" placeholder="ex.: principais uvas tintas do Piemonte" required>' +
+        '<div class="chips" style="margin:10px 0">' + ['principais uvas tintas da Itália', 'uvas brancas do Loire', 'uvas tintas internacionais mais plantadas', 'uvas da Península Ibérica'].map(function (x) {
+          return '<button type="button" class="chip" data-q="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
+        '<div class="btn-row" style="justify-content:flex-end"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn primary">Pesquisar</button></div></form>', { sticky: true });
+      m.addEventListener('click', function (e) { var c = e.target.closest('[data-q]'); if (c) m.querySelector('[name=q]').value = c.getAttribute('data-q'); });
+      m.querySelector('form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var q = e.target.q.value.trim();
+        if (q) AiUI.run('ai.catalog', { query: q }, 'Catálogo: ' + q).catch(UI.error);
+      });
+    }
+  },
+  render: function () {
+    return API.call('grapes.list').then(function (list) {
+      var html = '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>Uvas</h1><p class="sub">Sua enciclopédia de castas — ' + plural(list.length, 'uva', 'uvas') + '.</p></div>' +
+        '<div class="btn-row">' + (Store.lookups.ai_enabled ? '<button class="btn" data-action="ai-catalog">✦ Catalogar uvas com IA</button>' : '') + '<a class="btn primary" href="#/uvas/nova">Cadastrar uva</a></div></div>';
+      if (!list.length) return html + Components.empty('Nenhuma uva ainda.', 'Elas são criadas pela sincronização ou pelo cadastro.');
+      html += '<div class="grid auto">' + list.map(function (g) {
+        return '<a class="panel" href="#/uvas/' + g.id + '" style="text-decoration:none;color:inherit;display:block">' +
+          '<div class="eyebrow">' + esc(g.color ? (g.color === 'tinta' ? 'Tinta' : g.color === 'branca' ? 'Branca' : g.color) : 'Uva') + '</div>' +
+          '<div class="serif" style="font-size:1.7rem;line-height:1.1;margin:4px 0 8px">' + esc(g.name) + '</div>' +
+          '<div class="small muted" style="margin-bottom:10px">' + esc(g.origin || '') + (g.wines ? (g.origin ? ' · ' : '') + plural(g.wines, 'vinho', 'vinhos') + ' no estudo' : '') + '</div>' +
+          Components.meter(g.completeness) + '<div class="small muted" style="margin-top:6px;display:flex;justify-content:space-between;gap:8px"><span>' + g.completeness + '% da ficha preenchida</span>' +
+          (g.unverified ? Components.src('ia_nao_verificada') : '') + '</div></a>';
+      }).join('') + '</div>';
+      return html;
+    });
+  }
+};
+
+var GRAPE_FIELD_LABELS = {
+  synonyms: 'sinônimos', main_regions: 'regiões principais', main_countries: 'países principais', description: 'descrição',
+  confusions_text: 'uvas parecidas', how_to_recognize: 'como reconhecer', origin: 'origem', general_profile: 'perfil geral'
+};
+function grapeFieldLabel(k) { return GRAPE_FIELD_LABELS[k] || k; }
+
+var GRAPE_COLOR = { tinta: 'Tinta', branca: 'Branca', rosada: 'Rosada / cinza' };
+
+Pages.grape = {
+  mount: function () {
+    var g = Pages.grape.data;
+    var conf = (g.relationships || []).filter(function (r) { return r.kind === 'confused_with'; });
+    var host = document.getElementById('confusion-table');
+    if (!conf.length || !host) return;
+    API.call('grapes.compare', { ids: [g.id].concat(conf.slice(0, 3).map(function (r) { return r.grape_id; })) }).then(function (data) {
+      host.className = '';
+      host.innerHTML = GrapeCompare.table(data, { compact: true });
+    }).catch(function (e) { host.innerHTML = '<span class="missing">' + esc(e.message) + '</span>'; });
+  },
+  render: function (p) {
+    return API.call('grapes.get', { id: p.id }).then(function (g) {
+      Pages.grape.data = g;
+      var fs = g.field_sources || {};
+      var unverified = Object.keys(fs).filter(function (k) { return fs[k] === 'ia_nao_verificada'; });
+      var refs = g.field_refs || {};
+      function F(label, key, wide) { return Components.field(label, g[key], { source: fs[key], wide: wide, ref: refs[key] }); }
+
+      var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/uvas">Uvas</a>' + (g.color ? ' · ' + esc(GRAPE_COLOR[g.color] || g.color) : '') + '</div>' +
+        '<h1>' + esc(g.name) + '</h1>' + (g.general_profile ? '<p class="sub serif" style="font-size:1.2rem;font-style:italic">' + esc(g.general_profile) + '</p>' : '') +
+        '</div><div class="btn-row">' + (Store.lookups.ai_enabled ? '<button class="btn" data-action="ai-research">✦ Pesquisar com IA</button>' : '') + '<a class="btn" href="#/uvas/' + g.id + '/editar">Editar ficha</a></div></div>';
+
+      if (unverified.length) {
+        html += '<div class="callout warn" style="margin-bottom:18px">Alguns campos desta ficha foram gerados por IA na planilha e <b>não foram verificados</b>: ' +
+          esc(unverified.map(grapeFieldLabel).join(', ')) + '. Revise o texto e marque como revisado — ou edite. ' +
+          '<button class="btn small" style="margin-left:6px" data-action="verify-all">Marcar todos como revisados</button></div>';
+      }
+
+      html += '<div class="grid two"><section class="panel"><h3 style="margin-top:0">Identidade</h3><div class="fields">' +
+        F('Origem', 'origin') + F('Ciclo de maturação', 'ripening') +
+        Components.field('Sinônimos', (g.synonyms || []).join('\n'), { source: fs.synonyms, wide: true, ref: refs.synonyms }) +
+        F('Países principais', 'main_countries', true) + F('Regiões principais', 'main_regions', true) +
+        '</div></section>';
+      html += '<section class="panel"><h3 style="margin-top:0">Características da uva</h3><div class="fields">' +
+        F('Espessura da casca', 'skin_thickness') + F('Tamanho do cacho', 'bunch_size') + F('Tamanho da baga', 'berry_size') +
+        F('Produtividade / vigor', 'vigor') + F('Sensibilidade a doenças', 'disease_sensitivity', true) +
+        F('Clima preferido', 'climate') + F('Solos', 'soils') +
+        '</div></section></div>';
+
+      var pr = g.profile;
+      html += '<section class="panel" style="margin-top:16px"><div class="page-head" style="margin-bottom:12px"><div><h3 style="margin:0">Perfil sensorial típico</h3>' +
+        (pr ? '<div class="small muted">Origem: ' + Components.src(pr.source) + (pr.source_ref ? ' · ' + esc(pr.source_ref) : '') + '</div>' : '') + '</div>' +
+        '<button class="btn small" data-action="edit-profile">' + (pr ? 'Editar perfil' : 'Cadastrar perfil') + '</button></div>' +
+        '<div class="grid two"><div><div class="eyebrow" style="margin-bottom:10px">Boca</div>' + Components.palate(pr) + '</div>' +
+        '<div><div class="eyebrow" style="margin-bottom:10px">Aromas</div>' + Components.aromaGroups(g.aromas) + '</div></div>' +
+        '<div class="fields" style="margin-top:18px">' + F('Descrição', 'description', true) + '</div></section>';
+
+      var conf = g.relationships.filter(function (r) { return r.kind === 'confused_with'; });
+      var hasTree = g.relationships.some(function (r) { return r.kind === 'parent_of'; });
+      html += '<section class="panel" style="margin-top:16px"><div class="page-head" style="margin-bottom:10px"><h3 style="margin:0">Com quais uvas ela pode ser confundida?</h3>' +
+        '<div class="btn-row">' + (hasTree ? '<a class="btn small" href="#/genealogia?id=' + g.id + '">Ver na genealogia</a>' : '') +
+        (conf.length ? '<a class="btn small" href="#/uvas/comparar?ids=' + [g.id].concat(conf.slice(0, 3).map(function (r) { return r.grape_id; })).join(',') + '">Comparar lado a lado</a>' : '') + '</div></div>' +
+        (conf.length ? '<div id="confusion-table" class="loading" style="padding:20px 0">Montando comparação…</div>' : '');
+      if (conf.length) {
+        html += '<div class="list">' + conf.map(function (r) {
+          return '<div class="row"><div><div class="t"><a href="#/uvas/' + r.grape_id + '">' + esc(r.grape_name) + '</a> ' + Components.src(r.source) + '</div>' +
+            '<div class="m">' + (r.how_to_differentiate ? esc(r.how_to_differentiate) : Components.missing('Como diferenciar: não cadastrado')) + '</div></div><div></div></div>';
+        }).join('') + '</div>';
+      }
+      html += '<div class="fields" style="margin-top:12px">' + F('Uvas parecidas (texto importado)', 'confusions_text', true) + F('Como reconhecer', 'how_to_recognize', true) + '</div>';
+      html += '</section>';
+
+      if (g.regions && g.regions.length) {
+        var byRegion = {};
+        g.regions.forEach(function (x) { (byRegion[x.region] = byRegion[x.region] || []).push(x); });
+        html += '<section class="panel" style="margin-top:16px"><h3 style="margin-top:0">Onde é cultivada (regiões pesquisadas)</h3><div class="fields">' +
+          Object.keys(byRegion).map(function (k) {
+            return '<div class="field"><div class="k">' + esc(k) + '</div><div class="v">' + byRegion[k].map(function (x) {
+              return '<a href="#/regioes/' + x.id + '">' + esc(x.is_sub ? x.name + (x.classification ? ' (' + x.classification + ')' : '') : (x.role === 'secundaria' ? 'casta secundária da região' : 'casta principal da região')) + '</a>';
+            }).join('<br>') + '</div></div>';
+          }).join('') + '</div></section>';
+      }
+      html += '<div class="grid two" style="margin-top:16px"><section class="panel"><h3 style="margin-top:0">No meu estudo</h3>' +
+        (g.wines.length ? '<div class="list">' + g.wines.map(function (w) { return '<a class="row" href="#/vinhos/' + w.id + '"><div class="t">' + esc(w.name) + ' <span class="muted">' + esc(w.vintage || '') + '</span></div><div></div></a>'; }).join('') + '</div>' : '<p class="muted">Nenhum vinho com esta uva.</p>') +
+        '</section><section class="panel"><h3 style="margin-top:0">Meu desempenho</h3>' +
+        (g.my_results ? '<div class="serif" style="font-size:2.4rem">' + fmtNum(g.my_results.rate, 0) + '%</div><div class="muted small">de acerto ao identificar ' + esc(g.name) + ' às cegas (' + plural(g.my_results.total, 'tentativa', 'tentativas') + ')</div>'
+          : '<p class="muted">Ainda não apareceu nas suas degustações às cegas.</p>') +
+        '</section></div>';
+      return html;
+    });
+  },
+  actions: {
+    'edit-profile': function () {
+      var g = Pages.grape.data;
+      ProfileEditor.open('grape', g.id, g.profile, g.aromas, function () { Router.render(); });
+    },
+    'ai-research': function () {
+      var g = Pages.grape.data;
+      return AiUI.run('ai.grape', { id: g.id }, g.name);
+    },
+    'verify-all': function () {
+      var g = Pages.grape.data;
+      var fields = Object.keys(g.field_sources || {}).filter(function (k) { return g.field_sources[k] === 'ia_nao_verificada'; });
+      return UI.confirm('Marcar como revisado?', 'Confirme que você leu e concorda com: ' + fields.map(grapeFieldLabel).join(', ') + '.', 'Marcar como revisado').then(function (ok) {
+        if (!ok) return;
+        return API.call('grapes.verify', { id: g.id, fields: fields }).then(function () { UI.toast('Campos marcados como revisados.'); Router.render(); });
+      });
+    }
+  }
+};
+
+Pages.grapeEdit = {
+  render: function (p) {
+    var load = p.id ? API.call('grapes.get', { id: p.id }) : Promise.resolve({ synonyms: [] });
+    return load.then(function (g) {
+      var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/uvas">Uvas</a></div><h1>' + (p.id ? esc(g.name) : 'Nova uva') + '</h1>' +
+        '<p class="sub">Registre só o que você confirmou. O perfil sensorial é editado na página da uva.</p></div></div>' +
+        '<form data-action="save" class="panel"><div class="form-grid">' +
+        inp('name', 'Nome *', g.name) +
+        '<div><label class="f">Cor</label><select class="in" name="color">' + Components.options(Object.keys(GRAPE_COLOR).map(function (k) { return { v: k, t: GRAPE_COLOR[k] }; }), g.color || '', '—') + '</select></div>' +
+        inp('origin', 'Origem', g.origin) + inp('ripening', 'Ciclo de maturação', g.ripening) +
+        area('synonyms', 'Sinônimos (um por linha)', (g.synonyms || []).join('\n')) +
+        area('general_profile', 'Perfil geral (uma frase)', g.general_profile) +
+        area('main_countries', 'Países principais', g.main_countries) + area('main_regions', 'Regiões principais', g.main_regions) +
+        inp('skin_thickness', 'Espessura da casca', g.skin_thickness) + inp('bunch_size', 'Tamanho do cacho', g.bunch_size) +
+        inp('berry_size', 'Tamanho da baga', g.berry_size) + inp('vigor', 'Produtividade / vigor', g.vigor) +
+        inp('climate', 'Clima preferido', g.climate) + inp('soils', 'Solos', g.soils) +
+        area('disease_sensitivity', 'Sensibilidade a doenças', g.disease_sensitivity) +
+        area('description', 'Descrição', g.description) + area('confusions_text', 'Uvas parecidas', g.confusions_text) +
+        area('how_to_recognize', 'Como reconhecer', g.how_to_recognize) + area('notes', 'Minhas notas', g.notes) +
+        '</div><input type="hidden" name="id" value="' + esc(g.id || '') + '">' +
+        '<div class="btn-row" style="margin-top:22px;justify-content:flex-end"><a class="btn" href="' + (p.id ? '#/uvas/' + p.id : '#/uvas') + '">Cancelar</a><button class="btn primary">Salvar</button></div></form>';
+      return html;
+    });
+    function inp(n, l, v) { return '<div><label class="f">' + esc(l) + '</label><input class="in" name="' + n + '" value="' + esc(v || '') + '"></div>'; }
+    function area(n, l, v) { return '<div class="wide"><label class="f">' + esc(l) + '</label><textarea class="in" name="' + n + '">' + esc(v || '') + '</textarea></div>'; }
+  },
+  actions: {
+    save: function (form) {
+      var d = formData(form);
+      d.synonyms = d.synonyms.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+      if (!d.id) delete d.id;
+      return API.call('grapes.save', { grape: d }).then(function (g) {
+        UI.toast('Uva salva.');
+        return Store.refreshLookups().then(function () { Router.go('/uvas/' + g.id); });
+      });
+    }
+  }
+};
+
+/* ============================== CADERNO ============================== */
+var NOTE_KIND_LABELS = { impressao: 'Impressão', comparacao: 'Comparação', frase: 'Frase', associacao: 'Associação', descoberta: 'Descoberta', duvida: 'Dúvida', aula: 'Nota de aula', degustacao: 'Degustação' };
+
+Pages.notes = {
+  render: function (p) {
+    return API.call('notes.list').then(function (list) {
+      Pages.notes.data = list;
+      var html = '<div class="page-head"><div><div class="eyebrow">Estudo</div><h1>Meu Caderno</h1><p class="sub">Impressões, comparações, dúvidas e notas de aula.</p></div>' +
+        '<button class="btn primary" data-action="new">Nova nota</button></div>';
+      html += '<div class="chips" style="margin-bottom:16px"><button class="chip on" data-action="kind" data-k="">Todas</button>' +
+        Object.keys(NOTE_KIND_LABELS).map(function (k) { return '<button class="chip" data-action="kind" data-k="' + k + '">' + NOTE_KIND_LABELS[k] + '</button>'; }).join('') + '</div>';
+      html += '<div id="notes-list"></div>';
+      return html;
+    });
+  },
+  mount: function (root, p) {
+    Pages.notes.renderList('');
+    if (p.query.id) Pages.notes.actions.open(null, null, p.query.id);
+  },
+  renderList: function (kind) {
+    var rows = Pages.notes.data.filter(function (n) { return !kind || n.kind === kind; });
+    document.getElementById('notes-list').innerHTML = rows.length ? '<div class="grid two">' + rows.map(function (n) {
+      return '<article class="panel" style="cursor:pointer" data-action="open" data-id="' + n.id + '">' +
+        '<div class="eyebrow">' + esc(NOTE_KIND_LABELS[n.kind] || n.kind) + (n.pinned ? ' · fixada' : '') + ' · ' + fmtDate(n.date || n.created_at) + '</div>' +
+        '<div class="serif" style="font-size:1.45rem;margin:4px 0 6px">' + esc(n.title) + '</div>' +
+        '<div class="muted small" style="white-space:pre-line;max-height:7.5em;overflow:hidden">' + esc(n.body) + '</div>' +
+        (n.links.length ? '<div class="chips" style="margin-top:10px">' + n.links.map(function (l) { return '<span class="chip">' + esc(l.name) + '</span>'; }).join('') + '</div>' : '') +
+        '</article>';
+    }).join('') + '</div>' : Components.empty('Nenhuma nota aqui.', 'Registre uma impressão, uma dúvida, uma frase de aula…');
+  },
+  actions: {
+    kind: function (btn) {
+      btn.parentNode.querySelectorAll('.chip').forEach(function (c) { c.classList.remove('on'); });
+      btn.classList.add('on');
+      Pages.notes.renderList(btn.getAttribute('data-k'));
+    },
+    'new': function () { Pages.notes.edit({ links: [], kind: 'impressao' }); },
+    open: function (el, ev, forcedId) {
+      var id = forcedId || el.getAttribute('data-id');
+      var n = Pages.notes.data.filter(function (x) { return x.id === id; })[0];
+      if (n) Pages.notes.edit(n);
+    }
+  },
+  edit: function (n) {
+    var L = Store.lookups;
+    var linkOpts = [['wine', 'Vinho', (Pages.notes.wines || [])], ['grape', 'Uva', L.grapes], ['region', 'Região', L.regions], ['country', 'País', L.countries]];
+    var html = '<h2>' + (n.id ? 'Editar nota' : 'Nova nota') + '</h2><form data-note>' +
+      '<div class="form-grid"><div class="wide"><label class="f">Título</label><input class="in" name="title" value="' + esc(n.title || '') + '" required></div>' +
+      '<div><label class="f">Tipo</label><select class="in" name="kind">' + Components.options(Object.keys(NOTE_KIND_LABELS).map(function (k) { return { v: k, t: NOTE_KIND_LABELS[k] }; }), n.kind) + '</select></div>' +
+      '<div><label class="f">&nbsp;</label><label><input type="checkbox" name="pinned"' + (n.pinned ? ' checked' : '') + '> Fixar no topo</label></div>' +
+      '<div class="wide"><label class="f">Texto</label><textarea class="in" name="body" style="min-height:200px">' + esc(n.body || '') + '</textarea></div>' +
+      '<div class="wide"><label class="f">Relacionar a</label><div class="btn-row"><select class="in" id="lk-type" style="max-width:140px">' +
+      linkOpts.map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('') + '</select>' +
+      '<select class="in" id="lk-item" style="max-width:280px"></select><button type="button" class="btn small" id="lk-add">Adicionar</button></div>' +
+      '<div class="chips" id="lk-list" style="margin-top:10px"></div></div></div>' +
+      '<div class="btn-row" style="justify-content:space-between;margin-top:22px"><span>' + (n.id ? '<button type="button" class="btn ghost" id="note-del" style="color:var(--miss)">Excluir</button>' : '') + '</span>' +
+      '<span class="btn-row"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn primary">Salvar</button></span></div></form>';
+    var m = UI.modal(html, { sticky: true });
+    var links = (n.links || []).map(function (l) { return { entity_type: l.entity_type, entity_id: l.entity_id, name: l.name }; });
+    function drawLinks() {
+      m.querySelector('#lk-list').innerHTML = links.map(function (l, i) { return '<button type="button" class="chip" data-i="' + i + '">' + esc(l.name) + ' ✕</button>'; }).join('');
+    }
+    function fillItems() {
+      var t = m.querySelector('#lk-type').value;
+      var list = linkOpts.filter(function (o) { return o[0] === t; })[0][2];
+      m.querySelector('#lk-item').innerHTML = Components.options(list, '');
+    }
+    var ready = Pages.notes.wines ? Promise.resolve() : API.call('wines.list').then(function (ws) {
+      Pages.notes.wines = ws.map(function (w) { return { id: w.id, name: w.name + (w.vintage ? ' ' + w.vintage : '') }; });
+      linkOpts[0][2] = Pages.notes.wines;
+    });
+    ready.then(fillItems);
+    drawLinks();
+    m.querySelector('#lk-type').addEventListener('change', fillItems);
+    m.querySelector('#lk-add').addEventListener('click', function () {
+      var sel = m.querySelector('#lk-item');
+      if (!sel.value) return;
+      links.push({ entity_type: m.querySelector('#lk-type').value, entity_id: sel.value, name: sel.options[sel.selectedIndex].text });
+      drawLinks();
+    });
+    m.querySelector('#lk-list').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-i]');
+      if (b) { links.splice(+b.getAttribute('data-i'), 1); drawLinks(); }
+    });
+    var del = m.querySelector('#note-del');
+    if (del) del.addEventListener('click', function () {
+      UI.confirm('Excluir nota?', 'Esta ação não pode ser desfeita.', 'Excluir').then(function (ok) {
+        if (ok) API.call('notes.remove', { id: n.id }).then(function () { UI.toast('Nota excluída.'); Router.render(); }).catch(UI.error);
+      });
+    });
+    m.querySelector('form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var d = formData(e.target);
+      d.id = n.id;
+      d.links = links.map(function (l) { return { entity_type: l.entity_type, entity_id: l.entity_id }; });
+      API.call('notes.save', { note: d }).then(function () { UI.closeModal(); UI.toast('Nota salva.'); Router.render(); }).catch(UI.error);
+    });
+  }
+};
+</script>

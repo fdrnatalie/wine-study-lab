@@ -1,0 +1,346 @@
+<script>
+/* ============================================================
+   Núcleo do front-end: API, estado, roteador, utilidades.
+   Páginas se registram em Pages[nome] = { render(params), mount?(root, params), actions? }.
+   ============================================================ */
+
+var API = {
+  call: function (method, args) {
+    return new Promise(function (resolve, reject) {
+      google.script.run
+        .withSuccessHandler(function (s) {
+          var r;
+          try { r = JSON.parse(s); } catch (e) { return reject(new Error('Resposta inválida do servidor.')); }
+          if (r.ok) resolve(r.data); else reject(new Error(r.error));
+        })
+        .withFailureHandler(function (e) { reject(e instanceof Error ? e : new Error(String(e && e.message || e))); })
+        .api(method, args || {});
+    });
+  }
+};
+
+/** Estado compartilhado: dados de apoio (listas para selects) carregados uma vez. */
+var Store = {
+  lookups: null,
+  dashboard: null,
+  refreshLookups: function () {
+    return API.call('lookups').then(function (l) { Store.lookups = l; return l; });
+  },
+  name: function (kind, id) {
+    var list = Store.lookups && Store.lookups[kind] || [];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].name;
+    return '';
+  },
+  scale: function (name) { return (Store.lookups && Store.lookups.scales[name]) || []; },
+  scaleLabel: function (name, key) {
+    var s = Store.scale(name);
+    for (var i = 0; i < s.length; i++) if (s[i].key === key) return s[i].label;
+    return key || '';
+  }
+};
+
+var Pages = {};
+
+var Router = {
+  routes: [
+    [/^\/?$/, 'dashboard'],
+    [/^\/dashboard$/, 'dashboard'],
+    [/^\/busca$/, 'search'],
+    [/^\/vinhos$/, 'wines'],
+    [/^\/vinhos\/novo$/, 'wineEdit'],
+    [/^\/vinhos\/([A-Z]{3}_[0-9A-Z]+)\/editar$/, 'wineEdit', ['id']],
+    [/^\/vinhos\/([A-Z]{3}_[0-9A-Z]+)$/, 'wine', ['id']],
+    [/^\/uvas$/, 'grapes'],
+    [/^\/uvas\/nova$/, 'grapeEdit'],
+    [/^\/uvas\/comparar$/, 'grapeCompare'],
+    [/^\/genealogia$/, 'genealogy'],
+    [/^\/regioes$/, 'regions'],
+    [/^\/regioes\/pais\/([A-Z]{3}_[0-9A-Z]+)$/, 'country', ['id']],
+    [/^\/regioes\/([A-Z]{3}_[0-9A-Z]+)$/, 'region', ['id']],
+    [/^\/uvas\/([A-Z]{3}_[0-9A-Z]+)\/editar$/, 'grapeEdit', ['id']],
+    [/^\/uvas\/([A-Z]{3}_[0-9A-Z]+)$/, 'grape', ['id']],
+    [/^\/adega$/, 'cellar'],
+    [/^\/adega\/fracionar$/, 'fractionate'],
+    [/^\/degustacao\/nova$/, 'tastingNew'],
+    [/^\/degustacao\/historico$/, 'tastingHistory'],
+    [/^\/degustacao\/([A-Z]{3}_[0-9A-Z]+)\/resultado$/, 'tastingReport', ['id']],
+    [/^\/degustacao\/([A-Z]{3}_[0-9A-Z]+)$/, 'tastingPlay', ['id']],
+    [/^\/caderno$/, 'notes'],
+    [/^\/config$/, 'settings'],
+    [/^\/revisao$/, 'review']
+  ],
+  current: null,
+  parse: function () {
+    var h = Router.hash || '';
+    var parts = h.split('?');
+    var path = parts[0] || '/';
+    var query = {};
+    (parts[1] || '').split('&').forEach(function (kv) {
+      if (!kv) return;
+      var p = kv.split('=');
+      query[decodeURIComponent(p[0])] = decodeURIComponent((p[1] || '').replace(/\+/g, ' '));
+    });
+    for (var i = 0; i < Router.routes.length; i++) {
+      var r = Router.routes[i], m = path.match(r[0]);
+      if (m) {
+        var params = { query: query };
+        (r[2] || []).forEach(function (k, j) { params[k] = m[j + 1]; });
+        return { page: r[1], params: params, path: path };
+      }
+    }
+    return { page: 'dashboard', params: { query: query }, path: '/' };
+  },
+  // No Apps Script o app roda num iframe: a navegação usa google.script.history
+  // (atualiza a URL da janela principal e o botão Voltar). Fora dele, usa o hash.
+  hash: '/',
+  gas: !!(window.google && google.script && google.script.history),
+  go: function (path) {
+    if (Router.gas) {
+      Router.hash = path;
+      google.script.history.push({ path: path }, null, path);
+      Router.render();
+    } else {
+      location.hash = '#' + path;
+    }
+  },
+  init: function () {
+    if (Router.gas) {
+      google.script.history.setChangeHandler(function (e) {
+        Router.hash = (e.state && e.state.path) || (e.location && e.location.hash) || '/';
+        Router.render();
+      });
+      google.script.url.getLocation(function (loc) {
+        Router.hash = loc.hash || '/';
+        Router.render();
+      });
+    } else {
+      var sync = function () { Router.hash = location.hash.replace(/^#/, '') || '/'; Router.render(); };
+      window.addEventListener('hashchange', sync);
+      sync();
+    }
+  },
+  render: function () {
+    var route = Router.parse();
+    var page = Pages[route.page];
+    Router.current = { name: route.page, page: page, params: route.params };
+    UI.closeLayer();
+    UI.closeModal();
+    Nav.highlight(route.path);
+    document.getElementById('nav').classList.remove('open');
+    var view = document.getElementById('view');
+    var token = Router.token = (Router.token || 0) + 1;
+    if (!page.fullscreen) view.innerHTML = '<div class="loading">Carregando…</div>';
+    Promise.resolve(page.render(route.params)).then(function (html) {
+      if (token !== Router.token) return;           // o usuário navegou antes de terminar
+      if (page.fullscreen) { UI.openLayer(html); }
+      else { view.innerHTML = html; window.scrollTo(0, 0); }
+      if (page.mount) page.mount(page.fullscreen ? document.getElementById('layer') : view, route.params);
+    }).catch(function (e) {
+      if (token !== Router.token) return;
+      view.innerHTML = '<div class="empty"><span class="serif">Algo deu errado.</span>' + esc(e.message) + '</div>';
+    });
+  }
+};
+
+/* ---------- Utilidades ---------- */
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+}
+function blank(v) { return v === null || v === undefined || String(v).trim() === '' || (Array.isArray(v) && !v.length); }
+function fmtDate(iso, withTime) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d)) return esc(iso);
+  var s = d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+  return withTime ? s + ' · ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : s;
+}
+function fmtNum(n, digits) {
+  if (n === null || n === undefined || n === '') return '';
+  return Number(n).toLocaleString('pt-BR', { maximumFractionDigits: digits === undefined ? 1 : digits });
+}
+function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+function formData(form) {
+  var o = {};
+  Array.prototype.forEach.call(form.elements, function (el) {
+    if (!el.name || el.disabled) return;
+    if (el.type === 'checkbox') o[el.name] = el.checked;
+    else if (el.type === 'radio') { if (el.checked) o[el.name] = el.value; }
+    else if (el.multiple) o[el.name] = Array.prototype.filter.call(el.options, function (op) { return op.selected; }).map(function (op) { return op.value; });
+    else o[el.name] = el.value;
+  });
+  return o;
+}
+
+var UI = {
+  toast: function (msg, isErr) {
+    var t = document.createElement('div');
+    t.className = 'toast' + (isErr ? ' err' : '');
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, isErr ? 6000 : 2800);
+  },
+  error: function (e) { UI.toast(e && e.message ? e.message : String(e), true); },
+  openLayer: function (html) {
+    var l = document.getElementById('layer');
+    l.innerHTML = html;
+    document.body.style.overflow = 'hidden';
+  },
+  closeLayer: function () {
+    document.getElementById('layer').innerHTML = '';
+    document.body.style.overflow = '';
+  },
+  /** Modal simples. Retorna o elemento; fecha com UI.closeModal(). */
+  modal: function (html, opts) {
+    UI.closeModal();
+    var bg = document.createElement('div');
+    bg.className = 'modal-bg';
+    bg.id = 'modal';
+    bg.innerHTML = '<div class="modal" role="dialog" aria-modal="true">' + html + '</div>';
+    bg.addEventListener('click', function (e) { if (e.target === bg && !(opts && opts.sticky)) UI.closeModal(); });
+    var host = document.querySelector('.tasting-mode') || document.body;
+    host.appendChild(bg);
+    return bg;
+  },
+  closeModal: function () { var m = document.getElementById('modal'); if (m) m.remove(); },
+  confirm: function (title, text, okLabel) {
+    return new Promise(function (resolve) {
+      var m = UI.modal('<h2>' + esc(title) + '</h2><p>' + esc(text || '') + '</p>' +
+        '<div class="btn-row" style="justify-content:flex-end;margin-top:22px">' +
+        '<button class="btn" data-x="no">Cancelar</button><button class="btn primary" data-x="yes">' + esc(okLabel || 'Confirmar') + '</button></div>', { sticky: true });
+      m.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-x]');
+        if (!b) return;
+        UI.closeModal();
+        resolve(b.getAttribute('data-x') === 'yes');
+      });
+    });
+  },
+  busy: function (btn, on) {
+    if (!btn) return;
+    if (on) { btn.dataset.label = btn.innerHTML; btn.disabled = true; btn.innerHTML = 'Aguarde…'; }
+    else { btn.disabled = false; if (btn.dataset.label) btn.innerHTML = btn.dataset.label; }
+  }
+};
+
+/* ---------- Navegação lateral ---------- */
+var Nav = {
+  icons: {
+    home: '<path d="M3 10.5 10 4l7 6.5V17H3z" stroke-linejoin="round"/>',
+    wine: '<path d="M6 2h8c0 5-1.5 8-4 8.5C7.5 10 6 7 6 2ZM10 10.5V17M7 17.5h6"/>',
+    grape: '<circle cx="8" cy="8" r="2.2"/><circle cx="12.2" cy="8" r="2.2"/><circle cx="10.1" cy="11.6" r="2.2"/><circle cx="10.1" cy="15.2" r="2"/><path d="M10 3.5V6M10 3.5c1.5-1.3 3.5-1.3 4.5-.5"/>',
+    bottle: '<path d="M8.5 2h3v4c2 1 2.5 2.5 2.5 4v8H6v-8c0-1.5.5-3 2.5-4z"/><path d="M6 11h8"/>',
+    split: '<path d="M10 2v5M10 7 5 12v6M10 7l5 5v6M10 7v11"/>',
+    target: '<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.5"/><circle cx="10" cy="10" r=".8" fill="currentColor"/>',
+    history: '<path d="M3.5 10a6.5 6.5 0 1 0 2-4.7M3 3v3.5h3.5"/><path d="M10 6.5V10l2.5 1.5"/>',
+    note: '<path d="M5 2.5h7l3 3V17.5H5z"/><path d="M8 9h5M8 12h5M8 6h2"/>',
+    spark: '<path d="M10 2.5l1.6 4.4 4.4 1.6-4.4 1.6L10 14.5l-1.6-4.4L4 8.5l4.4-1.6z"/><path d="M15.5 13l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
+    map: '<path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/>',
+    compare: '<path d="M4 4h5v12H4zM11 4h5v12h-5z"/><path d="M4 8h5M11 11h5"/>',
+    tree: '<circle cx="5" cy="4" r="2"/><circle cx="15" cy="4" r="2"/><circle cx="10" cy="16" r="2"/><path d="M5 6v2c0 2 5 2 5 6M15 6v2c0 2-5 2-5 6"/>',
+    gear: '<circle cx="10" cy="10" r="2.6"/><path d="M10 2v2.2M10 15.8V18M2 10h2.2M15.8 10H18M4.3 4.3l1.6 1.6M14.1 14.1l1.6 1.6M4.3 15.7l1.6-1.6M14.1 5.9l1.6-1.6"/>'
+  },
+  groups: [
+    [null, [['#/', 'home', 'Dashboard', /^\/?$|^\/dashboard/]]],
+    ['Estudar', [['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
+    ['Minha Adega', [['#/adega', 'bottle', 'Garrafinhas', /^\/adega$/], ['#/adega/fracionar', 'split', 'Fracionar garrafa', /^\/adega\/fracionar/]]],
+    ['Degustação', [['#/degustacao/nova', 'target', 'Nova degustação', /^\/degustacao\/nova/], ['#/degustacao/historico', 'history', 'Histórico', /^\/degustacao\/(historico|[A-Z])/]]],
+    [null, [['#/caderno', 'note', 'Meu Caderno', /^\/caderno/], ['#/config', 'gear', 'Configurações', /^\/config/]]]
+  ],
+  render: function () {
+    var html = '';
+    var ai = Store.lookups && (Store.lookups.ai_enabled || (Store.dashboard && Store.dashboard.counts.ai_pending));
+    Nav.groups.forEach(function (g) {
+      if (g[0]) html += '<div class="nav-group eyebrow">' + g[0] + '</div>';
+      else html += '<div style="height:10px"></div>';
+      g[1].forEach(function (it) {
+        if (it[0] === '#/revisao' && !ai) return;
+        html += '<a class="item" href="' + it[0] + '" data-match="' + it[3].source + '">' +
+          '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">' + Nav.icons[it[1]] + '</svg>' + it[2] + '</a>';
+      });
+    });
+    document.getElementById('nav-items').innerHTML = html;
+  },
+  highlight: function (path) {
+    document.querySelectorAll('.nav a.item').forEach(function (a) {
+      a.classList.toggle('active', new RegExp(a.getAttribute('data-match')).test(path));
+    });
+  },
+  foot: function () {
+    var d = Store.dashboard;
+    var s = d && d.last_sync_at ? 'Sincronizado em ' + fmtDate(d.last_sync_at, true) : 'Ainda não sincronizado';
+    document.getElementById('nav-foot').innerHTML = esc(s);
+  }
+};
+
+/* ---------- Eventos (delegação) ---------- */
+var GlobalActions = {
+  'nav-toggle': function () { document.getElementById('nav').classList.toggle('open'); },
+  'go': function (el) { Router.go(el.getAttribute('data-to')); },
+  'close-modal': function () { UI.closeModal(); }
+};
+
+function dispatch(el, ev) {
+  var name = el.getAttribute('data-action');
+  var page = Router.current && Router.current.page;
+  var fn = (page && page.actions && page.actions[name]) || GlobalActions[name] || (Components.actions && Components.actions[name]);
+  if (!fn) return false;
+  ev.preventDefault();
+  var r = fn(el, ev);
+  if (r && r.catch) r.catch(UI.error);
+  return true;
+}
+
+document.addEventListener('click', function (ev) {
+  // Links internos ("#/vinhos") passam pelo roteador em vez de navegar a página.
+  var link = ev.target.closest('a[href^="#/"]');
+  if (link && !ev.metaKey && !ev.ctrlKey) {
+    ev.preventDefault();
+    Router.go(link.getAttribute('href').slice(1));
+    return;
+  }
+  var el = ev.target.closest('[data-action]');
+  if (el && el.tagName !== 'FORM') dispatch(el, ev);
+});
+document.addEventListener('submit', function (ev) {
+  var el = ev.target.closest('form[data-action]');
+  if (el) dispatch(el, ev);
+});
+document.addEventListener('change', function (ev) {
+  var el = ev.target.closest('[data-change]');
+  if (!el) return;
+  var name = el.getAttribute('data-change');
+  var page = Router.current && Router.current.page;
+  var fn = page && page.actions && page.actions[name];
+  if (fn) { var r = fn(el, ev); if (r && r.catch) r.catch(UI.error); }
+});
+document.addEventListener('input', function (ev) {
+  var el = ev.target.closest('[data-input]');
+  if (!el) return;
+  var name = el.getAttribute('data-input');
+  var page = Router.current && Router.current.page;
+  var fn = (page && page.actions && page.actions[name]) || (Components.actions && Components.actions[name]);
+  if (fn) fn(el, ev);
+});
+
+GlobalActions['global-search'] = function (form) {
+  var q = form.q.value.trim();
+  if (q) Router.go('/busca?q=' + encodeURIComponent(q));
+};
+
+var App = {
+  start: function () {
+    Nav.render();
+    API.call('bootstrap').then(function (b) {
+      Store.lookups = b.lookups;
+      Store.dashboard = b.dashboard;
+      Nav.render();
+      Nav.foot();
+      AiUI.setBadge(b.dashboard.counts.ai_pending);
+      Router.init();
+    }).catch(function (e) {
+      document.getElementById('view').innerHTML = '<div class="empty"><span class="serif">Não foi possível abrir o laboratório.</span>' + esc(e.message) + '</div>';
+    });
+  }
+};
+</script>

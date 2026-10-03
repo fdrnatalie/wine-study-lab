@@ -1,0 +1,219 @@
+<script>
+/* ============================================================
+   Regiões: países → região → sub-regiões, com mapa (Leaflet + OpenStreetMap).
+   Contornos: ISTAT via openpolis (CC BY 4.0). Pontos: OpenStreetMap Nominatim (ODbL).
+   ============================================================ */
+var MapUI = {
+  ATTR: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · limites: ISTAT/openpolis (Itália), IGN/Etalab (França), click_that_hood (Espanha, Portugal, Áustria), GADM (Alemanha), Natural Earth (demais)',
+  create: function (el) {
+    if (typeof L === 'undefined') { el.innerHTML = '<div class="empty small">Mapa indisponível (não foi possível carregar a biblioteca de mapas).</div>'; return null; }
+    var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 13, attribution: MapUI.ATTR }).addTo(map);
+    return map;
+  },
+  /** geo = {polygons: [[ring]]} com pontos [lon, lat]. */
+  polygon: function (geo, style) {
+    var latlngs = geo.polygons.map(function (poly) { return poly.map(function (ring) { return ring.map(function (p) { return [p[1], p[0]]; }); }); });
+    return L.polygon(latlngs, Object.assign({ color: '#6d1f2c', weight: 1.5, fillColor: '#8f2d3d', fillOpacity: 0.12 }, style || {}));
+  },
+  color: function () { return getComputedStyle(document.documentElement).getPropertyValue('--wine').trim() || '#6d1f2c'; },
+  // Cores discretas para distinguir regiões vizinhas quando o contorno é aproximado (sem bordas internas).
+  PALETTE: ['#8f2d3d', '#a8844c', '#5b6f4a', '#6a4c7a', '#b25f3c', '#3f6a7a', '#7a3b52'],
+  approxStyle: function (i, strong) {
+    var c = MapUI.PALETTE[i % MapUI.PALETTE.length];
+    return { stroke: false, fillColor: c, fillOpacity: strong ? 0.5 : 0.32 };
+  }
+};
+
+var CLASS_ORDER = { 'DOCG': 0, 'DOC': 1 };
+function classChip(c) {
+  if (!c) return '';
+  var strong = /DOCG/.test(c);
+  return '<span class="chip" style="' + (strong ? 'border-color:var(--wine);color:var(--wine);font-weight:600' : '') + '">' + esc(c) + '</span>';
+}
+function sourceLink(url) {
+  if (!url || !/^https?:/.test(url)) return '';
+  var host = url.replace(/^https?:\/\//, '').split('/')[0].replace(/^www\./, '');
+  return '<a class="small" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + esc(host) + ' ↗</a>';
+}
+function grapeChips(list) {
+  if (!list || !list.length) return Components.missing();
+  return '<div class="chips">' + list.map(function (g) {
+    return '<a class="chip" href="#/uvas/' + g.id + '"' + (g.role === 'secundaria' ? ' style="opacity:.75"' : '') + '>' + esc(g.name) + '</a>';
+  }).join('') + '</div>';
+}
+
+/* ---------------- Lista de países ---------------- */
+Pages.regions = {
+  render: function () {
+    return API.call('regions.countries').then(function (list) {
+      var done = list.filter(function (c) { return c.regions > 0; });
+      var todo = list.filter(function (c) { return c.regions === 0; });
+      var html = '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>Regiões</h1>' +
+        '<p class="sub">Países, regiões e sub-regiões, com mapas, castas, produtores e vinhos de destaque — cada dado com a sua fonte.</p></div></div>';
+      html += done.length ? '<div class="grid auto">' + done.map(function (c) {
+        return '<a class="panel" href="#/regioes/pais/' + c.id + '" style="text-decoration:none;color:inherit;display:block">' +
+          '<div class="eyebrow">País</div><div class="serif" style="font-size:1.8rem;line-height:1.1;margin:4px 0 8px">' + esc(c.name) + '</div>' +
+          '<div class="small muted">' + plural(c.regions, 'região', 'regiões') + ' · ' + plural(c.subregions, 'sub-região', 'sub-regiões') +
+          (c.wines ? ' · ' + plural(c.wines, 'vinho', 'vinhos') + ' no seu estudo' : '') + '</div></a>';
+      }).join('') + '</div>' : Components.empty('Nenhuma região pesquisada ainda.');
+      if (todo.length) {
+        html += '<h2>Ainda não pesquisados</h2><p class="muted small">Estes países entram nos próximos lotes da enciclopédia.</p><div class="chips">' +
+          todo.map(function (c) { return '<span class="chip">' + esc(c.name) + '</span>'; }).join('') + '</div>';
+      }
+      return html;
+    });
+  }
+};
+
+/* ---------------- País ---------------- */
+Pages.country = {
+  render: function (p) {
+    return API.call('regions.country', { id: p.id }).then(function (c) {
+      Pages.country.data = c;
+      var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/regioes">Regiões</a></div><h1>' + esc(c.name) + '</h1>' +
+        '<p class="sub">' + plural(c.regions.length, 'região', 'regiões') + '</p></div></div>';
+      if (c.description) html += '<p style="max-width:780px">' + esc(c.description) + ' ' + Components.src((c.field_sources || {}).description || c.source) + ' ' + sourceLink((c.field_refs || {}).description || c.source_ref) + '</p>';
+      var approx = Object.keys(c.geo).some(function (k) { return c.geo[k].approx; });
+      html += '<div class="grid" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-items:start" id="country-grid">' +
+        '<section class="panel" style="padding:0;overflow:hidden"><div id="country-map" style="height:560px"></div>' +
+        (approx ? '<div class="small muted" style="padding:8px 12px">Regiões desenhadas pelas divisões administrativas (departamentos, distritos) onde ficam: aproximação, pois as regiões vinícolas não seguem esses limites.</div>' : '') + '</section>' +
+        '<section><div class="list">' + c.regions.map(function (r) {
+          return '<a class="row" href="#/regioes/' + r.id + '" data-region="' + r.id + '"><div><div class="t">' + esc(r.name) + '</div>' +
+            '<div class="m">' + plural(r.subregions, 'sub-região', 'sub-regiões') + (r.wines ? ' · ' + plural(r.wines, 'vinho seu', 'vinhos seus') : '') + '</div></div><div></div></a>';
+        }).join('') + '</div></section></div>';
+      return html;
+    });
+  },
+  mount: function () {
+    var c = Pages.country.data;
+    if (window.innerWidth < 900) document.getElementById('country-grid').style.gridTemplateColumns = '1fr';
+    var map = MapUI.create(document.getElementById('country-map'));
+    if (!map) return;
+    var layers = [], byId = {};
+    c.regions.forEach(function (r, i) {
+      var g = c.geo[r.id];
+      if (!g) return;
+      var soft = g.approx || g.multi;   // várias unidades administrativas: sem as divisas internas
+      var base = soft ? MapUI.approxStyle(i, false) : { fillOpacity: r.wines ? 0.35 : 0.12 };
+      var hover = soft ? MapUI.approxStyle(i, true) : { fillOpacity: 0.45 };
+      var poly = MapUI.polygon(g, base).addTo(map);
+      poly.bindTooltip(r.name, { sticky: true });
+      poly.on('click', function () { Router.go('/regioes/' + r.id); });
+      poly.on('mouseover', function () { poly.setStyle(hover); });
+      poly.on('mouseout', function () { poly.setStyle(base); });
+      layers.push(poly); byId[r.id] = poly;
+    });
+    c.regions.forEach(function (r, i) {
+      if (c.geo[r.id] || !r.point) return;
+      var base = { radius: 8, color: '#fff', weight: 2, fillColor: MapUI.PALETTE[i % MapUI.PALETTE.length], fillOpacity: 0.9 };
+      var m = L.circleMarker(r.point, base).addTo(map).bindTooltip(r.name);
+      m.on('click', function () { Router.go('/regioes/' + r.id); });
+      m.on('mouseover', function () { m.setStyle({ radius: 11 }); });
+      m.on('mouseout', function () { m.setStyle({ radius: 8 }); });
+      layers.push(m); byId[r.id] = m;
+    });
+    // Enquadra o "continente": ilhas distantes (Canárias, Madeira, Açores) ficam fora do zoom inicial.
+    var centers = layers.map(function (l) { return l.getBounds ? l.getBounds().getCenter() : l.getLatLng(); });
+    function median(a) { a = a.slice().sort(function (x, y) { return x - y; }); return a[Math.floor(a.length / 2)]; }
+    var mLat = median(centers.map(function (p) { return p.lat; })), mLng = median(centers.map(function (p) { return p.lng; }));
+    var core = layers.filter(function (l, i) { return Math.abs(centers[i].lat - mLat) <= 8 && Math.abs(centers[i].lng - mLng) <= 8; });
+    if (core.length) map.fitBounds(L.featureGroup(core).getBounds(), { padding: [10, 10] });
+    document.querySelectorAll('[data-region]').forEach(function (a) {
+      var poly = byId[a.getAttribute('data-region')];
+      if (!poly) return;
+      a.addEventListener('mouseenter', function () { poly.fire('mouseover'); });
+      a.addEventListener('mouseleave', function () { poly.fire('mouseout'); });
+    });
+  }
+};
+
+/* ---------------- Região ---------------- */
+Pages.region = {
+  render: function (p) {
+    return API.call('regions.get', { id: p.id }).then(function (r) {
+      Pages.region.data = r;
+      Pages.region.focus = p.id !== r.id ? p.id : null;          // link direto para uma sub-região
+      var refs = r.field_refs || {}, fs = r.field_sources || {};
+      function F(label, key, wide) { return Components.field(label, r[key], { source: fs[key], ref: refs[key], wide: wide }); }
+      var docg = r.subregions.filter(function (s) { return /DOCG/.test(s.classification || ''); }).length;
+      var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/regioes">Regiões</a> · <a href="#/regioes/pais/' + r.country_id + '">' + esc(r.country) + '</a></div>' +
+        '<h1>' + esc(r.name) + '</h1><p class="sub">' + plural(r.subregions.length, 'sub-região', 'sub-regiões') + (docg ? ' · ' + docg + ' com DOCG' : '') +
+        (r.wines.length ? ' · ' + plural(r.wines.length, 'vinho seu', 'vinhos seus') : '') + '</p></div></div>';
+
+      html += '<div class="grid" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:start" id="region-grid">' +
+        '<section class="panel" style="padding:0;overflow:hidden"><div id="region-map" style="height:440px"></div>' +
+        (r.geo && r.geo.approx ? '<div class="small muted" style="padding:8px 12px">Contorno aproximado pelas divisões administrativas (departamentos, distritos) onde a região fica; os pontos das sub-regiões são exatos.</div>' : '') + '</section>' +
+        '<section class="panel"><div class="fields" style="grid-template-columns:1fr">' +
+        F('Clima', 'climate') + F('Solos', 'soils') + F('Altitude', 'altitude') + F('História', 'history') +
+        '</div></section></div>';
+
+      html += '<section class="panel" style="margin-top:16px"><h3 style="margin-top:0">Sobre a região</h3>' +
+        (r.description ? '<p style="margin-top:0">' + esc(r.description) + '</p>' : Components.missing()) +
+        '<div class="grid two" style="margin-top:14px"><div><div class="eyebrow" style="margin-bottom:8px">Castas principais</div>' + grapeChips(r.grapes.filter(function (g) { return g.role !== 'secundaria'; })) +
+        '<div class="eyebrow" style="margin:14px 0 8px">Outras castas</div>' + grapeChips(r.grapes.filter(function (g) { return g.role === 'secundaria'; })) + '</div>' +
+        '<div>' + F('Vinhos de destaque', 'notable_wines', true) + '</div></div>' +
+        (r.producers.length ? '<div class="eyebrow" style="margin:16px 0 6px">Produtores de referência da região</div><ul style="margin:0;padding-left:18px">' + r.producers.map(function (p) {
+          return '<li style="margin:3px 0"><b>' + esc(p.name) + '</b>' + (p.notable_labels ? ' <span class="muted small">— ' + esc(p.notable_labels) + '</span>' : '') + ' ' + sourceLink(p.source_ref) + '</li>';
+        }).join('') + '</ul>' : '') +
+        '<p class="small muted" style="margin-top:14px">Fonte: ' + Components.src(r.source) + ' ' + sourceLink(r.source_ref) + '</p></section>';
+
+      html += '<h2>Sub-regiões e denominações</h2>';
+      html += r.subregions.length ? r.subregions.map(function (s) {
+        var mine = r.wines.filter(function (w) { return s.wines.indexOf(w.id) >= 0; });
+        return '<article class="panel" id="sub-' + s.id + '" style="scroll-margin-top:16px">' +
+          '<div class="page-head" style="margin-bottom:6px"><div><div class="serif" style="font-size:1.55rem;line-height:1.15">' + esc(s.name) + '</div></div>' + classChip(s.classification) + '</div>' +
+          (s.description ? '<p style="margin:6px 0 12px">' + esc(s.description) + '</p>' : '') +
+          '<div class="grid two"><div><div class="eyebrow" style="margin-bottom:6px">Castas</div>' + grapeChips(s.grapes) +
+          (s.notable_wines ? '<div class="eyebrow" style="margin:12px 0 4px">Vinhos e rótulos</div><div>' + esc(s.notable_wines) + '</div>' : '') + '</div>' +
+          '<div><div class="eyebrow" style="margin-bottom:6px">Produtores de referência</div>' +
+          (s.producers.length ? '<ul style="margin:0;padding-left:18px">' + s.producers.map(function (p) {
+            return '<li style="margin:3px 0"><b>' + esc(p.name) + '</b>' + (p.notable_labels ? ' <span class="muted small">— ' + esc(p.notable_labels) + '</span>' : '') + '</li>';
+          }).join('') + '</ul>' : '<span class="missing">Nenhum produtor citado nas fontes pesquisadas</span>') +
+          (mine.length ? '<div class="eyebrow" style="margin:12px 0 4px">No seu estudo</div>' + mine.map(function (w) { return '<a href="#/vinhos/' + w.id + '">' + esc(w.name) + (w.vintage ? ' ' + w.vintage : '') + '</a>'; }).join(', ') : '') +
+          '</div></div><p class="small muted" style="margin:10px 0 0">Fonte: ' + sourceLink(s.source_ref) + '</p></article>';
+      }).join('') : Components.empty('Nenhuma sub-região cadastrada.');
+
+      if (r.wines.length) {
+        html += '<h2>Seus vinhos desta região</h2><div class="list">' + r.wines.map(function (w) {
+          return '<a class="row" href="#/vinhos/' + w.id + '"><div><div class="t">' + esc(w.name) + ' <span class="muted">' + esc(w.vintage || '') + '</span></div>' +
+            '<div class="m">' + esc([w.producer, w.grapes.map(function (g) { return g.name; }).join(', ')].filter(Boolean).join(' · ')) + '</div></div><div class="m">' + (w.bottles_available ? w.bottles_available + ' garrafinhas' : '') + '</div></a>';
+        }).join('') + '</div>';
+      }
+      return html;
+    });
+  },
+  mount: function () {
+    var r = Pages.region.data;
+    if (window.innerWidth < 900) document.getElementById('region-grid').style.gridTemplateColumns = '1fr';
+    var map = MapUI.create(document.getElementById('region-map'));
+    if (!map) return;
+    var bounds = [];
+    if (r.geo) {
+      var poly = MapUI.polygon(r.geo, r.geo.approx || r.geo.multi ? { stroke: false, fillOpacity: 0.18 } : {}).addTo(map);
+      bounds.push(poly.getBounds());
+    }
+    var markers = L.featureGroup().addTo(map);
+    r.subregions.forEach(function (s) {
+      if (s.lat === '' || s.lat === null || s.lng === '' || s.lng === null) return;
+      var strong = /DOCG/.test(s.classification || '');
+      var m = L.circleMarker([s.lat, s.lng], { radius: strong ? 7 : 5, color: '#fff', weight: 1.5, fillColor: strong ? '#6d1f2c' : '#a8844c', fillOpacity: 1 })
+        .bindTooltip(s.name + (s.classification ? ' · ' + s.classification : ''))
+        .on('click', function () { var el = document.getElementById('sub-' + s.id); if (el) el.scrollIntoView({ behavior: 'smooth' }); });
+      markers.addLayer(m);
+    });
+    if (markers.getLayers().length) bounds.push(markers.getBounds());
+    if (bounds.length) {
+      var b = bounds[0];
+      bounds.slice(1).forEach(function (x) { b.extend(x); });
+      map.fitBounds(b, { padding: [16, 16], maxZoom: 10 });
+    } else {
+      map.setView([42, 12.5], 5);
+    }
+    if (Pages.region.focus) {
+      var el = document.getElementById('sub-' + Pages.region.focus);
+      if (el) setTimeout(function () { el.scrollIntoView({ behavior: 'smooth' }); el.style.outline = '2px solid var(--wine)'; }, 300);
+    }
+  }
+};
+</script>

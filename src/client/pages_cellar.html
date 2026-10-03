@@ -1,0 +1,155 @@
+<script>
+/* ============================== MINHA ADEGA ============================== */
+var BOTTLE_STATUS = { disponivel: 'Disponível', reservada: 'Reservada p/ degustação', utilizada: 'Utilizada', descartada: 'Descartada' };
+
+Pages.cellar = {
+  // Modo discreto: esconde o conteúdo das garrafinhas (preserva o "às cegas").
+  discreet: (function () { try { return localStorage.getItem('wsl.discreet') !== '0'; } catch (e) { return true; } })(),
+  filter: 'ativas',
+  selected: {},
+  render: function () {
+    return Promise.all([API.call('bottles.list'), API.call('bottles.batches')]).then(function (r) {
+      Pages.cellar.data = r[0];
+      Pages.cellar.batches = r[1];
+      Pages.cellar.selected = {};
+      var list = r[0];
+      var n = function (s) { return list.filter(function (b) { return b.status === s; }).length; };
+      var html = '<div class="page-head"><div><div class="eyebrow">Minha Adega</div><h1>Adega de degustação</h1>' +
+        '<p class="sub">' + n('disponivel') + ' disponíveis · ' + n('reservada') + ' reservadas · ' + n('utilizada') + ' utilizadas</p></div>' +
+        '<div class="btn-row"><a class="btn" href="#/adega/fracionar">Fracionar garrafa</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>';
+      if (!list.length) return html + Components.empty('Nenhuma garrafinha cadastrada.', 'Fracione uma garrafa ou sincronize a planilha.', '<a class="btn primary" href="#/adega/fracionar">Fracionar garrafa</a>');
+      html += '<div class="btn-row" style="justify-content:space-between;margin-bottom:18px">' +
+        '<div class="seg" id="cellar-filter">' + [['ativas', 'Ativas'], ['disponivel', 'Disponíveis'], ['reservada', 'Reservadas'], ['utilizada', 'Utilizadas'], ['descartada', 'Descartadas'], ['todas', 'Todas']].map(function (f) {
+          return '<button type="button" data-action="filter" data-f="' + f[0] + '" class="' + (Pages.cellar.filter === f[0] ? 'on' : '') + '">' + f[1] + '</button>';
+        }).join('') + '</div>' +
+        '<label class="small"><input type="checkbox" data-change="discreet"' + (Pages.cellar.discreet ? ' checked' : '') + '> Modo discreto (esconde o conteúdo)</label></div>' +
+        '<div id="cellar-grid"></div>' +
+        '<div id="cellar-bar" class="panel" style="display:none;position:sticky;bottom:16px;margin-top:18px;box-shadow:var(--shadow)"></div>';
+
+      html += '<h2>Fracionamentos</h2><div class="list">' + r[1].map(function (b) {
+        return '<div class="row"><div><div class="t">' + esc(b.wine_name) + '</div><div class="m">' + (b.date ? fmtDate(b.date) + ' · ' : '') +
+          (b.original_volume_ml ? fmtNum(b.original_volume_ml, 0) + ' ml → ' : '') + plural(b.total, 'garrafinha', 'garrafinhas') + (b.bottle_volume_ml ? ' de ~' + fmtNum(b.bottle_volume_ml, 0) + ' ml' : '') +
+          ' · numeração ' + esc(b.numbering || '') + ' ' + Components.src(b.source) + '</div></div><div class="m nowrap">' + b.available + ' disponíveis</div></div>';
+      }).join('') + '</div>';
+      return html;
+    });
+  },
+  mount: function () { Pages.cellar.draw(); },
+  draw: function () {
+    var f = Pages.cellar.filter, d = Pages.cellar.discreet;
+    var rows = Pages.cellar.data.filter(function (b) {
+      return f === 'todas' || (f === 'ativas' ? (b.status === 'disponivel' || b.status === 'reservada') : b.status === f);
+    });
+    document.getElementById('cellar-grid').innerHTML = rows.length ? '<div class="cellar">' + rows.map(function (b) {
+      return '<button class="btl' + (b.status === 'utilizada' || b.status === 'descartada' ? ' dim' : '') + (Pages.cellar.selected[b.id] ? ' sel' : '') + '" data-action="pick" data-id="' + b.id + '" title="' + esc(BOTTLE_STATUS[b.status]) + '">' +
+        Components.bottle(b.number, { status: b.status }) + '<span class="n">#' + b.number + '</span>' +
+        (d ? '' : '<span class="w">' + esc(b.wine_name) + '</span>') + '</button>';
+    }).join('') + '</div>' : Components.empty('Nenhuma garrafinha neste filtro.');
+    Pages.cellar.drawBar();
+  },
+  drawBar: function () {
+    var ids = Object.keys(Pages.cellar.selected);
+    var bar = document.getElementById('cellar-bar');
+    if (!ids.length) { bar.style.display = 'none'; return; }
+    bar.style.display = '';
+    bar.innerHTML = '<div class="btn-row" style="justify-content:space-between"><span><b>' + ids.length + '</b> selecionada(s)</span><span class="btn-row">' +
+      (ids.length === 1 ? '<button class="btn small" data-action="details">Ver detalhes</button>' : '') +
+      '<button class="btn small" data-action="set-status" data-s="disponivel">Disponível</button>' +
+      '<button class="btn small" data-action="set-status" data-s="utilizada">Utilizada</button>' +
+      '<button class="btn small" data-action="set-status" data-s="descartada">Descartada</button>' +
+      '<button class="btn small ghost" data-action="clear">Limpar</button></span></div>';
+  },
+  actions: {
+    filter: function (btn) {
+      Pages.cellar.filter = btn.getAttribute('data-f');
+      btn.parentNode.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+      Pages.cellar.draw();
+    },
+    discreet: function (cb) {
+      Pages.cellar.discreet = cb.checked;
+      try { localStorage.setItem('wsl.discreet', cb.checked ? '1' : '0'); } catch (e) { /* sem storage */ }
+      Pages.cellar.draw();
+    },
+    pick: function (btn) {
+      var id = btn.getAttribute('data-id');
+      if (Pages.cellar.selected[id]) delete Pages.cellar.selected[id]; else Pages.cellar.selected[id] = true;
+      btn.classList.toggle('sel');
+      Pages.cellar.drawBar();
+    },
+    clear: function () { Pages.cellar.selected = {}; Pages.cellar.draw(); },
+    details: function () {
+      var id = Object.keys(Pages.cellar.selected)[0];
+      var b = Pages.cellar.data.filter(function (x) { return x.id === id; })[0];
+      var show = function () {
+        UI.modal('<h2>Garrafinha #' + b.number + '</h2><div class="fields">' +
+          Components.field('Vinho', '<a href="#/vinhos/' + b.wine_id + '">' + esc(b.wine_name) + '</a>', { html: true }) +
+          Components.field('Safra', b.vintage) + Components.field('Uva(s)', b.grapes) +
+          Components.field('Volume', b.volume_ml ? fmtNum(b.volume_ml, 0) + ' ml' : '') +
+          Components.field('Status', BOTTLE_STATUS[b.status]) + Components.field('Observações', b.notes, { wide: true }) +
+          '</div><div class="btn-row" style="justify-content:flex-end;margin-top:20px"><button class="btn" data-action="close-modal">Fechar</button></div>');
+      };
+      if (!Pages.cellar.discreet) return show();
+      return UI.confirm('Mostrar o conteúdo?', 'O modo discreto está ligado. Ver o conteúdo desta garrafinha pode estragar uma futura degustação às cegas.', 'Mostrar').then(function (ok) { if (ok) show(); });
+    },
+    'set-status': function (btn) {
+      var ids = Object.keys(Pages.cellar.selected), s = btn.getAttribute('data-s');
+      var reserved = Pages.cellar.data.filter(function (b) { return ids.indexOf(b.id) >= 0 && b.status === 'reservada'; });
+      var go = function () {
+        return API.call('bottles.setStatus', { ids: ids, status: s }).then(function (n) { UI.toast(plural(n, 'garrafinha atualizada', 'garrafinhas atualizadas') + '.'); Router.render(); });
+      };
+      if (reserved.length) {
+        return UI.confirm('Garrafinhas reservadas', reserved.length + ' delas estão reservadas numa degustação em andamento. Alterar mesmo assim?', 'Alterar').then(function (ok) { if (ok) return go(); });
+      }
+      return go();
+    }
+  }
+};
+
+/* ============================== FRACIONAR ============================== */
+Pages.fractionate = {
+  render: function (p) {
+    return API.call('wines.list').then(function (wines) {
+      var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/adega">Minha Adega</a></div><h1>Fracionar uma garrafa</h1>' +
+        '<p class="sub">Registre a divisão da garrafa em garrafinhas numeradas.</p></div></div>';
+      if (!wines.length) return html + Components.empty('Cadastre o vinho primeiro.', '', '<a class="btn primary" href="#/vinhos/novo">Cadastrar vinho</a>');
+      html += '<form class="panel" data-action="save"><div class="form-grid">' +
+        '<div class="wide"><label class="f">Vinho *</label><select class="in" name="wine_id" required>' +
+        Components.options(wines.map(function (w) { return { v: w.id, t: w.name + (w.vintage ? ' ' + w.vintage : '') + (w.producer ? ' — ' + w.producer : '') }; }), p.query.wine || '', 'Selecione…') + '</select></div>' +
+        '<div><label class="f">Data do fracionamento</label><input class="in" type="date" name="date" value="' + new Date().toISOString().slice(0, 10) + '"></div>' +
+        '<div><label class="f">Volume original (ml)</label><input class="in" type="number" name="original_volume_ml" value="750" data-input="calc"></div>' +
+        '<div><label class="f">Quantidade de garrafinhas *</label><input class="in" type="number" name="count" value="22" min="1" max="100" required data-input="calc"></div>' +
+        '<div><label class="f">Volume por garrafinha (ml)</label><input class="in" type="number" name="bottle_volume_ml" value="30" data-input="calc"></div>' +
+        '<div class="wide"><label class="f">Numeração</label>' +
+        '<label style="display:block;margin:6px 0"><input type="radio" name="numbering" value="aleatoria" checked> <b>Aleatória</b> — o sistema sorteia números livres. Recomendado: você não consegue deduzir o vinho pelo número.</label>' +
+        '<label style="display:block;margin:6px 0"><input type="radio" name="numbering" value="sequencial"> Sequencial — números em sequência depois do maior número ativo.</label></div>' +
+        '<div class="wide"><label class="f">Observações</label><textarea class="in" name="notes"></textarea></div>' +
+        '</div><p class="muted small" id="calc-hint"></p><div class="btn-row" style="justify-content:flex-end"><a class="btn" href="#/adega">Cancelar</a><button class="btn primary">Registrar e numerar</button></div></form>';
+      return html;
+    });
+  },
+  mount: function () { Pages.fractionate.actions.calc(); },
+  actions: {
+    calc: function () {
+      var f = document.querySelector('form[data-action="save"]');
+      if (!f) return;
+      var total = (+f.count.value || 0) * (+f.bottle_volume_ml.value || 0);
+      var orig = +f.original_volume_ml.value || 0;
+      document.getElementById('calc-hint').textContent = total ? 'Total: ' + total + ' ml de ' + orig + ' ml' + (total > orig ? ' — mais do que a garrafa!' : ' (sobram ~' + (orig - total) + ' ml)') : '';
+    },
+    save: function (form) {
+      var d = formData(form);
+      var btn = form.querySelector('button.primary');
+      UI.busy(btn, true);
+      return API.call('bottles.fractionate', d).then(function (r) {
+        document.getElementById('view').innerHTML =
+          '<div class="page-head"><div><div class="eyebrow">Fracionamento registrado</div><h1>' + esc(r.wine_name) + '</h1>' +
+          '<p class="sub">Etiquete as garrafinhas com estes números. Guarde esta lista longe de quem vai degustar — inclusive de você.</p></div>' +
+          '<div class="btn-row"><button class="btn" onclick="window.print()">Imprimir</button><a class="btn primary" href="#/adega">Ir para a adega</a></div></div>' +
+          '<div class="panel"><div class="cellar">' + r.numbers.map(function (n) {
+            return '<div class="btl">' + Components.bottle(n, { status: 'disponivel' }) + '<span class="n">#' + n + '</span></div>';
+          }).join('') + '</div><p class="serif" style="font-size:1.3rem;margin-top:18px">' + r.numbers.join(' · ') + '</p></div>';
+      }).catch(function (e) { UI.busy(btn, false); throw e; });
+    }
+  }
+};
+</script>

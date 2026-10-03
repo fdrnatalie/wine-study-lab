@@ -1,0 +1,198 @@
+<script>
+/* ============================================================
+   Componentes reutilizáveis (funções que devolvem HTML).
+   Componentes interativos guardam o estado no próprio DOM e
+   são lidos com Components.read*().
+   ============================================================ */
+var Components = {
+
+  SOURCE_LABELS: {
+    usuario: 'informado por você', rotulo: 'rótulo', pesquisado: 'pesquisado', planilha: 'planilha',
+    ia: 'IA · aguardando revisão', ia_revisada: 'IA · revisado', ia_nao_verificada: 'IA · não verificado', sistema: 'sistema'
+  },
+  STATE_LABELS: { hit: 'Acerto', near: 'Próximo', miss: 'Erro', no_ref: 'Sem gabarito' },
+
+  src: function (source) {
+    if (!source) return '';
+    return '<span class="src ' + esc(source) + '" title="Origem do dado">' + esc(Components.SOURCE_LABELS[source] || source) + '</span>';
+  },
+
+  state: function (s) {
+    return '<span class="state ' + esc(s) + '">' + esc(Components.STATE_LABELS[s] || s) + '</span>';
+  },
+
+  missing: function (text) { return '<span class="missing">' + esc(text || 'Informação não cadastrada') + '</span>'; },
+
+  /** Campo rotulado. Vazio → "Informação não cadastrada". fieldSource: origem específica do campo. */
+  field: function (label, value, opts) {
+    opts = opts || {};
+    var v = blank(value) ? Components.missing() : (opts.html ? value : esc(Array.isArray(value) ? value.join(', ') : value));
+    var badge = opts.source && opts.source !== 'usuario' && opts.source !== 'planilha' ? ' ' + Components.src(opts.source) : '';
+    if (opts.ref && !blank(value)) {
+      badge += /^https?:\/\//.test(opts.ref)
+        ? ' <a class="small" href="' + esc(opts.ref) + '" target="_blank" rel="noopener noreferrer" title="' + esc(opts.ref) + '">fonte ↗</a>'
+        : ' <span class="small muted" title="Fonte">' + esc(opts.ref) + '</span>';
+    }
+    return '<div class="field' + (opts.wide ? ' wide' : '') + '"><div class="k">' + esc(label) + badge + '</div><div class="v">' + v + '</div></div>';
+  },
+
+  /** Garrafinha estilizada. opts: {status, fill, stroke, label} */
+  bottle: function (number, opts) {
+    opts = opts || {};
+    var fill = opts.fill || ({ disponivel: 'var(--wine)', reservada: 'var(--gold)', utilizada: 'var(--line-2)', descartada: 'var(--line)' }[opts.status] || 'var(--wine)');
+    var level = opts.status === 'utilizada' || opts.status === 'descartada' ? 64 : 34;
+    var stroke = opts.stroke || 'currentColor';
+    return '<svg viewBox="0 0 40 92" aria-hidden="true">' +
+      '<path d="M16 3h8v14c0 3 8 6 8 16v52a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V33c0-10 8-13 8-16z" fill="none" stroke="' + stroke + '" stroke-width="1.5" opacity=".75"/>' +
+      '<clipPath id="c' + number + (opts.uid || '') + '"><path d="M16 3h8v14c0 3 8 6 8 16v52a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V33c0-10 8-13 8-16z"/></clipPath>' +
+      '<rect x="0" y="' + level + '" width="40" height="92" fill="' + fill + '" clip-path="url(#c' + number + (opts.uid || '') + ')" opacity=".92"/>' +
+      '<rect x="15" y="0" width="10" height="5" rx="1.5" fill="' + stroke + '" opacity=".55"/>' +
+      '<rect x="10" y="48" width="20" height="22" rx="2" fill="var(--paper, #fbf8f3)" opacity=".95"/>' +
+      '<text x="20" y="63" text-anchor="middle" font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#2b1f20">' + esc(opts.label !== undefined ? opts.label : number) + '</text>' +
+      '</svg>';
+  },
+
+  /** Barra de escala. value = chave ("media+") ou faixa ("media..alta"). */
+  scaleRow: function (label, scaleName, value) {
+    var levels = Store.scale(scaleName);
+    if (!levels.length) return '';
+    var lo = null, hi = null;
+    if (!blank(value)) {
+      var parts = String(value).split('..');
+      levels.forEach(function (l) { if (l.key === parts[0]) lo = l.position; if (l.key === (parts[1] || parts[0])) hi = l.position; });
+    }
+    var cells = levels.map(function (l) {
+      var cls = lo !== null && l.position >= lo && l.position <= hi ? (lo === hi ? 'on' : (l.position === hi ? 'on' : 'band')) : '';
+      return '<i class="' + cls + '"></i>';
+    }).join('');
+    var txt = lo === null ? '<span class="missing">Não cadastrado</span>'
+      : esc(String(value).split('..').map(function (k) { return Store.scaleLabel(scaleName, k); }).join(' a '));
+    return '<div class="scale-row"><div class="name">' + esc(label) + '</div><div class="bar">' + cells + '</div><div class="val">' + txt + '</div></div>';
+  },
+
+  PALATE: [['acidity', 'Acidez'], ['tannin', 'Tanino'], ['body', 'Corpo'], ['alcohol', 'Álcool'], ['sweetness', 'Dulçor'], ['intensity', 'Intensidade'], ['finish', 'Persistência']],
+
+  palate: function (profile) {
+    if (!profile) return '<p>' + Components.missing('Perfil sensorial não cadastrado') + '</p>';
+    return '<div class="scales">' + Components.PALATE.map(function (p) { return Components.scaleRow(p[1], p[0], profile[p[0]]); }).join('') + '</div>';
+  },
+
+  /** Aromas agrupados por categoria (somente leitura). */
+  aromaGroups: function (aromas) {
+    if (!aromas || !aromas.length) return '<p>' + Components.missing('Aromas não cadastrados') + '</p>';
+    var by = {};
+    aromas.forEach(function (a) { (by[a.category] = by[a.category] || []).push(a); });
+    return '<div class="aroma-cats">' + Object.keys(by).map(function (c) {
+      return '<div class="aroma-cat"><div class="h">' + esc(c) + '</div><div class="chips">' +
+        by[c].map(function (a) { return '<span class="chip">' + esc(a.name) + '</span>'; }).join('') + '</div></div>';
+    }).join('') + '</div>';
+  },
+
+  /** Seletor de aromas por categoria, com filtro. selected = [ids] */
+  aromaPicker: function (name, selected) {
+    var sel = {};
+    (selected || []).forEach(function (id) { sel[id] = true; });
+    var by = {}, order = [];
+    (Store.lookups.aromas || []).forEach(function (a) {
+      if (!by[a.category]) { by[a.category] = []; order.push(a.category); }
+      by[a.category].push(a);
+    });
+    return '<div class="aroma-picker" data-picker="' + esc(name) + '">' +
+      '<div class="search-in" style="max-width:320px;margin-bottom:14px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="9" r="6"/><path d="m14 14 4 4"/></svg>' +
+      '<input class="in" placeholder="Filtrar aromas…" data-input="aroma-filter"></div>' +
+      '<div class="small muted" data-count style="margin-bottom:10px">' + Object.keys(sel).length + ' selecionado(s)</div>' +
+      '<div class="aroma-cats">' + order.map(function (c) {
+        return '<div class="aroma-cat"><div class="h">' + esc(c) + '</div><div class="chips">' +
+          by[c].map(function (a) {
+            return '<button type="button" class="chip' + (sel[a.id] ? ' on' : '') + '" data-action="aroma-toggle" data-id="' + a.id + '" data-name="' + esc(a.name.toLowerCase()) + '" title="' + esc(a.subcategory) + '">' + esc(a.name) + '</button>';
+          }).join('') + '</div></div>';
+      }).join('') + '</div></div>';
+  },
+
+  readAromas: function (root) {
+    return Array.prototype.map.call(root.querySelectorAll('.aroma-picker .chip.on'), function (b) { return b.getAttribute('data-id'); });
+  },
+
+  /** Controle segmentado para escalas. */
+  seg: function (name, scaleName, value, opts) {
+    opts = opts || {};
+    var levels = opts.options || Store.scale(scaleName).map(function (l) { return { v: l.key, t: l.label }; });
+    return '<div class="seg" data-seg="' + esc(name) + '"' + (opts.multi ? ' data-multi="1"' : '') + '>' + levels.map(function (o) {
+      var on = opts.multi ? (value || []).indexOf(o.v) >= 0 : value === o.v;
+      return '<button type="button" class="' + (on ? 'on' : '') + '" data-action="seg-pick" data-v="' + esc(o.v) + '">' + esc(o.t) + '</button>';
+    }).join('') + '</div>';
+  },
+
+  readSeg: function (root, name) {
+    var el = root.querySelector('[data-seg="' + name + '"]');
+    if (!el) return undefined;
+    var on = Array.prototype.map.call(el.querySelectorAll('button.on'), function (b) { return b.getAttribute('data-v'); });
+    return el.getAttribute('data-multi') ? on : (on[0] || '');
+  },
+
+  options: function (list, selected, placeholder) {
+    return (placeholder !== undefined ? '<option value="">' + esc(placeholder) + '</option>' : '') +
+      list.map(function (o) {
+        var v = o.id !== undefined ? o.id : o.v, t = o.name !== undefined ? o.name : o.t;
+        var on = Array.isArray(selected) ? selected.indexOf(v) >= 0 : selected === v;
+        return '<option value="' + esc(v) + '"' + (on ? ' selected' : '') + '>' + esc(t) + '</option>';
+      }).join('');
+  },
+
+  /** Linha do tempo das notas (0–100) em SVG. */
+  sparkline: function (series) {
+    if (!series || series.length < 2) return '';
+    var w = 600, h = 120, pad = 10, n = series.length;
+    var pts = series.map(function (p, i) {
+      return [pad + i * (w - 2 * pad) / (n - 1), h - pad - (p.score / 100) * (h - 2 * pad)];
+    });
+    var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
+    var area = d + ' L' + pts[n - 1][0].toFixed(1) + ' ' + (h - pad) + ' L' + pts[0][0].toFixed(1) + ' ' + (h - pad) + ' Z';
+    return '<svg class="spark" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+      [25, 50, 75].map(function (g) { var y = h - pad - g / 100 * (h - 2 * pad); return '<line x1="0" x2="' + w + '" y1="' + y + '" y2="' + y + '" stroke="var(--line)" stroke-dasharray="3 5"/>'; }).join('') +
+      '<path d="' + area + '" fill="var(--wine-soft)" opacity=".7"/>' +
+      '<path d="' + d + '" fill="none" stroke="var(--wine)" stroke-width="2" vector-effect="non-scaling-stroke"/>' +
+      pts.map(function (p, i) { return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.5" fill="var(--paper)" stroke="var(--wine)" stroke-width="2" vector-effect="non-scaling-stroke"><title>' + fmtNum(series[i].score) + '</title></circle>'; }).join('') +
+      '</svg>';
+  },
+
+  meter: function (pct) {
+    return '<div class="meter"><i style="width:' + Math.max(0, Math.min(100, pct || 0)) + '%"></i></div>';
+  },
+
+  empty: function (title, text, cta) {
+    return '<div class="empty"><span class="serif">' + esc(title) + '</span>' + (text ? '<div>' + esc(text) + '</div>' : '') +
+      (cta ? '<div style="margin-top:16px">' + cta + '</div>' : '') + '</div>';
+  },
+
+  actions: {
+    'seg-pick': function (btn) {
+      var seg = btn.closest('.seg');
+      if (seg.getAttribute('data-multi')) { btn.classList.toggle('on'); }
+      else {
+        var was = btn.classList.contains('on');
+        seg.querySelectorAll('button').forEach(function (b) { b.classList.remove('on'); });
+        if (!was) btn.classList.add('on');            // clicar de novo desmarca
+      }
+      seg.dispatchEvent(new CustomEvent('segchange', { bubbles: true }));
+    },
+    'aroma-toggle': function (btn) {
+      btn.classList.toggle('on');
+      var p = btn.closest('.aroma-picker');
+      p.querySelector('[data-count]').textContent = p.querySelectorAll('.chip.on').length + ' selecionado(s)';
+    },
+    'aroma-filter': function (input) {
+      var q = input.value.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+      var p = input.closest('.aroma-picker');
+      p.querySelectorAll('.chip').forEach(function (c) {
+        var n = c.getAttribute('data-name').normalize('NFD').replace(/[̀-ͯ]/g, '');
+        c.style.display = !q || n.indexOf(q) >= 0 ? '' : 'none';
+      });
+      p.querySelectorAll('.aroma-cat').forEach(function (cat) {
+        var any = Array.prototype.some.call(cat.querySelectorAll('.chip'), function (c) { return c.style.display !== 'none'; });
+        cat.style.display = any ? '' : 'none';
+      });
+    }
+  }
+};
+</script>
