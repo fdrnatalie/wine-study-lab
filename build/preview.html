@@ -314,6 +314,23 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .cmp td.hl { font-weight: 600; }
 .leaflet-container { font-family: var(--sans); background: var(--paper-2); }
 .leaflet-tooltip { font-family: var(--sans); }
+
+/* Foto do rótulo */
+.label-scan { border: 1px dashed var(--line-2); border-radius: var(--radius); padding: 14px; margin-bottom: 18px; background: var(--paper-2); }
+.label-scan-body { display: flex; gap: 16px; align-items: flex-start; margin-top: 14px; }
+.label-thumb { width: 140px; max-height: 220px; object-fit: contain; border-radius: 8px; background: var(--paper); flex: none; }
+.label-scan-main { flex: 1; min-width: 0; }
+.label-row { display: grid; grid-template-columns: auto 150px minmax(0, 1fr); gap: 4px 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.label-row .in { padding: 6px 8px; }
+.label-row-name { font-weight: 600; font-size: .85rem; }
+.label-row-ev { grid-column: 3; }
+.label-text { white-space: pre-wrap; font-size: .8rem; max-height: 220px; overflow: auto; background: var(--paper); padding: 10px; border-radius: 8px; }
+@media (max-width: 640px) {
+  .label-scan-body { flex-direction: column; }
+  .label-thumb { width: 100%; max-height: 200px; }
+  .label-row { grid-template-columns: auto minmax(0, 1fr); }
+  .label-row > :nth-child(3), .label-row-ev { grid-column: 1 / -1; }
+}
 </style>
 
 </head>
@@ -403,13 +420,32 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 
   // Resposta SIMULADA da API da Anthropic (mesma estrutura de uma resposta real).
   g.Utilities = { sleep: function () {} };
+  // OCR SIMULADO do Google Drive (foto do rótulo): devolve sempre o mesmo texto de demonstração.
+  var DEMO_LABEL = 'Rótulo de demonstração (OCR simulado)\nCANTINA DEMO\nBAROLO\nDenominazione di Origine Controllata e Garantita\n' +
+    'NEBBIOLO\nVendemmia 2019\n14,5% vol\n750 ml\nVino rosso\nPRODOTTO IN ITALIA';
+  g.MimeType = { GOOGLE_DOCS: 'application/vnd.google-apps.document' };
+  g.ScriptApp = { getOAuthToken: function () { return 'mock-token'; } };
+  g.Utilities.newBlob = function (bytes, mime, name) { return { bytes: bytes, mime: mime, name: name }; };
+  g.Utilities.base64Decode = function (b64) { return b64; };
+  g.Drive = { Files: { create: function () { return { id: 'OCR_MOCK' }; } } };
   g.UrlFetchApp = { fetch: function (url, opts) {
+    if (/googleapis\.com\/drive/.test(url)) {
+      return { getResponseCode: function () { return 200; }, getContentText: function () { return /export/.test(url) ? DEMO_LABEL : ''; } };
+    }
     var body = JSON.parse(opts.payload);
     var tool = body.tools.filter(function (t) { return t.name === 'registrar_dados'; })[0];
     var props = tool.input_schema.properties;
     var prompt = body.messages[0].content;
+    if (typeof prompt !== 'string') prompt = prompt.filter(function (b) { return b.type === 'text'; }).map(function (b) { return b.text; }).join('\n');
     var input;
-    if (props.grapes) {
+    if (props.label) {
+      input = { label: { name: 'Barolo (simulado)', producer: 'Cantina Demo', country: 'Itália', region: 'Piemonte', subregion: 'Barolo', vintage: '2019' },
+        grapes: [{ name: 'Nebbiolo', percent: '100', source_url: 'rotulo' }],
+        fields: [{ field: 'aging', value: '24 meses em botti de carvalho da Eslavônia (simulado)', source_url: 'https://produtor.example/ficha', source_title: 'Ficha técnica' },
+          { field: 'serving_temp', value: '16–18 °C (simulado)', source_url: 'https://produtor.example/ficha', source_title: 'Ficha técnica' },
+          { field: 'pairing', value: 'Carnes vermelhas e trufas (simulado)', source_url: 'https://exemplo.com/nao-buscado', source_title: 'Blog' }],
+        not_found: 'Acidez total e açúcar residual (simulado).' };
+    } else if (props.grapes) {
       input = { grapes: [
         { name: 'Sangiovese', color: 'tinta', origin: 'Toscana, Itália (simulado)', source_url: 'https://www.vivc.de/sangiovese', source_title: 'VIVC' },
         { name: 'Nebbiolo', color: 'tinta', origin: 'Piemonte', source_url: 'https://www.vivc.de/nebbiolo', source_title: 'VIVC' },
@@ -9461,18 +9497,27 @@ var Wines = (function () {
     if (rec.color) Validate.oneOf(rec.color, CONFIG.WINE_COLORS, 'cor');
     if (rec.type) Validate.oneOf(rec.type, CONFIG.WINE_TYPES, 'tipo');
 
+    // Origem por campo vinda da foto do rótulo ("rotulo", "pesquisado" = enciclopédia, "ia_nao_verificada"); o resto é "usuario".
+    var origins = origins_(input.origins), refs = refs_(input.refs, origins);
     var saved;
     if (isNew) {
-      var fs = {};
-      Object.keys(rec).forEach(function (k) { if (!Util.isBlank(rec[k])) fs[k] = 'usuario'; });
-      saved = Repo.insert('wines', [Object.assign(rec, { source: 'usuario', field_sources: fs })])[0];
+      var fs = {}, fr = {};
+      Object.keys(rec).forEach(function (k) {
+        if (Util.isBlank(rec[k])) return;
+        fs[k] = origins[k] || 'usuario';
+        if (refs[k]) fr[k] = refs[k];
+      });
+      saved = Repo.insert('wines', [Object.assign(rec, { source: 'usuario', field_sources: fs, field_refs: fr })])[0];
     } else {
       // Campos alterados passam a ter origem "usuario" (a sincronização não os sobrescreve mais).
       var fs2 = Object.assign({}, existing.field_sources || {});
+      var fr2 = Object.assign({}, existing.field_refs || {});
       Object.keys(rec).forEach(function (k) {
-        if (JSON.stringify(rec[k]) !== JSON.stringify(existing[k] === undefined ? '' : existing[k])) fs2[k] = 'usuario';
+        if (JSON.stringify(rec[k]) === JSON.stringify(existing[k] === undefined ? '' : existing[k])) return;
+        fs2[k] = origins[k] || 'usuario';
+        if (refs[k]) fr2[k] = refs[k]; else delete fr2[k];
       });
-      Repo.update('wines', [Object.assign({ id: existing.id, field_sources: fs2 }, rec)]);
+      Repo.update('wines', [Object.assign({ id: existing.id, field_sources: fs2, field_refs: fr2 }, rec)]);
       saved = Repo.get('wines', existing.id);
     }
 
@@ -9480,23 +9525,47 @@ var Wines = (function () {
     return get(saved.id);
   }
 
+  var ORIGIN_FIELDS = { producer: 'producer_id', country: 'country_id', region: 'region_id', subregion: 'subregion_id', appellation: 'appellation_id' };
+  var LABEL_ORIGINS = ['rotulo', 'pesquisado', 'ia_nao_verificada'];
+
+  function origins_(o) {
+    var out = {};
+    if (!o || typeof o !== 'object') return out;
+    Object.keys(o).forEach(function (k) {
+      var col = ORIGIN_FIELDS[k] || k;
+      if ((TEXT_FIELDS[col] || ['name', 'vintage', 'abv', 'price'].indexOf(col) >= 0 || /_id$/.test(col)) && LABEL_ORIGINS.indexOf(o[k]) >= 0) out[col] = o[k];
+    });
+    return out;
+  }
+
+  function refs_(r, origins) {
+    var out = {};
+    if (!r || typeof r !== 'object') return out;
+    Object.keys(r).forEach(function (k) {
+      var col = ORIGIN_FIELDS[k] || k;
+      if (origins[col] && typeof r[k] === 'string' && /^https?:\/\/\S+$/.test(r[k]) && r[k].length <= 1000) out[col] = r[k];
+    });
+    return out;
+  }
+
   function setGrapes_(wineId, grapes) {
     var wanted = [];
     grapes.slice(0, 20).forEach(function (g) {
       var grape = g.id ? Repo.get('grapes', Validate.id(g.id)) : Catalog.resolveByName('grapes', g.name);
       if (!grape) return;
-      wanted.push({ grape_id: grape.id, percent: Validate.num(g.percent, 0, 100, 'Percentual') });
+      wanted.push({ grape_id: grape.id, percent: Validate.num(g.percent, 0, 100, 'Percentual'),
+        source: LABEL_ORIGINS.indexOf(g.source) >= 0 ? g.source : 'usuario' });
     });
     var existing = Repo.where('wine_grapes', { wine_id: wineId });
     var byGrape = Util.indexBy(existing, 'grape_id');
     var wantedIds = wanted.map(function (w) { return w.grape_id; });
     Repo.remove('wine_grapes', existing.filter(function (x) { return wantedIds.indexOf(x.grape_id) < 0; }).map(function (x) { return x.id; }));
     Repo.insert('wine_grapes', wanted.filter(function (w) { return !byGrape[w.grape_id]; }).map(function (w) {
-      return { wine_id: wineId, grape_id: w.grape_id, percent: w.percent, source: 'usuario' };
+      return { wine_id: wineId, grape_id: w.grape_id, percent: w.percent, source: w.source };
     }));
     Repo.update('wine_grapes', wanted.filter(function (w) {
       return byGrape[w.grape_id] && byGrape[w.grape_id].percent !== w.percent;
-    }).map(function (w) { return { id: byGrape[w.grape_id].id, percent: w.percent, source: 'usuario' }; }));
+    }).map(function (w) { return { id: byGrape[w.grape_id].id, percent: w.percent, source: w.source }; }));
   }
 
   return { list: list, get: get, save: save };
@@ -9945,6 +10014,327 @@ var SeedRegions = (function () {
   return { run: run, ensure: ensure, summary: summary };
 })();
 
+// ---- 34_LabelParse.js
+/**
+ * Leitura do TEXTO de um rótulo (vindo do OCR) → sugestões para o cadastro de vinho.
+ * Função pura (sem Planilha/Drive), testada em tests/run.js.
+ *
+ * Regra: só sugere o que está escrito no rótulo (com o trecho como evidência) ou o que
+ * o texto casa EXATAMENTE com a enciclopédia (produtor, região, país, uva). Nada é inferido
+ * a partir da uva ou do estilo; o nome do vinho fica para a usuária escolher entre as linhas lidas.
+ *
+ * cat = { countries:[{name}], regions:[{name, country, parent, level}], producers:[{name, regions:[nome região]}],
+ *         grapes:[{name, synonyms:[]}] }
+ */
+var LabelParse = (function () {
+
+  function norm(s) { return Util.normKey(s); }
+
+  // Palavras genéricas que nunca contam como nome de região/produtor sozinhas.
+  var STOP = {};
+  ('vinho vino vin wine wein tinto rosso rouge red branco bianco blanc blanco white rose rosado rosato reserva riserva ' +
+    'reserve gran grande grand cru classico superiore seco dry brut sul norte centro sur nord casa tenuta domaine chateau ' +
+    'bodega bodegas quinta estate vineyard vineyards winery cantina cave adega vale valle valley costa monte serra alto ' +
+    'mission alba bianca nero nera rosa').split(' ').forEach(function (w) { STOP[w] = 1; });
+
+  var COUNTRY_ALIASES = {
+    'italy': 'Itália', 'italia': 'Itália', 'france': 'França', 'francia': 'França', 'spain': 'Espanha', 'espana': 'Espanha',
+    'germany': 'Alemanha', 'deutschland': 'Alemanha', 'austria': 'Áustria', 'osterreich': 'Áustria', 'oesterreich': 'Áustria',
+    'switzerland': 'Suíça', 'suisse': 'Suíça', 'schweiz': 'Suíça', 'svizzera': 'Suíça', 'greece': 'Grécia', 'hungary': 'Hungria',
+    'magyarorszag': 'Hungria', 'united states': 'Estados Unidos', 'usa': 'Estados Unidos', 'u s a': 'Estados Unidos',
+    'south africa': 'África do Sul', 'new zealand': 'Nova Zelândia', 'australia': 'Austrália', 'brazil': 'Brasil',
+    'uruguay': 'Uruguai', 'mexico': 'México', 'canada': 'Canadá', 'england': 'Inglaterra', 'romania': 'Romênia',
+    'slovenia': 'Eslovênia', 'slovenija': 'Eslovênia', 'croatia': 'Croácia', 'hrvatska': 'Croácia', 'georgia': 'Geórgia',
+    'lebanon': 'Líbano', 'liban': 'Líbano', 'moldova': 'Moldávia', 'armenia': 'Armênia', 'turkey': 'Turquia', 'turkiye': 'Turquia',
+    'japan': 'Japão', 'bulgaria': 'Bulgária'
+  };
+
+  // Termos de classificação (texto normalizado → como gravar). Os mais longos primeiro.
+  var CLASS_PHRASES = [
+    ['denominazione di origine controllata e garantita', 'DOCG'], ['denominazione di origine controllata', 'DOC'],
+    ['denominacion de origen calificada', 'DOCa'], ['denominacion de origen protegida', 'DOP'], ['denominacion de origen', 'DO'],
+    ['denominacao de origem controlada', 'DOC'], ['denominacao de origem', 'DO'], ['indicazione geografica tipica', 'IGT'],
+    ['indicacao geografica', 'IG'], ['vinho regional', 'Vinho Regional'], ['appellation d origine protegee', 'AOP'],
+    ['appellation d origine controlee', 'AOC'], ['gran reserva', 'Gran Reserva'], ['grande reserva', 'Grande Reserva'],
+    ['reserva', 'Reserva'], ['riserva', 'Riserva'], ['crianza', 'Crianza'], ['grand cru classe', 'Grand Cru Classé'],
+    ['premier grand cru classe', 'Premier Grand Cru Classé'], ['grand cru', 'Grand Cru'], ['premier cru', 'Premier Cru'],
+    ['1er cru', 'Premier Cru'], ['superiore', 'Superiore'], ['classico', 'Classico'], ['gran selezione', 'Gran Selezione'],
+    ['trockenbeerenauslese', 'Trockenbeerenauslese'], ['beerenauslese', 'Beerenauslese'], ['auslese', 'Auslese'],
+    ['spatlese', 'Spätlese'], ['kabinett', 'Kabinett'], ['grosses gewachs', 'Grosses Gewächs'], ['smaragd', 'Smaragd'],
+    ['federspiel', 'Federspiel'], ['steinfeder', 'Steinfeder']
+  ];
+  // Siglas: só em MAIÚSCULAS no texto original (evita "do", "ig" etc.).
+  var CLASS_ACRONYMS = ['DOCG', 'DOCa', 'DOC', 'DOQ', 'DOP', 'AOC', 'AOP', 'IGT', 'IGP', 'DAC', 'VDP', 'AVA'];
+
+  var COLOR_WORDS = [
+    ['tinto', /\b(vinho tinto|vino tinto|vino rosso|vin rouge|red wine|rotwein)\b|\btinto\b(?! (fino|roriz|cao|amarela))/],
+    ['branco', /\b(vinho branco|vino blanco|vino bianco|vin blanc|white wine|weisswein|weißwein)\b|\b(branco|blanco)\b/],
+    ['rose', /\b(rose|rosado|rosato|rose wine)\b/],
+    ['laranja', /\b(orange wine|vinho laranja|vino naranja|ramato)\b/]
+  ];
+  var TYPE_WORDS = [
+    ['espumante', /\b(espumante|spumante|sparkling|champagne|cava|cremant|sekt|franciacorta|prosecco|metodo classico|metodo tradicional|methode traditionnelle|methode champenoise|brut|extra brut|pet nat)\b/],
+    ['fortificado', /\b(vinho do porto|port wine|porto (tawny|ruby|lbv|vintage)|vinho licoroso|vino generoso|madeira wine|sherry|jerez|xeres|marsala|vin doux naturel|fortified)\b/],
+    ['sobremesa', /\b(late harvest|colheita tardia|vendange tardive|vendemmia tardiva|passito|ice ?wine|eiswein|tokaji aszu|vin santo|noble rot|botrytis)\b/]
+  ];
+
+  /** Procura `key` (normalizado) como palavras inteiras dentro de `t` (normalizado, com espaços nas pontas). */
+  function findAll(t, key) {
+    var out = [], needle = ' ' + key + ' ', i = t.indexOf(needle);
+    while (i >= 0) { out.push(i); i = t.indexOf(needle, i + 1); }
+    return out;
+  }
+
+  /** Casa uma lista de nomes; descarta casamentos contidos em outros mais longos. */
+  function matchNames(t, items, keysOf, used) {
+    var hits = [];
+    items.forEach(function (it) {
+      keysOf(it).forEach(function (k) {
+        if (!k || k.length < 4 || STOP[k]) return;
+        findAll(t, k).forEach(function (pos) { hits.push({ item: it, key: k, start: pos, end: pos + k.length + 1 }); });
+      });
+    });
+    hits.sort(function (a, b) { return (b.end - b.start) - (a.end - a.start); });
+    var kept = [];
+    hits.forEach(function (h) {
+      var overlap = kept.concat(used || []).some(function (k) { return h.start < k.end && k.start < h.end; });
+      if (!overlap) kept.push(h);
+    });
+    return kept;
+  }
+
+  function uniq(list) { var s = {}; return list.filter(function (x) { if (s[x]) return false; s[x] = 1; return true; }); }
+
+  function lineOf(lines, re) {
+    for (var i = 0; i < lines.length; i++) { var m = lines[i].match(re); if (m) return { m: m, line: lines[i] }; }
+    return null;
+  }
+
+  function parse(text, cat, opts) {
+    text = String(text || '').replace(/\r/g, '');
+    var thisYear = (opts && opts.year) || new Date().getFullYear();
+    var lines = text.split('\n').map(function (l) { return l.replace(/\s+/g, ' ').trim(); }).filter(function (l) { return l.length > 1; });
+    var t = ' ' + norm(text) + ' ';
+    var fields = {};
+    function put(field, value, evidence, how, options) {
+      if (value === '' || value === null || value === undefined) return;
+      fields[field] = { value: value, evidence: evidence || '', how: how || 'rotulo', options: options || [] };
+    }
+
+    // ---------- Safra ----------
+    var years = [];
+    var yre = /\b(19[0-9]{2}|20[0-9]{2})\b/g, m;
+    while ((m = yre.exec(text))) {
+      var y = +m[1];
+      if (y < 1900 || y > thisYear) continue;
+      var before = norm(text.slice(Math.max(0, m.index - 30), m.index));
+      if (/\b(since|desde|dal|dall|depuis|seit|fundad[ao]|founded|est|fondata|fonde[e]?|gegrundet|anno|from)\s*$/.test(before)) continue;
+      years.push({ y: y, ctx: before });
+    }
+    if (years.length) {
+      var keyed = years.filter(function (x) { return /(safra|vintage|cosecha|annata|millesime|jahrgang|colheita|vendemmia|harvest|anada|vendimia)\s*$/.test(x.ctx); });
+      var distinct = uniq(years.map(function (x) { return x.y; }));
+      if (keyed.length) put('vintage', keyed[0].y, 'safra indicada no rótulo', 'rotulo', distinct);
+      else if (distinct.length === 1) put('vintage', distinct[0], 'único ano no rótulo', 'rotulo');
+      else fields.vintage = { value: '', evidence: 'vários anos no rótulo: escolha', how: 'rotulo', options: distinct };
+    }
+
+    // ---------- Teor alcoólico ----------
+    var abvRe = [
+      /(\d{1,2}(?:[.,]\d{1,2})?)\s*%\s*(?:vol|alc|v\/v|abv|by vol)/i,
+      /(?:alc(?:ohol|ool)?\.?|teor alco[oó]lico|gradua[cç][aã]o alco[oó]lica|titolo alcolometrico(?: volumico)?|grado alcoh[oó]lico|alkohol|vol\.?)\s*[:\-]?\s*(\d{1,2}(?:[.,]\d{1,2})?)\s*%/i
+    ];
+    for (var a = 0; a < abvRe.length && !fields.abv; a++) {
+      var am = lineOf(lines, abvRe[a]);
+      if (am) {
+        var abv = Util.parseNumber(am.m[1]);
+        if (abv !== null && abv >= 4 && abv <= 23) put('abv', abv, am.m[0]);
+      }
+    }
+
+    // ---------- Dados técnicos escritos no contrarrótulo ----------
+    var rs = lineOf(lines, /a[cç][uú]car(?:es)?(?: residua(?:l|is))?\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\s*g\s*\/?\s*l/i) ||
+      lineOf(lines, /residual sugar\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\s*g\s*\/?\s*l/i) || lineOf(lines, /zucchero residuo\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\s*g\s*\/?\s*l/i);
+    if (rs) put('residual_sugar', rs.m[1].replace('.', ',') + ' g/L', rs.m[0]);
+    var ac = lineOf(lines, /(?:acidez|acidity|acidit[àa]|acidit[ée])(?: total)?e?\s*[:\-]?\s*(\d+(?:[.,]\d+)?)\s*g\s*\/?\s*l/i);
+    if (ac) put('acidity_gl', ac.m[1].replace('.', ',') + ' g/L', ac.m[0]);
+    var ag = lineOf(lines, /\d{1,2}\s*(?:a\s*\d{1,2}\s*)?(?:meses|months|mesi|mois|monate)\s+(?:em|en|in|de|di|en fût de|in barrique)?\s*[^.;\n]{0,40}?(?:barricas?|barriques?|carvalho|roble|botti|tonneaux|f[ûu]ts?|oak|madeira|legno|bois|holzfass)[^.;\n]{0,30}/i);
+    if (ag) put('aging', ag.m[0].trim(), ag.m[0]);
+    var st = lineOf(lines, /(?:servir|serve|serving|temperatura|servire|servire a|da servire)[^\n]{0,30}?(\d{1,2})\s*(?:°\s*C?|ºC?)?\s*(?:-|–|a|à|to|e)\s*(\d{1,2})\s*(?:°|º)\s*C?/i);
+    if (st) put('serving_temp', st.m[1] + '–' + st.m[2] + ' °C', st.m[0]);
+
+    // ---------- Cor e tipo (só por palavras do rótulo) ----------
+    var grapeHits = matchNames(t, cat.grapes || [], function (g) { return [norm(g.name)].concat((g.synonyms || []).map(norm)); });
+    // Tira do texto os nomes de uva ("Sauvignon Blanc", "Tinta Roriz") antes de buscar cor.
+    var tNoGrapes = t;
+    grapeHits.forEach(function (h) { tNoGrapes = tNoGrapes.slice(0, h.start) + new Array(h.end - h.start + 1).join(' ') + tNoGrapes.slice(h.end); });
+    COLOR_WORDS.forEach(function (c) { if (!fields.color) { var cm = tNoGrapes.match(c[1]); if (cm) put('color', c[0], cm[0].trim()); } });
+    TYPE_WORDS.forEach(function (c) { if (!fields.type) { var tm = t.match(c[1]); if (tm) put('type', c[0], tm[0].trim()); } });
+
+    // ---------- Classificação ----------
+    var cls = [];
+    var tCls = t;
+    CLASS_PHRASES.forEach(function (p) {
+      if (findAll(tCls, p[0]).length) { cls.push(p[1]); tCls = tCls.split(' ' + p[0] + ' ').join('  '); }
+    });
+    CLASS_ACRONYMS.forEach(function (acr) {
+      if (new RegExp('(^|[^A-Za-z])' + acr.replace(/\./g, '\\.') + '([^A-Za-z]|$)').test(text)) cls.push(acr);
+    });
+    cls = uniq(cls);
+    // "DOCa" contém "DOC"; "DOCG" idem: fica a mais específica.
+    if (cls.indexOf('DOCG') >= 0 || cls.indexOf('DOCa') >= 0) cls = cls.filter(function (c) { return c !== 'DOC'; });
+    if (cls.indexOf('DOCa') >= 0) cls = cls.filter(function (c) { return c !== 'DO'; });
+    if (cls.indexOf('Gran Reserva') >= 0 || cls.indexOf('Grande Reserva') >= 0) cls = cls.filter(function (c) { return c !== 'Reserva'; });
+    if (cls.indexOf('Grand Cru Classé') >= 0 || cls.indexOf('Premier Grand Cru Classé') >= 0) cls = cls.filter(function (c) { return c !== 'Grand Cru'; });
+    if (cls.length) put('classification', cls.join(' '), 'termos no rótulo: ' + cls.join(', '));
+
+    // ---------- Uvas (com % quando escrito) ----------
+    var hasPct = /%/.test(text);
+    // "85% Tempranillo" (número antes) ou "Tempranillo 85%" (depois): decide pelo jeito do próprio rótulo.
+    var pctFirst = /\d\s*%\s*[A-Za-zÀ-ÿ]/.test(text.replace(/\d\s*%\s*(vol|alc|v\/v|abv|by)/gi, ''));
+    var grapes = grapeHits.sort(function (a, b) { return a.start - b.start; }).map(function (h) {
+      var pct = '';
+      if (hasPct) {
+        var after = t.slice(h.end).match(/^ (\d{1,3}) /), before = t.slice(0, h.start + 1).match(/ (\d{1,3}) $/);
+        var n = pctFirst ? (before ? +before[1] : null) : (after ? +after[1] : null);
+        if (n !== null && n > 0 && n <= 100) pct = n;
+      }
+      return { name: h.item.name, percent: pct, evidence: h.key };
+    });
+    grapes = grapes.filter(function (g, i) { return grapes.map(function (x) { return x.name; }).indexOf(g.name) === i; });
+
+    // ---------- Regiões / país ----------
+    var used = grapeHits.slice();
+    var regionHits = matchNames(t, cat.regions || [], function (r) { return [norm(r.name)]; }, used);
+    var subs = regionHits.filter(function (h) { return h.item.parent; });
+    var tops = regionHits.filter(function (h) { return !h.item.parent; });
+    var countryHits = [];
+    (cat.countries || []).forEach(function (c) { if (findAll(t, norm(c.name)).length) countryHits.push(c.name); });
+    Object.keys(COUNTRY_ALIASES).forEach(function (k) { if (findAll(t, k).length) countryHits.push(COUNTRY_ALIASES[k]); });
+    countryHits = uniq(countryHits);
+
+    // Prefere a sub-região cujo país (e região-mãe) também aparece; senão a primeira.
+    function score(r) { return (countryHits.indexOf(r.country) >= 0 ? 2 : 0) + (tops.some(function (x) { return x.item.name === r.parent; }) ? 1 : 0); }
+    subs.sort(function (a, b) { return score(b.item) - score(a.item); });
+    tops.sort(function (a, b) { return score(b.item) - score(a.item); });
+    var sub = subs[0] && subs[0].item, top = tops[0] && tops[0].item;
+    if (sub) {
+      put('subregion', sub.name, 'escrito no rótulo', 'rotulo', uniq(subs.map(function (h) { return h.item.name; })));
+      put('region', sub.parent, top && top.name === sub.parent ? 'escrito no rótulo' : 'região de ' + sub.name + ' (enciclopédia)', top && top.name === sub.parent ? 'rotulo' : 'enciclopedia');
+      put('country', sub.country, countryHits.indexOf(sub.country) >= 0 ? 'escrito no rótulo' : 'país de ' + sub.name + ' (enciclopédia)', countryHits.indexOf(sub.country) >= 0 ? 'rotulo' : 'enciclopedia');
+    } else if (top) {
+      put('region', top.name, 'escrito no rótulo', 'rotulo', uniq(tops.map(function (h) { return h.item.name; })));
+      put('country', top.country, countryHits.indexOf(top.country) >= 0 ? 'escrito no rótulo' : 'país de ' + top.name + ' (enciclopédia)', countryHits.indexOf(top.country) >= 0 ? 'rotulo' : 'enciclopedia');
+    } else if (countryHits.length) {
+      put('country', countryHits[0], 'escrito no rótulo', 'rotulo', countryHits);
+    }
+    if (fields.country && countryHits.length && countryHits.indexOf(fields.country.value) < 0) {
+      // Conflito (ex.: região homônima em outro país): mostra o país escrito como alternativa.
+      fields.country.options = uniq([fields.country.value].concat(countryHits));
+    }
+
+    // ---------- Produtor ----------
+    var prodHits = matchNames(t, cat.producers || [], function (p) { return [norm(p.name)]; }, used.concat(regionHits));
+    if (prodHits.length) {
+      var p = prodHits[0].item;
+      put('producer', p.name, 'escrito no rótulo', 'rotulo', uniq(prodHits.map(function (h) { return h.item.name; })));
+      if (!fields.region && p.regions && p.regions.length === 1) put('region', p.regions[0], 'região do produtor (enciclopédia)', 'enciclopedia');
+    } else {
+      var bottler = lineOf(lines, /(?:produzido e engarrafado por|engarrafado por|elaborado (?:y embotellado )?por|embotellado por|imbottigliato (?:all'origine )?(?:da|dal|dalla|dall')|prodotto e imbottigliato da|mis en bouteille (?:au domaine |au chateau )?par|produced and bottled by|bottled by|abfüller|erzeugerabfüllung)\s*:?\s*(.{3,80})$/i);
+      if (bottler) {
+        var nm = bottler.m[1].split(/\s*[-,–]\s*|\s+(?:em|en|in|à|a|-)\s+[A-ZÀ-Ý]/)[0].trim();
+        if (nm.length >= 3) put('producer', nm, bottler.m[0]);
+      }
+    }
+
+    return { lines: lines, fields: fields, grapes: grapes };
+  }
+
+  return { parse: parse };
+})();
+
+// ---- 35_Label.js
+/**
+ * Foto do rótulo → sugestões para o cadastro de vinho.
+ *
+ * 1) Leitura grátis: a foto vira um Google Doc temporário com OCR do Google Drive
+ *    (escopo drive.file: o app só enxerga os arquivos que ele mesmo cria), o texto é
+ *    exportado e o arquivo é apagado na hora. A foto não fica guardada.
+ * 2) O texto é cruzado com a enciclopédia (LabelParse): produtor, região, país, uvas,
+ *    safra, teor alcoólico, classificação… cada sugestão com o trecho que a justifica.
+ * A leitura com IA (opcional, paga) fica em Enrichment.label().
+ */
+var Label = (function () {
+  var MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+  var MAX_B64 = 4500000;          // ~3,3 MB de imagem; o navegador já reduz a foto antes de enviar.
+
+  function validateImage(image, mime) {
+    if (MIMES.indexOf(mime) < 0) throw new Error('Formato de imagem não aceito (use JPG, PNG ou WebP).');
+    if (typeof image !== 'string' || !image || image.length > MAX_B64 || !/^[A-Za-z0-9+/=]+$/.test(image)) {
+      throw new Error('Imagem inválida ou grande demais.');
+    }
+    return image;
+  }
+
+  /** OCR pelo Google Drive. Devolve o texto lido. */
+  function ocr_(image, mime) {
+    if (typeof Drive === 'undefined') throw new Error('O serviço do Google Drive não está ativo neste projeto.');
+    var blob = Utilities.newBlob(Utilities.base64Decode(image), mime, 'rotulo');
+    var file = Drive.Files.create({ name: 'wsl-rotulo-ocr-' + Date.now(), mimeType: MimeType.GOOGLE_DOCS }, blob, { fields: 'id' });
+    var auth = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
+    try {
+      var res = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(file.id) + '/export?mimeType=text%2Fplain',
+        { headers: auth, muteHttpExceptions: true });
+      if (res.getResponseCode() !== 200) throw new Error('Não consegui ler o texto da foto (Drive ' + res.getResponseCode() + ').');
+      return res.getContentText('UTF-8').replace(/^﻿/, '');
+    } finally {
+      try {
+        UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(file.id), { method: 'delete', headers: auth, muteHttpExceptions: true });
+      } catch (e) { console.error('OCR: arquivo temporário não apagado', file.id, e); }
+    }
+  }
+
+  /** Enciclopédia em forma compacta para o cruzamento. */
+  function catalog_() {
+    var countries = Repo.all('countries');
+    var cById = Util.indexBy(countries, 'id');
+    var regions = Repo.all('regions');
+    var rById = Util.indexBy(regions, 'id');
+    var linkByProducer = Util.groupBy(Repo.all('region_producers'), 'producer_id');
+    return {
+      countries: countries.map(function (c) { return { name: c.name }; }),
+      regions: regions.map(function (r) {
+        var parent = r.parent_id && rById[r.parent_id];
+        return { name: r.name, parent: parent ? parent.name : '', country: cById[r.country_id] ? cById[r.country_id].name : '' };
+      }),
+      producers: Repo.all('producers').map(function (p) {
+        var regs = (linkByProducer[p.id] || []).map(function (l) { return rById[l.region_id]; }).filter(Boolean)
+          .map(function (r) { return r.parent_id && rById[r.parent_id] ? rById[r.parent_id].name : r.name; });
+        if (!regs.length && p.region_id && rById[p.region_id]) regs = [rById[p.region_id].name];
+        return { name: p.name, regions: regs.filter(function (x, i) { return regs.indexOf(x) === i; }) };
+      }),
+      grapes: Repo.all('grapes').map(function (g) { return { name: g.name, synonyms: (g.synonyms || []).map(function (x) { return String(x).replace(/\(.*\)/, '').trim(); }) }; })
+    };
+  }
+
+  /** Lê a foto (OCR grátis) e devolve {text, lines, fields, grapes}. */
+  function read(image, mime) {
+    validateImage(image, mime);
+    var text = ocr_(image, mime);
+    if (!String(text).trim()) return { text: '', lines: [], fields: {}, grapes: [] };
+    return fromText(text);
+  }
+
+  function fromText(text) {
+    text = Validate.str(text, 20000, 'Texto do rótulo');
+    var r = LabelParse.parse(text, catalog_());
+    r.text = text;
+    return r;
+  }
+
+  return { read: read, fromText: fromText, validateImage: validateImage };
+})();
+
 // ---- 40_Bottles.js
 /**
  * Minha Adega de Degustação: fracionamentos e garrafinhas.
@@ -10312,7 +10702,11 @@ var Tastings = (function () {
   /** Gabarito de um vinho: fatos do rótulo + perfil/aromas somente se de fonte confiável. */
   function truthFor_(wineId) {
     var w = Repo.get('wines', wineId) || {};
+    // Campo vindo de IA sem revisão (ex.: foto do rótulo lida pela IA) não vale como gabarito.
+    var fs = w.field_sources || {};
+    function ok(col) { return fs[col] !== 'ia_nao_verificada'; }
     var grapes = Repo.where('wine_grapes', { wine_id: wineId })
+      .filter(function (x) { return x.source !== 'ia_nao_verificada'; })
       .sort(function (a, b) { return (b.percent || 0) - (a.percent || 0); })
       .map(function (x) { return x.grape_id; });
     var profile = Catalog.profileOf('wine', wineId);
@@ -10321,8 +10715,9 @@ var Tastings = (function () {
       return x.entity_type === 'wine' && x.entity_id === wineId && Catalog.isTrusted(x.source);
     }).map(function (x) { return x.aroma_id; });
     return {
-      grape_ids: grapes, country_id: w.country_id || '', region_id: w.subregion_id || w.region_id || '',
-      vintage: w.vintage, abv: w.abv, profile: profile, profile_trusted: trusted,
+      grape_ids: grapes, country_id: ok('country_id') && w.country_id || '',
+      region_id: (ok('subregion_id') && w.subregion_id) || (ok('region_id') && w.region_id) || '',
+      vintage: ok('vintage') ? w.vintage : '', abv: ok('abv') ? w.abv : '', profile: profile, profile_trusted: trusted,
       aroma_ids: aromaIds, aromas_trusted: aromaIds.length > 0
     };
   }
@@ -10881,7 +11276,7 @@ var AiProvider = (function () {
 
   /**
    * Pesquisa com busca na web e devolve o objeto passado à ferramenta de registro.
-   * @param {{system: string, prompt: string, schema: Object, toolDescription: string}} task
+   * @param {{system: string, prompt: string, content: Array=, schema: Object, toolDescription: string}} task
    * @return {{data: Object, urls: string[], usage: Object, model: string}}
    */
   function research(task) {
@@ -10890,7 +11285,7 @@ var AiProvider = (function () {
       { type: 'web_search_20260209', name: 'web_search', max_uses: cfg.max_searches },
       { name: 'registrar_dados', description: task.toolDescription, strict: true, input_schema: task.schema }
     ];
-    var messages = [{ role: 'user', content: task.prompt }];
+    var messages = [{ role: 'user', content: task.content || task.prompt }];   // content: blocos (ex.: imagem + texto)
     var usage = { input_tokens: 0, output_tokens: 0, web_searches: 0 };
     var urls = {};
     var model = cfg.model;
@@ -11129,6 +11524,67 @@ var Enrichment = (function () {
     });
   }
 
+  /**
+   * Foto do rótulo → identifica o vinho e busca a ficha técnica na web.
+   * Não grava nada: devolve sugestões para o formulário, que as marca como "IA não verificada".
+   */
+  function label(image, mime, ocrText) {
+    Label.validateImage(image, mime);
+    ocrText = Validate.str(ocrText, 20000, 'Texto do rótulo');
+    var ident = { name: 'Nome do vinho como aparece no rótulo', producer: 'Produtor', country: 'País (em português)', region: 'Região',
+      subregion: 'Sub-região / denominação de origem', vintage: 'Safra (ano), só se estiver no rótulo' };
+    var identProps = {};
+    Object.keys(ident).forEach(function (k) { identProps[k] = STR; });
+    var prompt = [
+      'A foto é o rótulo de um vinho. 1) Leia o rótulo e identifique o vinho (em label: só o que está ESCRITO na foto; deixe vazio o que não estiver legível).',
+      '2) Pesquise a ficha técnica do produtor para este vinho e safra (ou a mais próxima, dizendo qual em source_title) e preencha fields e grapes com fonte. Use dados sobre ESTE vinho, não dados genéricos da uva ou da denominação.',
+      ocrText ? 'Texto que o OCR já extraiu da foto (pode ter erros):\n' + ocrText.slice(0, 4000) : '',
+      'Campos de identificação (em label):\n' + fieldDoc(ident),
+      'Campos técnicos (em fields):\n' + fieldDoc(WINE_FIELDS),
+      'Uvas (em grapes): nome e percentual, com fonte (o próprio rótulo conta como fonte: use source_url "rotulo").'
+    ].filter(Boolean).join('\n\n');
+    var schema = obj({
+      label: obj(identProps),
+      grapes: { type: 'array', items: obj({ name: STR, percent: STR, source_url: STR }) },
+      fields: fieldsSchema(WINE_FIELDS), not_found: STR
+    });
+    var content = [{ type: 'image', source: { type: 'base64', media_type: mime, data: image } }, { type: 'text', text: prompt }];
+    var result;
+    try {
+      result = AiProvider.research({ system: SYSTEM, content: content, schema: schema,
+        toolDescription: 'Registra o que foi lido no rótulo e a ficha técnica encontrada, cada dado técnico com a URL da fonte.' });
+    } catch (e) {
+      logCall_('rotulo', '', AiProvider.config().model, null, 0, 'erro', e.message);
+      throw e;
+    }
+    var d = result.data || {};
+    var out = { fields: {}, grapes: [], not_found: d.not_found || '' };
+    function ok(v) { return !Util.isBlank(v) && !Util.isAiErrorText(v); }
+    Object.keys(ident).forEach(function (k) {
+      var v = d.label && d.label[k];
+      if (k === 'vintage') v = /^(19|20)\d{2}$/.test(String(v || '').trim()) ? +String(v).trim() : '';
+      if (ok(v)) out.fields[k] = { value: Util.clampStr(String(v), 200), evidence: 'lido na foto pela IA', ref: '' };
+    });
+    (d.fields || []).forEach(function (f) {
+      if (!ok(f.value)) return;
+      if (f.field === 'type' && CONFIG.WINE_TYPES.indexOf(f.value) < 0) return;
+      if (f.field === 'color' && CONFIG.WINE_COLORS.indexOf(f.value) < 0) return;
+      if (f.field === 'abv' && Util.parseNumber(f.value) === null) return;
+      var url = /^https?:\/\//.test(f.source_url || '') ? Util.clampStr(f.source_url, 1000) : '';
+      out.fields[f.field] = { value: f.field === 'abv' ? Util.parseNumber(f.value) : Util.clampStr(String(f.value), 5000),
+        evidence: (f.source_title || url || 'sem fonte') + (url && result.urls[url] === undefined ? ' (link não confirmado na busca)' : ''), ref: url };
+    });
+    (d.grapes || []).forEach(function (g) {
+      if (!ok(g.name)) return;
+      var known = findGrape(g.name);
+      var pct = Util.parseNumber(g.percent);
+      out.grapes.push({ name: known ? known.name : Util.clampStr(g.name, 120), percent: pct !== null && pct > 0 && pct <= 100 ? pct : '' });
+    });
+    out.cost_usd = logCall_('rotulo', '', result.model, result.usage, Object.keys(out.fields).length + out.grapes.length, 'ok', '');
+    out.searches = result.usage.web_searches;
+    return out;
+  }
+
   function addProfile_(add, entityType, entityId, p) {
     if (!p) return;
     var vals = {}, any = false;
@@ -11340,7 +11796,7 @@ var Enrichment = (function () {
     };
   }
 
-  return { grape: grape, wine: wine, catalog: catalog, pending: pending, pendingCount: pendingCount, review: review,
+  return { grape: grape, wine: wine, catalog: catalog, label: label, pending: pending, pendingCount: pendingCount, review: review,
     status: status, findGrape: findGrape };
 })();
 
@@ -11374,6 +11830,8 @@ var API_METHODS = {
   'wines.list': function () { return Wines.list(); },
   'wines.get': function (a) { return Wines.get(a.id); },
   'wines.save': function (a) { return Wines.save(a.wine); },
+  'label.read': function (a) { return Label.read(a.image, a.mime); },
+  'label.ai': function (a) { return Enrichment.label(a.image, a.mime, a.text); },
 
   'grapes.list': function () { return Grapes.list(); },
   'grapes.get': function (a) { return Grapes.get(a.id); },
@@ -12400,8 +12858,8 @@ Pages.wine = {
         Components.field('Produtor', w.producer, { source: fs.producer_id }) +
         Components.field('País', w.country, { source: fs.country_id }) +
         Components.field('Região', w.region, { source: fs.region_id }) +
-        Components.field('Sub-região', w.subregion) +
-        Components.field('Denominação', w.appellation) +
+        Components.field('Sub-região', w.subregion, { source: fs.subregion_id }) +
+        Components.field('Denominação', w.appellation, { source: fs.appellation_id }) +
         Components.field('Safra', w.vintage, { source: fs.vintage }) +
         Components.field('Cor', COLOR_LABELS[w.color] || w.color, { source: fs.color, ref: rf.color }) +
         Components.field('Tipo', TYPE_LABELS[w.type] || w.type, { source: fs.type, ref: rf.type }) +
@@ -12539,11 +12997,12 @@ var ProfileEditor = {
 Pages.wineEdit = {
   render: function (p) {
     var load = p.id ? API.call('wines.get', { id: p.id }) : Promise.resolve({ grapes: [] });
+    Pages.wineEdit.scan = { origins: {}, refs: {} };
     return load.then(function (w) {
       var L = Store.lookups;
       var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/vinhos">Vinhos</a></div><h1>' + (p.id ? 'Editar ' + esc(w.name) : 'Novo vinho') + '</h1>' +
         '<p class="sub">Preencha só o que você sabe. Campos vazios aparecem como “Informação não cadastrada”.</p></div></div>' +
-        '<form data-action="save" class="panel">' +
+        '<form data-action="save" class="panel">' + LabelScan.html() +
         '<datalist id="dl-countries">' + L.countries.map(o).join('') + '</datalist>' +
         '<datalist id="dl-regions">' + L.regions.map(o).join('') + '</datalist>' +
         '<datalist id="dl-producers">' + L.producers.map(o).join('') + '</datalist>' +
@@ -12580,7 +13039,16 @@ Pages.wineEdit = {
         Components.options(Object.keys(map).map(function (k) { return { v: k, t: map[k] }; }), v || '', '—') + '</select></div>';
     }
   },
+  mount: function (root) {
+    var form = root.querySelector('form[data-action=save]');
+    // Campo preenchido pela foto e depois editado à mão volta a ser "informado por você".
+    if (form) form.addEventListener('input', function (e) { LabelScan.touched(form, e.target); });
+  },
   actions: {
+    'label-photo': function (input) { return LabelScan.photo(input); },
+    'label-apply': function (btn) { LabelScan.apply(btn); },
+    'label-ai': function (btn) { return LabelScan.ai(btn); },
+    'label-name': function (btn) { LabelScan.setName(btn); },
     'add-grape': function () { document.getElementById('grape-rows').insertAdjacentHTML('beforeend', grapeRow({})); },
     'remove-grape': function (btn) { btn.closest('.grape-row').remove(); },
     'save': function (form) {
@@ -12588,10 +13056,12 @@ Pages.wineEdit = {
       var grapes = [];
       form.querySelectorAll('.grape-row').forEach(function (r) {
         var name = r.querySelector('[data-g=name]').value.trim();
-        if (name) grapes.push({ name: name, percent: r.querySelector('[data-g=percent]').value });
+        if (name) grapes.push({ name: name, percent: r.querySelector('[data-g=percent]').value, source: r.getAttribute('data-source') || '' });
       });
       Object.keys(d).forEach(function (k) { if (/^g_/.test(k)) delete d[k]; });
       d.grapes = grapes;
+      d.origins = Pages.wineEdit.scan.origins;
+      d.refs = Pages.wineEdit.scan.refs;
       if (!d.id) delete d.id;
       var btn = form.querySelector('button.primary');
       UI.busy(btn, true);
@@ -12604,9 +13074,10 @@ Pages.wineEdit = {
 };
 
 function grapeRow(g) {
-  return '<div class="grape-row btn-row" style="margin-bottom:8px">' +
+  return '<div class="grape-row btn-row" style="margin-bottom:8px"' + (g.source ? ' data-source="' + esc(g.source) + '"' : '') + '>' +
     '<input class="in" data-g="name" name="g_name" list="dl-grapes" placeholder="Uva" value="' + esc(g.name || '') + '" style="max-width:280px">' +
     '<input class="in" data-g="percent" name="g_pct" type="number" min="0" max="100" placeholder="%" value="' + esc(g.percent || '') + '" style="max-width:90px">' +
+    (g.source ? Components.src(g.source) : '') +
     '<button type="button" class="btn ghost small" data-action="remove-grape">remover</button></div>';
 }
 
@@ -12893,6 +13364,233 @@ Pages.notes = {
     });
   }
 };
+</script>
+
+  <script>
+/* ============================== FOTO DO RÓTULO ==============================
+ * No formulário de vinho: tirar/escolher a foto → leitura grátis (OCR do Google + enciclopédia)
+ * → revisão das sugestões → aplicar. Opcional: IA lê a foto e busca a ficha técnica na web.
+ * Cada campo aplicado guarda a origem ("rótulo", "pesquisado" ou "IA · não verificado");
+ * se você editar o campo depois, ele passa a ser "informado por você".
+ */
+var LabelScan = (function () {
+  var LABELS = {
+    name: 'Nome', producer: 'Produtor', country: 'País', region: 'Região', subregion: 'Sub-região', appellation: 'Denominação',
+    vintage: 'Safra', abv: 'Teor alcoólico (%)', color: 'Cor', type: 'Tipo', classification: 'Classificação',
+    residual_sugar: 'Açúcar residual', acidity_gl: 'Acidez total', production_method: 'Método de produção',
+    aging: 'Estágio / maturação', oak: 'Madeira', aging_time: 'Tempo de envelhecimento', serving_temp: 'Temperatura de serviço',
+    pairing: 'Harmonização', curiosities: 'Curiosidades'
+  };
+  var ORDER = Object.keys(LABELS);
+  var MAX_SIDE = 1600;
+  var photo = null;   // { b64, mime, dataUrl, text }
+
+  function state() { return Pages.wineEdit.scan; }
+  function form() { return document.querySelector('form[data-action=save]'); }
+
+  function html() {
+    photo = null;
+    return '<section id="label-scan" class="label-scan">' +
+      '<div class="btn-row">' +
+      '<label class="btn primary">📷&nbsp; Fotografar rótulo<input type="file" accept="image/*" capture="environment" data-change="label-photo" hidden></label>' +
+      '<label class="btn">Escolher imagem<input type="file" accept="image/*" data-change="label-photo" hidden></label>' +
+      '<span class="small muted">A leitura é grátis (Google). A foto não fica guardada.</span></div>' +
+      '<div id="label-out"></div></section>';
+  }
+
+  /** Reduz a foto no navegador (lado maior 1600 px, JPEG) antes de enviar. */
+  function shrink(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var s = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * s);
+        c.height = Math.round(img.naturalHeight * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        var dataUrl = c.toDataURL('image/jpeg', 0.85);
+        resolve({ dataUrl: dataUrl, b64: dataUrl.split(',')[1], mime: 'image/jpeg' });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Não consegui abrir essa imagem.')); };
+      img.src = url;
+    });
+  }
+
+  function photoInput(input) {
+    var file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (!/^image\//.test(file.type || 'image/')) return Promise.reject(new Error('Escolha um arquivo de imagem.'));
+    var out = document.getElementById('label-out');
+    out.innerHTML = '<div class="label-scan-body"><div class="muted">Preparando a foto…</div></div>';
+    return shrink(file).then(function (p) {
+      photo = p;
+      out.innerHTML = '<div class="label-scan-body"><img class="label-thumb" alt="Foto do rótulo" src="' + p.dataUrl + '">' +
+        '<div class="label-scan-main"><div id="label-ocr"><div class="muted">Lendo o rótulo…</div></div><div id="label-ai-out"></div></div></div>';
+      return API.call('label.read', { image: p.b64, mime: p.mime });
+    }).then(function (r) {
+      photo.text = r.text || '';
+      document.getElementById('label-ocr').innerHTML = block(r, 'ocr');
+    }).catch(function (e) {
+      var el = document.getElementById('label-ocr') || out;
+      el.innerHTML = '<div class="callout warn">' + esc(e.message || String(e)) + '</div>' + aiButton();
+    });
+  }
+
+  function aiButton() {
+    if (!photo) return '';
+    if (!Store.lookups.ai_enabled) return '<p class="small muted" style="margin-top:10px">Para buscar a ficha técnica na web com IA, configure a chave do Claude em Configurações.</p>';
+    return '<div class="btn-row" style="margin-top:10px"><button type="button" class="btn" data-action="label-ai">✦ Buscar ficha técnica com IA</button>' +
+      '<span class="small muted">custa alguns centavos de dólar; os dados entram como “IA · não verificado”</span></div>';
+  }
+
+  /** Bloco de revisão: uma linha por campo sugerido, marcada por padrão quando o campo do formulário está vazio. */
+  function block(r, kind) {
+    var f = form();
+    var keys = ORDER.filter(function (k) { return r.fields && r.fields[k]; });
+    var h = '';
+    if (kind === 'ocr') {
+      if (!r.text) return '<div class="callout warn">Não encontrei texto na foto. Tente outra com o rótulo reto, bem iluminado e sem reflexo.</div>' + aiButton();
+      h += '<h3 style="margin-top:0">Lido no rótulo</h3>';
+    } else {
+      h += '<h3>Ficha encontrada pela IA ' + Components.src('ia_nao_verificada') + '</h3>' +
+        '<p class="small muted">Confira com o rótulo e a fonte antes de usar como gabarito. Custo desta busca: US$ ' + fmtNum(r.cost_usd || 0, 2) + '.</p>';
+    }
+    if (!keys.length && !(r.grapes || []).length) h += '<p class="muted">Nenhum dado reconhecido' + (kind === 'ocr' ? ' na enciclopédia.' : '.') + '</p>';
+    h += '<div class="label-rows" data-kind="' + kind + '">';
+    keys.forEach(function (k) {
+      var s = r.fields[k];
+      var how = kind === 'ai' ? 'ia_nao_verificada' : (s.how === 'enciclopedia' ? 'pesquisado' : 'rotulo');
+      var cur = f && f.elements[k] ? f.elements[k].value : '';
+      var checked = (s.value !== '' && s.value !== null) && !cur;
+      h += '<label class="label-row"><input type="checkbox" data-f="' + k + '" data-how="' + how + '" data-ref="' + esc(s.ref || '') + '"' + (checked ? ' checked' : '') + '>' +
+        '<span class="label-row-name">' + esc(LABELS[k]) + '</span>' + valueInput(k, s) +
+        '<span class="small muted label-row-ev">' + esc(s.evidence || '') + (cur ? ' · atual: ' + esc(cur) : '') + '</span></label>';
+    });
+    (r.grapes || []).forEach(function (g) {
+      h += '<label class="label-row"><input type="checkbox" data-grape="' + esc(g.name) + '" data-pct="' + esc(g.percent || '') + '" data-how="' + (kind === 'ai' ? 'ia_nao_verificada' : 'rotulo') + '" checked>' +
+        '<span class="label-row-name">Uva</span><span>' + esc(g.name) + (g.percent ? ' · ' + g.percent + '%' : '') + '</span></label>';
+    });
+    h += '</div>';
+    if (kind === 'ocr' && (r.lines || []).length) {
+      h += '<div class="small muted" style="margin-top:12px">Nome do vinho: toque na linha do rótulo que é o nome.</div><div class="chips" style="margin-top:6px">' +
+        r.lines.filter(function (l) { return l.length <= 70; }).slice(0, 14).map(function (l) {
+          return '<button type="button" class="chip" data-action="label-name" data-v="' + esc(l) + '">' + esc(l) + '</button>';
+        }).join('') + '</div>';
+    }
+    if (kind === 'ai' && r.not_found) h += '<p class="small muted">Não encontrado: ' + esc(r.not_found) + '</p>';
+    if (keys.length || (r.grapes || []).length) {
+      h += '<div class="btn-row" style="margin-top:12px"><button type="button" class="btn small" data-action="label-apply" data-kind="' + kind + '">Aplicar marcados ao formulário</button></div>';
+    }
+    if (kind === 'ocr') {
+      h += '<details style="margin-top:12px"><summary class="small muted">Texto lido</summary><pre class="label-text">' + esc(r.text) + '</pre></details>' + aiButton();
+    }
+    return h;
+  }
+
+  function valueInput(k, s) {
+    var opts = (s.options || []).map(String);
+    if (k === 'color' || k === 'type') {
+      var map = k === 'color' ? COLOR_LABELS : TYPE_LABELS;
+      return '<select class="in" data-v>' + Object.keys(map).map(function (x) {
+        return '<option value="' + x + '"' + (x === s.value ? ' selected' : '') + '>' + esc(map[x]) + '</option>'; }).join('') + '</select>';
+    }
+    if (opts.length > 1) {
+      return '<select class="in" data-v>' + (s.value === '' ? '<option value="">— escolha —</option>' : '') + opts.map(function (x) {
+        return '<option' + (x === String(s.value) ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>';
+    }
+    return '<input class="in" data-v value="' + esc(s.value) + '">';
+  }
+
+  function mark(f, k, how, ref) {
+    var el = f.elements[k];
+    if (!el) return;
+    var st = state();
+    st.origins[k] = how;
+    if (ref) st.refs[k] = ref; else delete st.refs[k];
+    var holder = el.parentNode;
+    var old = holder.querySelector('.src[data-label-src]');
+    if (old) old.remove();
+    var lab = holder.querySelector('label.f');
+    if (lab) lab.insertAdjacentHTML('beforeend', ' ' + Components.src(how).replace('<span ', '<span data-label-src '));
+  }
+
+  function apply(btn) {
+    var f = form();
+    var rows = btn.closest('#label-ocr, #label-ai-out').querySelector('.label-rows');
+    var n = 0;
+    rows.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
+      var how = cb.getAttribute('data-how');
+      if (cb.hasAttribute('data-grape')) { n += addGrape(cb.getAttribute('data-grape'), cb.getAttribute('data-pct'), how); return; }
+      var k = cb.getAttribute('data-f');
+      var v = cb.closest('.label-row').querySelector('[data-v]').value;
+      if (v === '' || !f.elements[k]) return;
+      f.elements[k].value = v;
+      mark(f, k, how, cb.getAttribute('data-ref'));
+      n++;
+    });
+    UI.toast(n ? n + ' campo(s) preenchido(s). Revise e salve.' : 'Nada marcado para aplicar.');
+  }
+
+  function addGrape(name, pct, how) {
+    var box = document.getElementById('grape-rows');
+    var rows = box.querySelectorAll('.grape-row');
+    for (var i = 0; i < rows.length; i++) {
+      var inp = rows[i].querySelector('[data-g=name]');
+      if (inp.value.trim().toLowerCase() === name.toLowerCase()) return 0;
+    }
+    var empty = Array.prototype.filter.call(rows, function (r) { return !r.querySelector('[data-g=name]').value.trim(); })[0];
+    if (empty) empty.remove();
+    box.insertAdjacentHTML('beforeend', grapeRow({ name: name, percent: pct, source: how }));
+    return 1;
+  }
+
+  function setName(btn) {
+    var f = form();
+    var v = btn.getAttribute('data-v');
+    // Linha toda em MAIÚSCULAS ("BAROLO DEL COMUNE") → "Barolo del Comune".
+    if (v === v.toUpperCase() && /[A-Z]/.test(v)) {
+      v = v.toLowerCase().replace(/(^|[\s'’(-])([a-zà-ÿ])/g, function (m, a, b) { return a + b.toUpperCase(); })
+        .replace(/ (Di|Da|De|Del|Della|Dei|Do|Dos|Das|Du|Des|La|Le|E|Et|Y|Von|Van) /g, function (m) { return m.toLowerCase(); });
+    }
+    f.elements.name.value = v;
+    mark(f, 'name', 'rotulo', '');
+  }
+
+  /** Edição manual depois de aplicar → a origem volta a ser "usuario". */
+  function touched(f, el) {
+    if (!el || el.closest('#label-scan')) return;
+    var row = el.closest('.grape-row');
+    if (row && row.hasAttribute('data-source')) {
+      row.removeAttribute('data-source');
+      var b = row.querySelector('.src');
+      if (b) b.remove();
+      return;
+    }
+    var k = el.name;
+    if (!k || !state().origins[k]) return;
+    delete state().origins[k];
+    delete state().refs[k];
+    var badge = el.parentNode.querySelector('.src[data-label-src]');
+    if (badge) badge.remove();
+  }
+
+  function ai(btn) {
+    if (!photo) return Promise.resolve();
+    UI.busy(btn, true);
+    var out = document.getElementById('label-ai-out');
+    out.innerHTML = '<p class="muted">Lendo a foto e buscando a ficha técnica… (pode levar até 1 minuto)</p>';
+    return API.call('label.ai', { image: photo.b64, mime: photo.mime, text: photo.text || '' }).then(function (r) {
+      UI.busy(btn, false);
+      btn.closest('.btn-row').remove();
+      out.innerHTML = block(r, 'ai');
+    }).catch(function (e) { UI.busy(btn, false); out.innerHTML = ''; throw e; });
+  }
+
+  return { html: html, photo: photoInput, apply: apply, ai: ai, setName: setName, touched: touched };
+})();
 </script>
 
   <script>

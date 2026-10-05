@@ -68,7 +68,7 @@ var AiProvider = (function () {
 
   /**
    * Pesquisa com busca na web e devolve o objeto passado à ferramenta de registro.
-   * @param {{system: string, prompt: string, schema: Object, toolDescription: string}} task
+   * @param {{system: string, prompt: string, content: Array=, schema: Object, toolDescription: string}} task
    * @return {{data: Object, urls: string[], usage: Object, model: string}}
    */
   function research(task) {
@@ -77,7 +77,7 @@ var AiProvider = (function () {
       { type: 'web_search_20260209', name: 'web_search', max_uses: cfg.max_searches },
       { name: 'registrar_dados', description: task.toolDescription, strict: true, input_schema: task.schema }
     ];
-    var messages = [{ role: 'user', content: task.prompt }];
+    var messages = [{ role: 'user', content: task.content || task.prompt }];   // content: blocos (ex.: imagem + texto)
     var usage = { input_tokens: 0, output_tokens: 0, web_searches: 0 };
     var urls = {};
     var model = cfg.model;

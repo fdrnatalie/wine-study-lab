@@ -187,6 +187,31 @@ propor combinações de garrafinhas para estudo. Regras:
 - Os campos por registro `field_sources` (JSON) permitem saber a origem de cada campo
   individualmente.
 
+### D10. Foto do rótulo no cadastro de vinho — ✅ implementado
+Fluxo em duas camadas, a primeira grátis:
+
+1. **Leitura grátis (OCR do Google Drive)** — `35_Label.js`. O navegador reduz a foto
+   (lado maior 1600 px, JPEG) e envia ao servidor; a foto vira um Google Doc temporário com OCR
+   (serviço avançado Drive v3), o texto é exportado e o arquivo é **apagado na hora**. A foto não
+   fica guardada em lugar nenhum. Escopo novo: `drive.file` — o app só enxerga arquivos que ele
+   mesmo cria, nunca o resto do seu Drive. (Exige reautorizar o app uma vez.)
+2. **Cruzamento com a enciclopédia** — `34_LabelParse.js` (função pura, testada em `tests/run.js`).
+   Casamento EXATO (palavras inteiras, sem acento) de produtores, regiões/sub-regiões, países
+   (inclusive "Italia", "France"…) e uvas/sinônimos; safra (ignora "desde 1890"; se houver vários
+   anos sem "safra/vintage/annata…", pede para escolher), teor alcoólico, classificação (DOCG, DOCa,
+   Gran Reserva, Grand Cru…), cor/tipo só por palavras do rótulo ("vino rosso", "brut"), e dados de
+   contrarrótulo (açúcar residual, acidez, estágio, temperatura de serviço) copiados literalmente.
+   Cada sugestão mostra o trecho que a justifica. O nome do vinho não é adivinhado: você toca na
+   linha lida que é o nome.
+3. **IA opcional** — `Enrichment.label()`: Claude recebe a foto + o texto do OCR, lê o rótulo e busca
+   a ficha técnica na web. Nada é gravado direto: as sugestões aparecem para revisão e, aplicadas,
+   ficam com origem `ia_nao_verificada` (e o link da fonte em `field_refs`). Custo registrado em `db_ai_calls`.
+
+Origem por campo ao salvar (`wines.save` → `origins`): `rotulo` (lido), `pesquisado` (deduzido da
+enciclopédia, ex.: região de uma sub-região), `ia_nao_verificada`. Se você editar o campo depois,
+ele vira `usuario`. Campos e uvas `ia_nao_verificada` **não entram no gabarito** das degustações
+(`Tastings.truthFor_`) até serem revisados.
+
 ---
 
 ## 4. Modelo de dados (abas `db_*`)

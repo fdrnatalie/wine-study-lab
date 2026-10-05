@@ -91,18 +91,27 @@ var Wines = (function () {
     if (rec.color) Validate.oneOf(rec.color, CONFIG.WINE_COLORS, 'cor');
     if (rec.type) Validate.oneOf(rec.type, CONFIG.WINE_TYPES, 'tipo');
 
+    // Origem por campo vinda da foto do rótulo ("rotulo", "pesquisado" = enciclopédia, "ia_nao_verificada"); o resto é "usuario".
+    var origins = origins_(input.origins), refs = refs_(input.refs, origins);
     var saved;
     if (isNew) {
-      var fs = {};
-      Object.keys(rec).forEach(function (k) { if (!Util.isBlank(rec[k])) fs[k] = 'usuario'; });
-      saved = Repo.insert('wines', [Object.assign(rec, { source: 'usuario', field_sources: fs })])[0];
+      var fs = {}, fr = {};
+      Object.keys(rec).forEach(function (k) {
+        if (Util.isBlank(rec[k])) return;
+        fs[k] = origins[k] || 'usuario';
+        if (refs[k]) fr[k] = refs[k];
+      });
+      saved = Repo.insert('wines', [Object.assign(rec, { source: 'usuario', field_sources: fs, field_refs: fr })])[0];
     } else {
       // Campos alterados passam a ter origem "usuario" (a sincronização não os sobrescreve mais).
       var fs2 = Object.assign({}, existing.field_sources || {});
+      var fr2 = Object.assign({}, existing.field_refs || {});
       Object.keys(rec).forEach(function (k) {
-        if (JSON.stringify(rec[k]) !== JSON.stringify(existing[k] === undefined ? '' : existing[k])) fs2[k] = 'usuario';
+        if (JSON.stringify(rec[k]) === JSON.stringify(existing[k] === undefined ? '' : existing[k])) return;
+        fs2[k] = origins[k] || 'usuario';
+        if (refs[k]) fr2[k] = refs[k]; else delete fr2[k];
       });
-      Repo.update('wines', [Object.assign({ id: existing.id, field_sources: fs2 }, rec)]);
+      Repo.update('wines', [Object.assign({ id: existing.id, field_sources: fs2, field_refs: fr2 }, rec)]);
       saved = Repo.get('wines', existing.id);
     }
 
@@ -110,23 +119,47 @@ var Wines = (function () {
     return get(saved.id);
   }
 
+  var ORIGIN_FIELDS = { producer: 'producer_id', country: 'country_id', region: 'region_id', subregion: 'subregion_id', appellation: 'appellation_id' };
+  var LABEL_ORIGINS = ['rotulo', 'pesquisado', 'ia_nao_verificada'];
+
+  function origins_(o) {
+    var out = {};
+    if (!o || typeof o !== 'object') return out;
+    Object.keys(o).forEach(function (k) {
+      var col = ORIGIN_FIELDS[k] || k;
+      if ((TEXT_FIELDS[col] || ['name', 'vintage', 'abv', 'price'].indexOf(col) >= 0 || /_id$/.test(col)) && LABEL_ORIGINS.indexOf(o[k]) >= 0) out[col] = o[k];
+    });
+    return out;
+  }
+
+  function refs_(r, origins) {
+    var out = {};
+    if (!r || typeof r !== 'object') return out;
+    Object.keys(r).forEach(function (k) {
+      var col = ORIGIN_FIELDS[k] || k;
+      if (origins[col] && typeof r[k] === 'string' && /^https?:\/\/\S+$/.test(r[k]) && r[k].length <= 1000) out[col] = r[k];
+    });
+    return out;
+  }
+
   function setGrapes_(wineId, grapes) {
     var wanted = [];
     grapes.slice(0, 20).forEach(function (g) {
       var grape = g.id ? Repo.get('grapes', Validate.id(g.id)) : Catalog.resolveByName('grapes', g.name);
       if (!grape) return;
-      wanted.push({ grape_id: grape.id, percent: Validate.num(g.percent, 0, 100, 'Percentual') });
+      wanted.push({ grape_id: grape.id, percent: Validate.num(g.percent, 0, 100, 'Percentual'),
+        source: LABEL_ORIGINS.indexOf(g.source) >= 0 ? g.source : 'usuario' });
     });
     var existing = Repo.where('wine_grapes', { wine_id: wineId });
     var byGrape = Util.indexBy(existing, 'grape_id');
     var wantedIds = wanted.map(function (w) { return w.grape_id; });
     Repo.remove('wine_grapes', existing.filter(function (x) { return wantedIds.indexOf(x.grape_id) < 0; }).map(function (x) { return x.id; }));
     Repo.insert('wine_grapes', wanted.filter(function (w) { return !byGrape[w.grape_id]; }).map(function (w) {
-      return { wine_id: wineId, grape_id: w.grape_id, percent: w.percent, source: 'usuario' };
+      return { wine_id: wineId, grape_id: w.grape_id, percent: w.percent, source: w.source };
     }));
     Repo.update('wine_grapes', wanted.filter(function (w) {
       return byGrape[w.grape_id] && byGrape[w.grape_id].percent !== w.percent;
-    }).map(function (w) { return { id: byGrape[w.grape_id].id, percent: w.percent, source: 'usuario' }; }));
+    }).map(function (w) { return { id: byGrape[w.grape_id].id, percent: w.percent, source: w.source }; }));
   }
 
   return { list: list, get: get, save: save };

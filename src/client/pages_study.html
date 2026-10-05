@@ -58,8 +58,8 @@ Pages.wine = {
         Components.field('Produtor', w.producer, { source: fs.producer_id }) +
         Components.field('País', w.country, { source: fs.country_id }) +
         Components.field('Região', w.region, { source: fs.region_id }) +
-        Components.field('Sub-região', w.subregion) +
-        Components.field('Denominação', w.appellation) +
+        Components.field('Sub-região', w.subregion, { source: fs.subregion_id }) +
+        Components.field('Denominação', w.appellation, { source: fs.appellation_id }) +
         Components.field('Safra', w.vintage, { source: fs.vintage }) +
         Components.field('Cor', COLOR_LABELS[w.color] || w.color, { source: fs.color, ref: rf.color }) +
         Components.field('Tipo', TYPE_LABELS[w.type] || w.type, { source: fs.type, ref: rf.type }) +
@@ -197,11 +197,12 @@ var ProfileEditor = {
 Pages.wineEdit = {
   render: function (p) {
     var load = p.id ? API.call('wines.get', { id: p.id }) : Promise.resolve({ grapes: [] });
+    Pages.wineEdit.scan = { origins: {}, refs: {} };
     return load.then(function (w) {
       var L = Store.lookups;
       var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/vinhos">Vinhos</a></div><h1>' + (p.id ? 'Editar ' + esc(w.name) : 'Novo vinho') + '</h1>' +
         '<p class="sub">Preencha só o que você sabe. Campos vazios aparecem como “Informação não cadastrada”.</p></div></div>' +
-        '<form data-action="save" class="panel">' +
+        '<form data-action="save" class="panel">' + LabelScan.html() +
         '<datalist id="dl-countries">' + L.countries.map(o).join('') + '</datalist>' +
         '<datalist id="dl-regions">' + L.regions.map(o).join('') + '</datalist>' +
         '<datalist id="dl-producers">' + L.producers.map(o).join('') + '</datalist>' +
@@ -238,7 +239,16 @@ Pages.wineEdit = {
         Components.options(Object.keys(map).map(function (k) { return { v: k, t: map[k] }; }), v || '', '—') + '</select></div>';
     }
   },
+  mount: function (root) {
+    var form = root.querySelector('form[data-action=save]');
+    // Campo preenchido pela foto e depois editado à mão volta a ser "informado por você".
+    if (form) form.addEventListener('input', function (e) { LabelScan.touched(form, e.target); });
+  },
   actions: {
+    'label-photo': function (input) { return LabelScan.photo(input); },
+    'label-apply': function (btn) { LabelScan.apply(btn); },
+    'label-ai': function (btn) { return LabelScan.ai(btn); },
+    'label-name': function (btn) { LabelScan.setName(btn); },
     'add-grape': function () { document.getElementById('grape-rows').insertAdjacentHTML('beforeend', grapeRow({})); },
     'remove-grape': function (btn) { btn.closest('.grape-row').remove(); },
     'save': function (form) {
@@ -246,10 +256,12 @@ Pages.wineEdit = {
       var grapes = [];
       form.querySelectorAll('.grape-row').forEach(function (r) {
         var name = r.querySelector('[data-g=name]').value.trim();
-        if (name) grapes.push({ name: name, percent: r.querySelector('[data-g=percent]').value });
+        if (name) grapes.push({ name: name, percent: r.querySelector('[data-g=percent]').value, source: r.getAttribute('data-source') || '' });
       });
       Object.keys(d).forEach(function (k) { if (/^g_/.test(k)) delete d[k]; });
       d.grapes = grapes;
+      d.origins = Pages.wineEdit.scan.origins;
+      d.refs = Pages.wineEdit.scan.refs;
       if (!d.id) delete d.id;
       var btn = form.querySelector('button.primary');
       UI.busy(btn, true);
@@ -262,9 +274,10 @@ Pages.wineEdit = {
 };
 
 function grapeRow(g) {
-  return '<div class="grape-row btn-row" style="margin-bottom:8px">' +
+  return '<div class="grape-row btn-row" style="margin-bottom:8px"' + (g.source ? ' data-source="' + esc(g.source) + '"' : '') + '>' +
     '<input class="in" data-g="name" name="g_name" list="dl-grapes" placeholder="Uva" value="' + esc(g.name || '') + '" style="max-width:280px">' +
     '<input class="in" data-g="percent" name="g_pct" type="number" min="0" max="100" placeholder="%" value="' + esc(g.percent || '') + '" style="max-width:90px">' +
+    (g.source ? Components.src(g.source) : '') +
     '<button type="button" class="btn ghost small" data-action="remove-grape">remover</button></div>';
 }
 

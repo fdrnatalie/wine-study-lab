@@ -8,10 +8,10 @@ const vm = require('vm');
 const assert = require('assert');
 
 const ctx = vm.createContext({ console, Date, Math, JSON });
-['00_Config.js', '01_Util.js', '14_Settings.js', '20_ImportParse.js', '51_Scoring.js'].forEach((f) => {
+['00_Config.js', '01_Util.js', '14_Settings.js', '20_ImportParse.js', '51_Scoring.js', '34_LabelParse.js'].forEach((f) => {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../src/server', f), 'utf8'), ctx, { filename: f });
 });
-const { Util, ScaleUtil, ImportParse, Scoring } = vm.runInContext('({Util, ScaleUtil, ImportParse, Scoring})', ctx);
+const { Util, ScaleUtil, ImportParse, Scoring, LabelParse } = vm.runInContext('({Util, ScaleUtil, ImportParse, Scoring, LabelParse})', ctx);
 
 let passed = 0;
 function test(name, fn) {
@@ -189,6 +189,65 @@ test('aggregate rates', () => {
   const a = Scoring.aggregate([{ criterion: 'grape', state: 'hit' }, { criterion: 'grape', state: 'near' }, { criterion: 'grape', state: 'no_ref' }], 0.5);
   assert.strictEqual(a[0].total, 2);
   assert.strictEqual(a[0].rate, 75);
+});
+
+console.log('LabelParse');
+const cat = {
+  countries: [{ name: 'Itália' }, { name: 'Espanha' }, { name: 'Portugal' }, { name: 'França' }],
+  regions: [
+    { name: 'Piemonte', parent: '', country: 'Itália' }, { name: 'Barolo', parent: 'Piemonte', country: 'Itália' },
+    { name: 'Rioja', parent: '', country: 'Espanha' }, { name: 'Rioja Alta', parent: 'Rioja', country: 'Espanha' },
+    { name: 'Douro', parent: '', country: 'Portugal' }, { name: 'Loire', parent: '', country: 'França' }
+  ],
+  producers: [{ name: 'Bodega Exemplo', regions: ['Rioja'] }, { name: 'Cantina Fittizia', regions: ['Piemonte'] }],
+  grapes: [{ name: 'Nebbiolo', synonyms: ['Spanna'] }, { name: 'Tempranillo', synonyms: ['Tinta Roriz', 'Tinto Fino'] },
+    { name: 'Sauvignon Blanc', synonyms: [] }, { name: 'Graciano', synonyms: [] }]
+};
+test('Barolo: subregion → region/country, DOCG, abv, vintage', () => {
+  const r = LabelParse.parse('CANTINA FITTIZIA\nBAROLO\nDenominazione di Origine Controllata e Garantita\n2019\n14,5% vol\n750 ml\nPRODOTTO IN ITALIA', cat, { year: 2026 });
+  assert.strictEqual(r.fields.subregion.value, 'Barolo');
+  assert.strictEqual(r.fields.region.value, 'Piemonte');
+  assert.strictEqual(r.fields.country.value, 'Itália');
+  assert.strictEqual(r.fields.country.how, 'rotulo');
+  assert.strictEqual(r.fields.classification.value, 'DOCG');
+  assert.strictEqual(r.fields.abv.value, 14.5);
+  assert.strictEqual(r.fields.vintage.value, 2019);
+  assert.strictEqual(r.fields.producer.value, 'Cantina Fittizia');
+});
+test('Rioja: grapes with %, Gran Reserva, founded year ignored', () => {
+  const r = LabelParse.parse('Bodega Exemplo · desde 1890\nRIOJA\nDenominación de Origen Calificada\nGRAN RESERVA 2015\n85% Tempranillo 15% Graciano\nVino tinto\nAlc. 13,5% vol.', cat, { year: 2026 });
+  assert.strictEqual(r.fields.vintage.value, 2015);
+  assert.strictEqual(r.fields.region.value, 'Rioja');
+  assert.strictEqual(r.fields.country.how, 'enciclopedia');
+  assert.ok(/DOCa/.test(r.fields.classification.value) && /Gran Reserva/.test(r.fields.classification.value));
+  assert.ok(!/\bReserva\b/.test(r.fields.classification.value.replace('Gran Reserva', '')));
+  assert.strictEqual(JSON.stringify(r.grapes.map((g) => [g.name, g.percent])), JSON.stringify([['Tempranillo', 85], ['Graciano', 15]]));
+  assert.strictEqual(r.fields.color.value, 'tinto');
+  assert.strictEqual(r.fields.abv.value, 13.5);
+});
+test('grape synonyms and grape names do not set colour', () => {
+  const r = LabelParse.parse('Douro\nTinta Roriz\nSauvignon Blanc', cat, { year: 2026 });
+  assert.strictEqual(JSON.stringify(r.grapes.map((g) => g.name)), JSON.stringify(['Tempranillo', 'Sauvignon Blanc']));
+  assert.ok(!r.fields.color);
+  assert.ok(!r.fields.vintage);
+});
+test('several years without keyword → options, no value', () => {
+  const r = LabelParse.parse('Loire\n2018\n2020', cat, { year: 2026 });
+  assert.strictEqual(r.fields.vintage.value, '');
+  assert.strictEqual(JSON.stringify(r.fields.vintage.options), JSON.stringify([2018, 2020]));
+});
+test('bottler line gives producer when not in encyclopedia; technical data', () => {
+  const r = LabelParse.parse('Engarrafado por Quinta Nova do Teste - Pinhão\nAçúcar residual: 2,1 g/L\nAcidez total 5.6 g/l\nEstagiou 12 meses em barricas de carvalho francês\nServir entre 16 e 18 °C', cat, { year: 2026 });
+  assert.strictEqual(r.fields.producer.value, 'Quinta Nova do Teste');
+  assert.strictEqual(r.fields.residual_sugar.value, '2,1 g/L');
+  assert.strictEqual(r.fields.acidity_gl.value, '5,6 g/L');
+  assert.ok(/12 meses em barricas de carvalho/.test(r.fields.aging.value));
+  assert.strictEqual(r.fields.serving_temp.value, '16–18 °C');
+});
+test('sparkling detected; no invented country', () => {
+  const r = LabelParse.parse('Espumante Brut\nMétodo Tradicional', cat, { year: 2026 });
+  assert.strictEqual(r.fields.type.value, 'espumante');
+  assert.ok(!r.fields.country && !r.fields.region);
 });
 
 console.log('\n' + passed + ' testes passaram' + (process.exitCode ? ' (com falhas)' : ''));

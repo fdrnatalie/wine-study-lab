@@ -194,6 +194,67 @@ var Enrichment = (function () {
     });
   }
 
+  /**
+   * Foto do rótulo → identifica o vinho e busca a ficha técnica na web.
+   * Não grava nada: devolve sugestões para o formulário, que as marca como "IA não verificada".
+   */
+  function label(image, mime, ocrText) {
+    Label.validateImage(image, mime);
+    ocrText = Validate.str(ocrText, 20000, 'Texto do rótulo');
+    var ident = { name: 'Nome do vinho como aparece no rótulo', producer: 'Produtor', country: 'País (em português)', region: 'Região',
+      subregion: 'Sub-região / denominação de origem', vintage: 'Safra (ano), só se estiver no rótulo' };
+    var identProps = {};
+    Object.keys(ident).forEach(function (k) { identProps[k] = STR; });
+    var prompt = [
+      'A foto é o rótulo de um vinho. 1) Leia o rótulo e identifique o vinho (em label: só o que está ESCRITO na foto; deixe vazio o que não estiver legível).',
+      '2) Pesquise a ficha técnica do produtor para este vinho e safra (ou a mais próxima, dizendo qual em source_title) e preencha fields e grapes com fonte. Use dados sobre ESTE vinho, não dados genéricos da uva ou da denominação.',
+      ocrText ? 'Texto que o OCR já extraiu da foto (pode ter erros):\n' + ocrText.slice(0, 4000) : '',
+      'Campos de identificação (em label):\n' + fieldDoc(ident),
+      'Campos técnicos (em fields):\n' + fieldDoc(WINE_FIELDS),
+      'Uvas (em grapes): nome e percentual, com fonte (o próprio rótulo conta como fonte: use source_url "rotulo").'
+    ].filter(Boolean).join('\n\n');
+    var schema = obj({
+      label: obj(identProps),
+      grapes: { type: 'array', items: obj({ name: STR, percent: STR, source_url: STR }) },
+      fields: fieldsSchema(WINE_FIELDS), not_found: STR
+    });
+    var content = [{ type: 'image', source: { type: 'base64', media_type: mime, data: image } }, { type: 'text', text: prompt }];
+    var result;
+    try {
+      result = AiProvider.research({ system: SYSTEM, content: content, schema: schema,
+        toolDescription: 'Registra o que foi lido no rótulo e a ficha técnica encontrada, cada dado técnico com a URL da fonte.' });
+    } catch (e) {
+      logCall_('rotulo', '', AiProvider.config().model, null, 0, 'erro', e.message);
+      throw e;
+    }
+    var d = result.data || {};
+    var out = { fields: {}, grapes: [], not_found: d.not_found || '' };
+    function ok(v) { return !Util.isBlank(v) && !Util.isAiErrorText(v); }
+    Object.keys(ident).forEach(function (k) {
+      var v = d.label && d.label[k];
+      if (k === 'vintage') v = /^(19|20)\d{2}$/.test(String(v || '').trim()) ? +String(v).trim() : '';
+      if (ok(v)) out.fields[k] = { value: Util.clampStr(String(v), 200), evidence: 'lido na foto pela IA', ref: '' };
+    });
+    (d.fields || []).forEach(function (f) {
+      if (!ok(f.value)) return;
+      if (f.field === 'type' && CONFIG.WINE_TYPES.indexOf(f.value) < 0) return;
+      if (f.field === 'color' && CONFIG.WINE_COLORS.indexOf(f.value) < 0) return;
+      if (f.field === 'abv' && Util.parseNumber(f.value) === null) return;
+      var url = /^https?:\/\//.test(f.source_url || '') ? Util.clampStr(f.source_url, 1000) : '';
+      out.fields[f.field] = { value: f.field === 'abv' ? Util.parseNumber(f.value) : Util.clampStr(String(f.value), 5000),
+        evidence: (f.source_title || url || 'sem fonte') + (url && result.urls[url] === undefined ? ' (link não confirmado na busca)' : ''), ref: url };
+    });
+    (d.grapes || []).forEach(function (g) {
+      if (!ok(g.name)) return;
+      var known = findGrape(g.name);
+      var pct = Util.parseNumber(g.percent);
+      out.grapes.push({ name: known ? known.name : Util.clampStr(g.name, 120), percent: pct !== null && pct > 0 && pct <= 100 ? pct : '' });
+    });
+    out.cost_usd = logCall_('rotulo', '', result.model, result.usage, Object.keys(out.fields).length + out.grapes.length, 'ok', '');
+    out.searches = result.usage.web_searches;
+    return out;
+  }
+
   function addProfile_(add, entityType, entityId, p) {
     if (!p) return;
     var vals = {}, any = false;
@@ -405,6 +466,6 @@ var Enrichment = (function () {
     };
   }
 
-  return { grape: grape, wine: wine, catalog: catalog, pending: pending, pendingCount: pendingCount, review: review,
+  return { grape: grape, wine: wine, catalog: catalog, label: label, pending: pending, pendingCount: pendingCount, review: review,
     status: status, findGrape: findGrape };
 })();

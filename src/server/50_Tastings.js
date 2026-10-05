@@ -264,7 +264,11 @@ var Tastings = (function () {
   /** Gabarito de um vinho: fatos do rótulo + perfil/aromas somente se de fonte confiável. */
   function truthFor_(wineId) {
     var w = Repo.get('wines', wineId) || {};
+    // Campo vindo de IA sem revisão (ex.: foto do rótulo lida pela IA) não vale como gabarito.
+    var fs = w.field_sources || {};
+    function ok(col) { return fs[col] !== 'ia_nao_verificada'; }
     var grapes = Repo.where('wine_grapes', { wine_id: wineId })
+      .filter(function (x) { return x.source !== 'ia_nao_verificada'; })
       .sort(function (a, b) { return (b.percent || 0) - (a.percent || 0); })
       .map(function (x) { return x.grape_id; });
     var profile = Catalog.profileOf('wine', wineId);
@@ -273,8 +277,9 @@ var Tastings = (function () {
       return x.entity_type === 'wine' && x.entity_id === wineId && Catalog.isTrusted(x.source);
     }).map(function (x) { return x.aroma_id; });
     return {
-      grape_ids: grapes, country_id: w.country_id || '', region_id: w.subregion_id || w.region_id || '',
-      vintage: w.vintage, abv: w.abv, profile: profile, profile_trusted: trusted,
+      grape_ids: grapes, country_id: ok('country_id') && w.country_id || '',
+      region_id: (ok('subregion_id') && w.subregion_id) || (ok('region_id') && w.region_id) || '',
+      vintage: ok('vintage') ? w.vintage : '', abv: ok('abv') ? w.abv : '', profile: profile, profile_trusted: trusted,
       aroma_ids: aromaIds, aromas_trusted: aromaIds.length > 0
     };
   }

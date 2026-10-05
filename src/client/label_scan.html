@@ -1,0 +1,226 @@
+<script>
+/* ============================== FOTO DO RÓTULO ==============================
+ * No formulário de vinho: tirar/escolher a foto → leitura grátis (OCR do Google + enciclopédia)
+ * → revisão das sugestões → aplicar. Opcional: IA lê a foto e busca a ficha técnica na web.
+ * Cada campo aplicado guarda a origem ("rótulo", "pesquisado" ou "IA · não verificado");
+ * se você editar o campo depois, ele passa a ser "informado por você".
+ */
+var LabelScan = (function () {
+  var LABELS = {
+    name: 'Nome', producer: 'Produtor', country: 'País', region: 'Região', subregion: 'Sub-região', appellation: 'Denominação',
+    vintage: 'Safra', abv: 'Teor alcoólico (%)', color: 'Cor', type: 'Tipo', classification: 'Classificação',
+    residual_sugar: 'Açúcar residual', acidity_gl: 'Acidez total', production_method: 'Método de produção',
+    aging: 'Estágio / maturação', oak: 'Madeira', aging_time: 'Tempo de envelhecimento', serving_temp: 'Temperatura de serviço',
+    pairing: 'Harmonização', curiosities: 'Curiosidades'
+  };
+  var ORDER = Object.keys(LABELS);
+  var MAX_SIDE = 1600;
+  var photo = null;   // { b64, mime, dataUrl, text }
+
+  function state() { return Pages.wineEdit.scan; }
+  function form() { return document.querySelector('form[data-action=save]'); }
+
+  function html() {
+    photo = null;
+    return '<section id="label-scan" class="label-scan">' +
+      '<div class="btn-row">' +
+      '<label class="btn primary">📷&nbsp; Fotografar rótulo<input type="file" accept="image/*" capture="environment" data-change="label-photo" hidden></label>' +
+      '<label class="btn">Escolher imagem<input type="file" accept="image/*" data-change="label-photo" hidden></label>' +
+      '<span class="small muted">A leitura é grátis (Google). A foto não fica guardada.</span></div>' +
+      '<div id="label-out"></div></section>';
+  }
+
+  /** Reduz a foto no navegador (lado maior 1600 px, JPEG) antes de enviar. */
+  function shrink(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var s = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * s);
+        c.height = Math.round(img.naturalHeight * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        var dataUrl = c.toDataURL('image/jpeg', 0.85);
+        resolve({ dataUrl: dataUrl, b64: dataUrl.split(',')[1], mime: 'image/jpeg' });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Não consegui abrir essa imagem.')); };
+      img.src = url;
+    });
+  }
+
+  function photoInput(input) {
+    var file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    if (!/^image\//.test(file.type || 'image/')) return Promise.reject(new Error('Escolha um arquivo de imagem.'));
+    var out = document.getElementById('label-out');
+    out.innerHTML = '<div class="label-scan-body"><div class="muted">Preparando a foto…</div></div>';
+    return shrink(file).then(function (p) {
+      photo = p;
+      out.innerHTML = '<div class="label-scan-body"><img class="label-thumb" alt="Foto do rótulo" src="' + p.dataUrl + '">' +
+        '<div class="label-scan-main"><div id="label-ocr"><div class="muted">Lendo o rótulo…</div></div><div id="label-ai-out"></div></div></div>';
+      return API.call('label.read', { image: p.b64, mime: p.mime });
+    }).then(function (r) {
+      photo.text = r.text || '';
+      document.getElementById('label-ocr').innerHTML = block(r, 'ocr');
+    }).catch(function (e) {
+      var el = document.getElementById('label-ocr') || out;
+      el.innerHTML = '<div class="callout warn">' + esc(e.message || String(e)) + '</div>' + aiButton();
+    });
+  }
+
+  function aiButton() {
+    if (!photo) return '';
+    if (!Store.lookups.ai_enabled) return '<p class="small muted" style="margin-top:10px">Para buscar a ficha técnica na web com IA, configure a chave do Claude em Configurações.</p>';
+    return '<div class="btn-row" style="margin-top:10px"><button type="button" class="btn" data-action="label-ai">✦ Buscar ficha técnica com IA</button>' +
+      '<span class="small muted">custa alguns centavos de dólar; os dados entram como “IA · não verificado”</span></div>';
+  }
+
+  /** Bloco de revisão: uma linha por campo sugerido, marcada por padrão quando o campo do formulário está vazio. */
+  function block(r, kind) {
+    var f = form();
+    var keys = ORDER.filter(function (k) { return r.fields && r.fields[k]; });
+    var h = '';
+    if (kind === 'ocr') {
+      if (!r.text) return '<div class="callout warn">Não encontrei texto na foto. Tente outra com o rótulo reto, bem iluminado e sem reflexo.</div>' + aiButton();
+      h += '<h3 style="margin-top:0">Lido no rótulo</h3>';
+    } else {
+      h += '<h3>Ficha encontrada pela IA ' + Components.src('ia_nao_verificada') + '</h3>' +
+        '<p class="small muted">Confira com o rótulo e a fonte antes de usar como gabarito. Custo desta busca: US$ ' + fmtNum(r.cost_usd || 0, 2) + '.</p>';
+    }
+    if (!keys.length && !(r.grapes || []).length) h += '<p class="muted">Nenhum dado reconhecido' + (kind === 'ocr' ? ' na enciclopédia.' : '.') + '</p>';
+    h += '<div class="label-rows" data-kind="' + kind + '">';
+    keys.forEach(function (k) {
+      var s = r.fields[k];
+      var how = kind === 'ai' ? 'ia_nao_verificada' : (s.how === 'enciclopedia' ? 'pesquisado' : 'rotulo');
+      var cur = f && f.elements[k] ? f.elements[k].value : '';
+      var checked = (s.value !== '' && s.value !== null) && !cur;
+      h += '<label class="label-row"><input type="checkbox" data-f="' + k + '" data-how="' + how + '" data-ref="' + esc(s.ref || '') + '"' + (checked ? ' checked' : '') + '>' +
+        '<span class="label-row-name">' + esc(LABELS[k]) + '</span>' + valueInput(k, s) +
+        '<span class="small muted label-row-ev">' + esc(s.evidence || '') + (cur ? ' · atual: ' + esc(cur) : '') + '</span></label>';
+    });
+    (r.grapes || []).forEach(function (g) {
+      h += '<label class="label-row"><input type="checkbox" data-grape="' + esc(g.name) + '" data-pct="' + esc(g.percent || '') + '" data-how="' + (kind === 'ai' ? 'ia_nao_verificada' : 'rotulo') + '" checked>' +
+        '<span class="label-row-name">Uva</span><span>' + esc(g.name) + (g.percent ? ' · ' + g.percent + '%' : '') + '</span></label>';
+    });
+    h += '</div>';
+    if (kind === 'ocr' && (r.lines || []).length) {
+      h += '<div class="small muted" style="margin-top:12px">Nome do vinho: toque na linha do rótulo que é o nome.</div><div class="chips" style="margin-top:6px">' +
+        r.lines.filter(function (l) { return l.length <= 70; }).slice(0, 14).map(function (l) {
+          return '<button type="button" class="chip" data-action="label-name" data-v="' + esc(l) + '">' + esc(l) + '</button>';
+        }).join('') + '</div>';
+    }
+    if (kind === 'ai' && r.not_found) h += '<p class="small muted">Não encontrado: ' + esc(r.not_found) + '</p>';
+    if (keys.length || (r.grapes || []).length) {
+      h += '<div class="btn-row" style="margin-top:12px"><button type="button" class="btn small" data-action="label-apply" data-kind="' + kind + '">Aplicar marcados ao formulário</button></div>';
+    }
+    if (kind === 'ocr') {
+      h += '<details style="margin-top:12px"><summary class="small muted">Texto lido</summary><pre class="label-text">' + esc(r.text) + '</pre></details>' + aiButton();
+    }
+    return h;
+  }
+
+  function valueInput(k, s) {
+    var opts = (s.options || []).map(String);
+    if (k === 'color' || k === 'type') {
+      var map = k === 'color' ? COLOR_LABELS : TYPE_LABELS;
+      return '<select class="in" data-v>' + Object.keys(map).map(function (x) {
+        return '<option value="' + x + '"' + (x === s.value ? ' selected' : '') + '>' + esc(map[x]) + '</option>'; }).join('') + '</select>';
+    }
+    if (opts.length > 1) {
+      return '<select class="in" data-v>' + (s.value === '' ? '<option value="">— escolha —</option>' : '') + opts.map(function (x) {
+        return '<option' + (x === String(s.value) ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>';
+    }
+    return '<input class="in" data-v value="' + esc(s.value) + '">';
+  }
+
+  function mark(f, k, how, ref) {
+    var el = f.elements[k];
+    if (!el) return;
+    var st = state();
+    st.origins[k] = how;
+    if (ref) st.refs[k] = ref; else delete st.refs[k];
+    var holder = el.parentNode;
+    var old = holder.querySelector('.src[data-label-src]');
+    if (old) old.remove();
+    var lab = holder.querySelector('label.f');
+    if (lab) lab.insertAdjacentHTML('beforeend', ' ' + Components.src(how).replace('<span ', '<span data-label-src '));
+  }
+
+  function apply(btn) {
+    var f = form();
+    var rows = btn.closest('#label-ocr, #label-ai-out').querySelector('.label-rows');
+    var n = 0;
+    rows.querySelectorAll('input[type=checkbox]:checked').forEach(function (cb) {
+      var how = cb.getAttribute('data-how');
+      if (cb.hasAttribute('data-grape')) { n += addGrape(cb.getAttribute('data-grape'), cb.getAttribute('data-pct'), how); return; }
+      var k = cb.getAttribute('data-f');
+      var v = cb.closest('.label-row').querySelector('[data-v]').value;
+      if (v === '' || !f.elements[k]) return;
+      f.elements[k].value = v;
+      mark(f, k, how, cb.getAttribute('data-ref'));
+      n++;
+    });
+    UI.toast(n ? n + ' campo(s) preenchido(s). Revise e salve.' : 'Nada marcado para aplicar.');
+  }
+
+  function addGrape(name, pct, how) {
+    var box = document.getElementById('grape-rows');
+    var rows = box.querySelectorAll('.grape-row');
+    for (var i = 0; i < rows.length; i++) {
+      var inp = rows[i].querySelector('[data-g=name]');
+      if (inp.value.trim().toLowerCase() === name.toLowerCase()) return 0;
+    }
+    var empty = Array.prototype.filter.call(rows, function (r) { return !r.querySelector('[data-g=name]').value.trim(); })[0];
+    if (empty) empty.remove();
+    box.insertAdjacentHTML('beforeend', grapeRow({ name: name, percent: pct, source: how }));
+    return 1;
+  }
+
+  function setName(btn) {
+    var f = form();
+    var v = btn.getAttribute('data-v');
+    // Linha toda em MAIÚSCULAS ("BAROLO DEL COMUNE") → "Barolo del Comune".
+    if (v === v.toUpperCase() && /[A-Z]/.test(v)) {
+      v = v.toLowerCase().replace(/(^|[\s'’(-])([a-zà-ÿ])/g, function (m, a, b) { return a + b.toUpperCase(); })
+        .replace(/ (Di|Da|De|Del|Della|Dei|Do|Dos|Das|Du|Des|La|Le|E|Et|Y|Von|Van) /g, function (m) { return m.toLowerCase(); });
+    }
+    f.elements.name.value = v;
+    mark(f, 'name', 'rotulo', '');
+  }
+
+  /** Edição manual depois de aplicar → a origem volta a ser "usuario". */
+  function touched(f, el) {
+    if (!el || el.closest('#label-scan')) return;
+    var row = el.closest('.grape-row');
+    if (row && row.hasAttribute('data-source')) {
+      row.removeAttribute('data-source');
+      var b = row.querySelector('.src');
+      if (b) b.remove();
+      return;
+    }
+    var k = el.name;
+    if (!k || !state().origins[k]) return;
+    delete state().origins[k];
+    delete state().refs[k];
+    var badge = el.parentNode.querySelector('.src[data-label-src]');
+    if (badge) badge.remove();
+  }
+
+  function ai(btn) {
+    if (!photo) return Promise.resolve();
+    UI.busy(btn, true);
+    var out = document.getElementById('label-ai-out');
+    out.innerHTML = '<p class="muted">Lendo a foto e buscando a ficha técnica… (pode levar até 1 minuto)</p>';
+    return API.call('label.ai', { image: photo.b64, mime: photo.mime, text: photo.text || '' }).then(function (r) {
+      UI.busy(btn, false);
+      btn.closest('.btn-row').remove();
+      out.innerHTML = block(r, 'ai');
+    }).catch(function (e) { UI.busy(btn, false); out.innerHTML = ''; throw e; });
+  }
+
+  return { html: html, photo: photoInput, apply: apply, ai: ai, setName: setName, touched: touched };
+})();
+</script>

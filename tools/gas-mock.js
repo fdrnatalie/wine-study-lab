@@ -83,13 +83,32 @@
 
   // Resposta SIMULADA da API da Anthropic (mesma estrutura de uma resposta real).
   g.Utilities = { sleep: function () {} };
+  // OCR SIMULADO do Google Drive (foto do rótulo): devolve sempre o mesmo texto de demonstração.
+  var DEMO_LABEL = 'Rótulo de demonstração (OCR simulado)\nCANTINA DEMO\nBAROLO\nDenominazione di Origine Controllata e Garantita\n' +
+    'NEBBIOLO\nVendemmia 2019\n14,5% vol\n750 ml\nVino rosso\nPRODOTTO IN ITALIA';
+  g.MimeType = { GOOGLE_DOCS: 'application/vnd.google-apps.document' };
+  g.ScriptApp = { getOAuthToken: function () { return 'mock-token'; } };
+  g.Utilities.newBlob = function (bytes, mime, name) { return { bytes: bytes, mime: mime, name: name }; };
+  g.Utilities.base64Decode = function (b64) { return b64; };
+  g.Drive = { Files: { create: function () { return { id: 'OCR_MOCK' }; } } };
   g.UrlFetchApp = { fetch: function (url, opts) {
+    if (/googleapis\.com\/drive/.test(url)) {
+      return { getResponseCode: function () { return 200; }, getContentText: function () { return /export/.test(url) ? DEMO_LABEL : ''; } };
+    }
     var body = JSON.parse(opts.payload);
     var tool = body.tools.filter(function (t) { return t.name === 'registrar_dados'; })[0];
     var props = tool.input_schema.properties;
     var prompt = body.messages[0].content;
+    if (typeof prompt !== 'string') prompt = prompt.filter(function (b) { return b.type === 'text'; }).map(function (b) { return b.text; }).join('\n');
     var input;
-    if (props.grapes) {
+    if (props.label) {
+      input = { label: { name: 'Barolo (simulado)', producer: 'Cantina Demo', country: 'Itália', region: 'Piemonte', subregion: 'Barolo', vintage: '2019' },
+        grapes: [{ name: 'Nebbiolo', percent: '100', source_url: 'rotulo' }],
+        fields: [{ field: 'aging', value: '24 meses em botti de carvalho da Eslavônia (simulado)', source_url: 'https://produtor.example/ficha', source_title: 'Ficha técnica' },
+          { field: 'serving_temp', value: '16–18 °C (simulado)', source_url: 'https://produtor.example/ficha', source_title: 'Ficha técnica' },
+          { field: 'pairing', value: 'Carnes vermelhas e trufas (simulado)', source_url: 'https://exemplo.com/nao-buscado', source_title: 'Blog' }],
+        not_found: 'Acidez total e açúcar residual (simulado).' };
+    } else if (props.grapes) {
       input = { grapes: [
         { name: 'Sangiovese', color: 'tinta', origin: 'Toscana, Itália (simulado)', source_url: 'https://www.vivc.de/sangiovese', source_title: 'VIVC' },
         { name: 'Nebbiolo', color: 'tinta', origin: 'Piemonte', source_url: 'https://www.vivc.de/nebbiolo', source_title: 'VIVC' },

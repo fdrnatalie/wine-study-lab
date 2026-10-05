@@ -27,6 +27,8 @@ var API_METHODS = {
   'wines.list': function () { return Wines.list(); },
   'wines.get': function (a) { return Wines.get(a.id); },
   'wines.save': function (a) { return Wines.save(a.wine); },
+  'label.read': function (a) { return Label.read(a.image, a.mime); },
+  'label.ai': function (a) { return Enrichment.label(a.image, a.mime, a.text); },
 
   'grapes.list': function () { return Grapes.list(); },
   'grapes.get': function (a) { return Grapes.get(a.id); },
