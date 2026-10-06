@@ -17,7 +17,25 @@ var SessionStore = {
 
 var API = {
   remote: function () { return !!(window.WSL_CONFIG && window.WSL_CONFIG.apiUrl); },
+  // Leituras recentes ficam 60 s na memória do navegador (voltar a uma tela é instantâneo);
+  // qualquer gravação limpa tudo, para nunca mostrar dado velho depois de salvar.
+  cache: {},
+  READS: /^(lookups|dashboard|search|game\.data|settings\.get|regions\.\w+|[a-z]+\.(list|get|batches|status|compare|genealogy|pending))$/,
+  TTL: 60000,
+  prime: function (method, args, data) { API.cache[method + '|' + JSON.stringify(args || {})] = { t: Date.now(), data: JSON.stringify(data) }; },
   call: function (method, args) {
+    var key = method + '|' + JSON.stringify(args || {});
+    var isRead = API.READS.test(method);
+    if (isRead) {
+      var hit = API.cache[key];
+      if (hit && Date.now() - hit.t < API.TTL) return Promise.resolve(JSON.parse(hit.data));
+    } else if (!/^auth\./.test(method)) API.cache = {};
+    return API.raw_(method, args).then(function (data) {
+      if (isRead) API.cache[key] = { t: Date.now(), data: JSON.stringify(data) };
+      return data;
+    });
+  },
+  raw_: function (method, args) {
     if (API.remote()) return API.post_(method, args);
     return new Promise(function (resolve, reject) {
       google.script.run

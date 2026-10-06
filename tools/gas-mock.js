@@ -77,7 +77,8 @@
   var scriptProps = props;
   g.PropertiesService = { getScriptProperties: function () { return {
     getProperty: function (k) { return props[k] || null; }, setProperty: function (k, v) { props[k] = v; },
-    deleteProperty: function (k) { delete props[k]; }
+    deleteProperty: function (k) { delete props[k]; },
+    getProperties: function () { return Object.assign({}, props); }
   }; } };
   g.Session = {
     getActiveUser: function () { return { getEmail: function () { return 'dev@local'; } }; },

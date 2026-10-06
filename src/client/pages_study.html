@@ -307,7 +307,10 @@ Pages.wineEdit = {
       UI.busy(btn, true);
       return API.call('wines.save', { wine: d }).then(function (w) {
         UI.toast('Vinho salvo.');
-        return Store.refreshLookups().then(function () { Router.go('/vinhos/' + w.id); });
+        // A resposta já traz o vinho completo: abre direto, e as listas atualizam em segundo plano.
+        API.prime('wines.get', { id: w.id }, w);
+        Store.refreshLookups().catch(function () {});
+        Router.go('/vinhos/' + w.id);
       }).catch(function (e) { UI.busy(btn, false); throw e; });
     }
   }
@@ -499,7 +502,9 @@ Pages.grapeEdit = {
       if (!d.id) delete d.id;
       return API.call('grapes.save', { grape: d }).then(function (g) {
         UI.toast('Uva salva.');
-        return Store.refreshLookups().then(function () { Router.go('/uvas/' + g.id); });
+        API.prime('grapes.get', { id: g.id }, g);
+        Store.refreshLookups().catch(function () {});
+        Router.go('/uvas/' + g.id);
       });
     }
   }

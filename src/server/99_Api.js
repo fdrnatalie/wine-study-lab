@@ -154,19 +154,22 @@ var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|ver
  * Ordem: estrutura da planilha (como sistema) → usuário → limites → permissão → método.
  */
 function dispatch_(method, args, resolveUser) {
+  var T = [Date.now()], mark = function () { T.push(Date.now()); };
   try {
+    if (method === 'debug.ping') return { ok: true, data: 'pong' };
     var fn = API_METHODS[method];
     if (typeof method !== 'string' || !fn || !Object.prototype.hasOwnProperty.call(API_METHODS, method)) throw new Error('Método desconhecido.');
     Ctx.setUser(null);
-    Ctx.asSystem(ensureSchema_);
+    Ctx.asSystem(ensureSchema_); mark();
     if (!PUBLIC_METHODS[method]) {
-      var user = resolveUser();
+      var user = resolveUser(); mark();
       Ctx.setUser(user);
       Auth.rateLimit(user, method);
       if (ADMIN_METHODS.test(method)) Ctx.requireAdmin();
     }
-    var data = fn(args && typeof args === 'object' ? args : {});
-    return { ok: true, data: data === undefined ? null : data };
+    var data = fn(args && typeof args === 'object' ? args : {}); mark();
+    // Tempos por etapa (ms): estrutura, login, método. Ajuda a achar lentidão; não contém dados.
+    return { ok: true, data: data === undefined ? null : data, ms: T.slice(1).map(function (t, i) { return t - T[i]; }) };
   } catch (e) {
     var msg = e && e.message ? e.message : String(e);
     console.error(method, e && e.stack || e);
@@ -204,6 +207,12 @@ function doPost(e) {
 
 /** Aplica automaticamente mudanças de schema depois de um `clasp push` (só acrescenta abas/colunas). */
 function ensureSchema_() {
+  // Atalho: se nada mudou desde a última verificação (mesma estrutura e mesmas versões dos dados), não
+  // consulta propriedades nem planilha — economiza ~0,5 s em toda chamada.
+  var sig = CONFIG.SCHEMA_VERSION + '|' + SEED_MANIFEST.grapes.version + '|' +
+    SEED_MANIFEST.packs.map(function (p) { return p.code + p.version; }).join(',');
+  var cache = CacheService.getScriptCache();
+  if (cache.get('seeds_ok') === sig) return;
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('SCHEMA_VERSION') !== String(CONFIG.SCHEMA_VERSION)) {
     Repo.withLock(function () {
@@ -216,8 +225,9 @@ function ensureSchema_() {
   }
   try {
     // Em etapas curtas: a primeira abertura depois de uma versão nova não trava o app.
-    SeedEncyclopedia.ensure(8000);
-    SeedRegions.ensure(8000);
+    var g = SeedEncyclopedia.ensure(8000);
+    var r = SeedRegions.ensure(8000);
+    if (g === null && !r.length) cache.put('seeds_ok', sig, 21600);
   } catch (e) {
     // Não bloqueia o app: registra e tenta de novo na próxima chamada.
     console.error('Enciclopédia de uvas', e && e.stack || e);

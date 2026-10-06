@@ -114,6 +114,23 @@ var Repo = (function () {
     return out;
   }
 
+  function objects_(header, rows, types) {
+    var out = [];
+    rows.forEach(function (row) { var o = rowObj_(header, row, types); if (o.id) out.push(o); });
+    return out;
+  }
+
+  /**
+   * Cache "de escrita": depois de gravar na planilha, atualiza memória e CacheService com a tabela já
+   * alterada, em vez de apagar o cache (que obrigaria a próxima chamada a reler a aba inteira).
+   * Sempre roda sob o lock do script, para duas gravações simultâneas não se sobrescreverem no cache.
+   */
+  function store_(entity, list) {
+    memo[entity] = list;
+    Cache.remove(entity);
+    Cache.put(entity, list);
+  }
+
   function get(entity, id) {
     var list = all(entity);
     for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
@@ -136,6 +153,10 @@ var Repo = (function () {
   /** Insere registros. Gera id/created_at/updated_at. Retorna os registros com id. */
   function insert(entity, records) {
     if (!records || !records.length) return [];
+    return withLock(function () { return insert_(entity, records); });
+  }
+
+  function insert_(entity, records) {
     var sh = sheet(entity);
     var header = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
     var types = typesOf(entity);
@@ -157,13 +178,19 @@ var Repo = (function () {
       return header.map(function (h) { return h ? toCell(o[h], types[h] || 'string') : ''; });
     });
     sh.getRange(sh.getLastRow() + 1, 1, rows.length, header.length).setValues(rows);
-    invalidate_(entity);
+    var cached = Cache.get(entity);
+    if (cached) store_(entity, cached.concat(objects_(header, rows, types)));
+    else invalidate_(entity);
     return saved;
   }
 
   /** Atualiza registros existentes (patch parcial por id). Retorna quantos foram atualizados. */
   function update(entity, patches) {
     if (!patches || !patches.length) return 0;
+    return withLock(function () { return update_(entity, patches); });
+  }
+
+  function update_(entity, patches) {
     var sh = sheet(entity);
     var values = sh.getDataRange().getValues();
     var header = values[0].map(String);
@@ -187,7 +214,7 @@ var Repo = (function () {
     if (n) {
       var block = values.slice(minRow, maxRow + 1);
       sh.getRange(minRow + 1, 1, block.length, header.length).setValues(block);
-      invalidate_(entity);
+      store_(entity, objects_(header, values.slice(1), types));
     }
     return n;
   }
@@ -195,6 +222,10 @@ var Repo = (function () {
   /** Remove registros por id (usado para tabelas de ligação e rascunhos). */
   function remove(entity, ids) {
     if (!ids || !ids.length) return 0;
+    return withLock(function () { return remove_(entity, ids); });
+  }
+
+  function remove_(entity, ids) {
     var set = {};
     ids.forEach(function (id) { set[id] = true; });
     var sh = sheet(entity);
@@ -209,19 +240,40 @@ var Repo = (function () {
       rows.push(i + 1);
     }
     for (var j = rows.length - 1; j >= 0; j--) sh.deleteRow(rows[j]);
-    if (rows.length) invalidate_(entity);
+    if (rows.length) {
+      var gone = {};
+      rows.forEach(function (r) { gone[r - 1] = true; });
+      store_(entity, objects_(header, values.slice(1).filter(function (row, k) { return !gone[k + 1]; }), types));
+    }
     return rows.length;
   }
 
   /** Executa fn com lock de script (escritas concorrentes: duas abas abertas, por exemplo). */
+  var lockDepth = 0;
   function withLock(fn) {
+    if (lockDepth > 0) return fn();          // já com o lock nesta execução (chamadas aninhadas)
     var lock = LockService.getScriptLock();
     lock.waitLock(20000);
-    try { return fn(); } finally { lock.releaseLock(); }
+    lockDepth++;
+    try { return fn(); } finally { lockDepth--; lock.releaseLock(); }
+  }
+
+  /** Para trabalhos longos em etapas (importação): tenta pegar o lock sem esperar muito. */
+  var held = null;
+  function tryLock(ms) {
+    if (lockDepth > 0) { lockDepth++; return true; }
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(ms || 1000)) return false;
+    held = lock; lockDepth++;
+    return true;
+  }
+  function unlock() {
+    lockDepth--;
+    if (lockDepth === 0 && held) { held.releaseLock(); held = null; }
   }
 
   function spreadsheet() { return ss(); }
 
   return { all: all, getRaw: getRaw, get: get, where: where, insert: insert, update: update, remove: remove,
-    withLock: withLock, spreadsheet: spreadsheet };
+    withLock: withLock, tryLock: tryLock, unlock: unlock, spreadsheet: spreadsheet };
 })();

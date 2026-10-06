@@ -8,6 +8,24 @@
  * - Aromas e relações: só acrescenta o que falta.
  * Pode rodar quantas vezes quiser (idempotente).
  */
+/**
+ * Dados grandes (enciclopédia de uvas, packs de regiões) ficam em src/seed/*.html como texto JS e só são
+ * executados quando há importação — o Apps Script não precisa carregá-los a cada chamada (ver tools/build-seeds.js).
+ * Na prévia e nos testes os arquivos já vêm carregados, e load() não faz nada.
+ */
+var SeedData = (function () {
+  var loaded = {};
+  var CHECK = { grapes: function () { return typeof GRAPE_ENCYCLOPEDIA !== 'undefined'; },
+    regions: function () { return typeof REGION_PACKS !== 'undefined' && REGION_PACKS.length > 0; } };
+  function load(name) {
+    if (loaded[name] || CHECK[name]()) { loaded[name] = true; return; }
+    var code = HtmlService.createHtmlOutputFromFile('seed/' + name).getContent();
+    (0, eval)(code);    // eval indireto: as declarações viram globais (GRAPE_ENCYCLOPEDIA, REGION_PACKS, GEO_PLACES)
+    loaded[name] = true;
+  }
+  return { load: load };
+})();
+
 var SeedEncyclopedia = (function () {
   var REPLACEABLE = { planilha: 1, ia_nao_verificada: 1, pesquisado: 1 };
   var FIELDS = ['color', 'origin', 'main_countries', 'main_regions', 'ripening', 'vigor', 'skin_thickness',
@@ -22,10 +40,10 @@ var SeedEncyclopedia = (function () {
    */
   function run(budgetMs) {
     var budget = budgetMs || 8000, t0 = Date.now();
-    var lock = LockService.getScriptLock();
-    if (!lock.tryLock(1000)) return null;
+    if (!Repo.tryLock(1000)) return null;
     try {
       var props = PropertiesService.getScriptProperties();
+      SeedData.load('grapes');
       var E = GRAPE_ENCYCLOPEDIA;
       var prog = JSON.parse(props.getProperty(PROGRESS) || 'null');
       if (!prog || prog.version !== E.version) prog = { version: E.version, index: 0, report: null };
@@ -155,7 +173,7 @@ var SeedEncyclopedia = (function () {
       props.setProperty('GRAPE_ENCYCLOPEDIA_VERSION', String(E.version));
       return { done: true, remaining: 0, report: report };
     } finally {
-      lock.releaseLock();
+      Repo.unlock();
     }
   }
 
@@ -175,8 +193,8 @@ var SeedEncyclopedia = (function () {
   /** Roda a importação uma vez por versão da enciclopédia (chamado automaticamente pela API). */
   function ensure(budgetMs) {
     var props = PropertiesService.getScriptProperties();
-    if (props.getProperty('GRAPE_ENCYCLOPEDIA_VERSION') === String(GRAPE_ENCYCLOPEDIA.version)) return null;
-    return run(budgetMs || 8000);
+    if (props.getProperty('GRAPE_ENCYCLOPEDIA_VERSION') === String(SEED_MANIFEST.grapes.version)) return null;
+    return run(budgetMs || 8000) || { done: false, busy: true };
   }
 
   /** Importação completa (setup e botão "Reimportar"): chama run em etapas até acabar ou ~4 min. */

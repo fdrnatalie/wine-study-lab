@@ -51,4 +51,6 @@ fs.writeFileSync(path.join(out, 'jogo.html'), game);
 fs.copyFileSync(path.join(root, 'build', 'preview.html'), path.join(out, 'demo', 'index.html'));
 fs.copyFileSync(path.join(root, 'build', 'jogo.html'), path.join(out, 'demo', 'jogo.html'));
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
+// Contornos dos mapas (gerado por tools/build-seeds.js), servido como arquivo estático e guardado em cache pelo navegador.
+fs.copyFileSync(path.join(root, 'build', 'geo.js'), path.join(out, 'geo.js'));
 console.log('build/site: index.html (' + Math.round(app.length / 1024) + ' KB), jogo.html, demo/');

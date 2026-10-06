@@ -58,7 +58,7 @@ var Catalog = (function () {
       ai_enabled: AiProvider.hasKey() && Ctx.isAdmin(),
       me: Auth.publicUser(Ctx.current()),
       is_admin: Ctx.isAdmin(),
-      encyclopedia: { version: GRAPE_ENCYCLOPEDIA.version, grapes: GRAPE_ENCYCLOPEDIA.grapes.length,
+      encyclopedia: { version: SEED_MANIFEST.grapes.version, grapes: SEED_MANIFEST.grapes.count,
         region_packs: SeedRegions.summary() },
       enums: {
         sources: CONFIG.SOURCES, bottleStatuses: CONFIG.BOTTLE_STATUSES, noteKinds: CONFIG.NOTE_KINDS,

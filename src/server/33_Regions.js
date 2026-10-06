@@ -25,8 +25,11 @@ var Regions = (function () {
     var wines = Repo.all('wines');
     var top = regs.filter(function (r) { return r.country_id === c.id && !r.parent_id; })
       .sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'pt'); });
+    // Contornos: o navegador busca no arquivo estático do site (geo.js); aqui só a chave de cada região.
+    var geoKeys = {};
+    SEED_MANIFEST.geo_keys.forEach(function (k) { geoKeys[k] = true; });
     var geo = {};
-    top.forEach(function (r) { if (r.geo_key && typeof GEO_REGIONS !== 'undefined' && GEO_REGIONS[r.geo_key]) geo[r.id] = GEO_REGIONS[r.geo_key]; });
+    top.forEach(function (r) { if (r.geo_key && geoKeys[r.geo_key]) geo[r.id] = r.geo_key; });
     return {
       id: c.id, name: c.name, description: c.description, source: c.source, source_ref: c.source_ref, field_refs: c.field_refs || {}, field_sources: c.field_sources || {},
       regions: top.map(function (r) {
@@ -85,7 +88,7 @@ var Regions = (function () {
       field_sources: r.field_sources || {}, field_refs: r.field_refs || {},
       grapes: grapeList(r.id),
       producers: prodList(r.id),
-      geo: r.geo_key && typeof GEO_REGIONS !== 'undefined' ? GEO_REGIONS[r.geo_key] || null : null,
+      geo_key: r.geo_key || '',
       subregions: subs.map(function (s) {
         return { id: s.id, name: s.name, classification: s.classification, description: s.description,
           notable_wines: s.notable_wines, lat: s.lat, lng: s.lng, source: s.source, source_ref: s.source_ref,
@@ -254,7 +257,7 @@ var SeedRegions = (function () {
     });
   }
 
-  function packs() { return typeof REGION_PACKS !== 'undefined' ? REGION_PACKS : []; }
+  function packs() { SeedData.load('regions'); return typeof REGION_PACKS !== 'undefined' ? REGION_PACKS : []; }
 
   /** Importa todos os packs e soma os relatórios. */
   /**
@@ -284,6 +287,13 @@ var SeedRegions = (function () {
    */
   function ensure(maxMs) {
     var props = PropertiesService.getScriptProperties();
+    // Pelo manifesto (pequeno) vê se há algo pendente antes de carregar os packs (grandes).
+    var all = props.getProperties();
+    var pending = SEED_MANIFEST.packs.some(function (m) {
+      var cur = all['REGION_PACK_' + m.code + '_VERSION'] || (m.code === 'IT' ? all.REGION_ENCYCLOPEDIA_VERSION : '');
+      return cur !== String(m.version);
+    });
+    if (!pending) return [];
     var done = [], t0 = Date.now(), limit = maxMs || 20000;
     packs().forEach(function (E) {
       if (done.length && Date.now() - t0 > limit) return;
@@ -300,7 +310,7 @@ var SeedRegions = (function () {
   }
 
   function summary() {
-    return packs().map(function (E) { return { code: E.code, country: E.country_of, version: E.version, regions: E.regions.length }; });
+    return SEED_MANIFEST.packs.map(function (m) { return { code: m.code, country: m.country, version: m.version, regions: m.regions }; });
   }
 
   return { run: run, ensure: ensure, summary: summary };

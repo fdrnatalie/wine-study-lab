@@ -593,7 +593,8 @@ h3 { font-size: 20px; margin-bottom: 7px; }
   var scriptProps = props;
   g.PropertiesService = { getScriptProperties: function () { return {
     getProperty: function (k) { return props[k] || null; }, setProperty: function (k, v) { props[k] = v; },
-    deleteProperty: function (k) { delete props[k]; }
+    deleteProperty: function (k) { delete props[k]; },
+    getProperties: function () { return Object.assign({}, props); }
   }; } };
   g.Session = {
     getActiveUser: function () { return { getEmail: function () { return 'dev@local'; } }; },
@@ -1615,6 +1616,23 @@ var Repo = (function () {
     return out;
   }
 
+  function objects_(header, rows, types) {
+    var out = [];
+    rows.forEach(function (row) { var o = rowObj_(header, row, types); if (o.id) out.push(o); });
+    return out;
+  }
+
+  /**
+   * Cache "de escrita": depois de gravar na planilha, atualiza memória e CacheService com a tabela já
+   * alterada, em vez de apagar o cache (que obrigaria a próxima chamada a reler a aba inteira).
+   * Sempre roda sob o lock do script, para duas gravações simultâneas não se sobrescreverem no cache.
+   */
+  function store_(entity, list) {
+    memo[entity] = list;
+    Cache.remove(entity);
+    Cache.put(entity, list);
+  }
+
   function get(entity, id) {
     var list = all(entity);
     for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
@@ -1637,6 +1655,10 @@ var Repo = (function () {
   /** Insere registros. Gera id/created_at/updated_at. Retorna os registros com id. */
   function insert(entity, records) {
     if (!records || !records.length) return [];
+    return withLock(function () { return insert_(entity, records); });
+  }
+
+  function insert_(entity, records) {
     var sh = sheet(entity);
     var header = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
     var types = typesOf(entity);
@@ -1658,13 +1680,19 @@ var Repo = (function () {
       return header.map(function (h) { return h ? toCell(o[h], types[h] || 'string') : ''; });
     });
     sh.getRange(sh.getLastRow() + 1, 1, rows.length, header.length).setValues(rows);
-    invalidate_(entity);
+    var cached = Cache.get(entity);
+    if (cached) store_(entity, cached.concat(objects_(header, rows, types)));
+    else invalidate_(entity);
     return saved;
   }
 
   /** Atualiza registros existentes (patch parcial por id). Retorna quantos foram atualizados. */
   function update(entity, patches) {
     if (!patches || !patches.length) return 0;
+    return withLock(function () { return update_(entity, patches); });
+  }
+
+  function update_(entity, patches) {
     var sh = sheet(entity);
     var values = sh.getDataRange().getValues();
     var header = values[0].map(String);
@@ -1688,7 +1716,7 @@ var Repo = (function () {
     if (n) {
       var block = values.slice(minRow, maxRow + 1);
       sh.getRange(minRow + 1, 1, block.length, header.length).setValues(block);
-      invalidate_(entity);
+      store_(entity, objects_(header, values.slice(1), types));
     }
     return n;
   }
@@ -1696,6 +1724,10 @@ var Repo = (function () {
   /** Remove registros por id (usado para tabelas de ligação e rascunhos). */
   function remove(entity, ids) {
     if (!ids || !ids.length) return 0;
+    return withLock(function () { return remove_(entity, ids); });
+  }
+
+  function remove_(entity, ids) {
     var set = {};
     ids.forEach(function (id) { set[id] = true; });
     var sh = sheet(entity);
@@ -1710,21 +1742,42 @@ var Repo = (function () {
       rows.push(i + 1);
     }
     for (var j = rows.length - 1; j >= 0; j--) sh.deleteRow(rows[j]);
-    if (rows.length) invalidate_(entity);
+    if (rows.length) {
+      var gone = {};
+      rows.forEach(function (r) { gone[r - 1] = true; });
+      store_(entity, objects_(header, values.slice(1).filter(function (row, k) { return !gone[k + 1]; }), types));
+    }
     return rows.length;
   }
 
   /** Executa fn com lock de script (escritas concorrentes: duas abas abertas, por exemplo). */
+  var lockDepth = 0;
   function withLock(fn) {
+    if (lockDepth > 0) return fn();          // já com o lock nesta execução (chamadas aninhadas)
     var lock = LockService.getScriptLock();
     lock.waitLock(20000);
-    try { return fn(); } finally { lock.releaseLock(); }
+    lockDepth++;
+    try { return fn(); } finally { lockDepth--; lock.releaseLock(); }
+  }
+
+  /** Para trabalhos longos em etapas (importação): tenta pegar o lock sem esperar muito. */
+  var held = null;
+  function tryLock(ms) {
+    if (lockDepth > 0) { lockDepth++; return true; }
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(ms || 1000)) return false;
+    held = lock; lockDepth++;
+    return true;
+  }
+  function unlock() {
+    lockDepth--;
+    if (lockDepth === 0 && held) { held.releaseLock(); held = null; }
   }
 
   function spreadsheet() { return ss(); }
 
   return { all: all, getRaw: getRaw, get: get, where: where, insert: insert, update: update, remove: remove,
-    withLock: withLock, spreadsheet: spreadsheet };
+    withLock: withLock, tryLock: tryLock, unlock: unlock, spreadsheet: spreadsheet };
 })();
 
 // ---- 11_Cache.js
@@ -2007,6 +2060,10 @@ var Seeds = (function () {
 
   return { run: run };
 })();
+
+// ---- 14_SeedManifest.js
+/** Gerado por tools/build-seeds.js — não editar. Versões dos dados empacotados em src/seed/. */
+var SEED_MANIFEST = {"grapes":{"version":5,"count":204},"packs":[{"code":"AM","version":1,"country":"Armênia","regions":6},{"code":"AR","version":1,"country":"Argentina","regions":4},{"code":"AT","version":1,"country":"Áustria","regions":4},{"code":"AU","version":1,"country":"Austrália","regions":5},{"code":"BG","version":1,"country":"Bulgária","regions":5},{"code":"BR","version":2,"country":"Brasil","regions":6},{"code":"CA","version":1,"country":"Canadá","regions":4},{"code":"CH","version":1,"country":"Suíça","regions":6},{"code":"CL","version":1,"country":"Chile","regions":4},{"code":"CN","version":1,"country":"China","regions":4},{"code":"DE","version":1,"country":"Alemanha","regions":13},{"code":"ES","version":1,"country":"Espanha","regions":15},{"code":"FR","version":1,"country":"França","regions":13},{"code":"GB","version":1,"country":"Inglaterra","regions":2},{"code":"GE","version":1,"country":"Geórgia","regions":5},{"code":"GR","version":1,"country":"Grécia","regions":8},{"code":"HR","version":1,"country":"Croácia","regions":4},{"code":"HU","version":1,"country":"Hungria","regions":6},{"code":"IL","version":1,"country":"Israel","regions":5},{"code":"IT","version":2,"country":"Itália","regions":20},{"code":"JP","version":1,"country":"Japão","regions":4},{"code":"LB","version":1,"country":"Líbano","regions":3},{"code":"MD","version":1,"country":"Moldávia","regions":3},{"code":"MX","version":1,"country":"México","regions":5},{"code":"NZ","version":1,"country":"Nova Zelândia","regions":8},{"code":"PT","version":1,"country":"Portugal","regions":14},{"code":"RO","version":1,"country":"Romênia","regions":8},{"code":"SI","version":1,"country":"Eslovênia","regions":3},{"code":"TR","version":1,"country":"Turquia","regions":5},{"code":"US","version":1,"country":"Estados Unidos","regions":4},{"code":"UY","version":1,"country":"Uruguai","regions":4},{"code":"ZA","version":1,"country":"África do Sul","regions":2}],"geo_keys":["AM:Aragatsotn","AM:Ararat","AM:Armavir","AM:Kotayk","AM:Tavush","AM:Vayots Dzor","AR:Mendoza","AR:Noroeste","AR:Patagônia","AR:San Juan","AT:Burgenland","AT:Niederösterreich","AT:Steiermark","AT:Wien","AU:New South Wales","AU:South Australia","AU:Tasmania","AU:Victoria","AU:Western Australia","Abruzzo","BG:Danúbio","BG:Mar Negro","BG:Struma","BG:Trácia","BR:Minas Gerais","BR:Paraná","BR:Rio Grande do Sul","BR:Santa Catarina","BR:São Francisco","BR:São Paulo","Basilicata","CA:British Columbia","CA:Nova Scotia","CA:Ontario","CA:Quebec","CH:Deutschschweiz","CH:Genève","CH:Ticino","CH:Três Lagos","CH:Valais","CH:Vaud","CL:Aconcágua","CL:Central","CL:Coquimbo","CL:Sul","CN:Hebei","CN:Ningxia","CN:Shandong","CN:Xinjiang","Calabria","Campania","DE:Ahr","DE:Baden","DE:Franken","DE:Hessische Bergstraße","DE:Mittelrhein","DE:Mosel","DE:Nahe","DE:Pfalz","DE:Rheingau","DE:Rheinhessen","DE:Saale-Unstrut","DE:Sachsen","DE:Württemberg","ES:Andalucia","ES:Aragon","ES:Baleares","ES:Canarias","ES:Castilla-La Mancha","ES:Castilla-Leon","ES:Cataluña","ES:Extremadura","ES:Galicia","ES:La Rioja","ES:Madrid","ES:Murcia","ES:Navarra","ES:Pais Vasco","ES:Valencia","Emilia-Romagna","FR:Alsácia","FR:Beaujolais","FR:Bordeaux","FR:Borgonha","FR:Champagne","FR:Córsega","FR:Jura","FR:Languedoc-Roussillon","FR:Provença","FR:Savoia","FR:Sudoeste","FR:Vale do Loire","FR:Vale do Rhône","Friuli-Venezia Giulia","GB:England","GB:Wales","GE:Imereti","GE:Kakheti","GE:Kartli","GE:Racha","GE:Samegrelo","GR:Central","GR:Creta","GR:Egeu","GR:Epiro","GR:Jônicas","GR:Macedônia","GR:Peloponeso","GR:Tessália","HR:Dalmácia","HR:Eslavônia","HR:Ocidental","HR:Ístria","HU:Balaton","HU:Duna","HU:Eger","HU:Pannon","HU:Tokaj","HU:Észak-Dunántúl","IL:Galileia","IL:Judeia","IL:Negev","IL:Samson","IL:Sharon","JP:Hokkaido","JP:Nagano","JP:Yamagata","JP:Yamanashi","LB:Bekaa","LB:Montanha","LB:Sul","Lazio","Liguria","Lombardia","MD:Codru","MD:Valul lui Traian","MD:Ștefan Vodă","MX:Baja California","MX:Centro","MX:Chihuahua","MX:Coahuila","MX:Sonora","Marche","Molise","NZ:Auckland","NZ:Canterbury","NZ:Gisborne","NZ:Hawke's Bay","NZ:Marlborough","NZ:Nelson","NZ:Otago","NZ:Wairarapa","PT:Alentejo","PT:Algarve","PT:Bairrada","PT:Beira Interior","PT:Douro","PT:Dão","PT:Lisboa","PT:Minho","PT:Setúbal","PT:Tejo","PT:Trás-os-Montes","Piemonte","Puglia","RO:Banat","RO:Crișana","RO:Danúbio","RO:Dobruja","RO:Moldávia","RO:Muntênia","RO:Transilvânia","SI:Podravje","SI:Posavje","SI:Primorska","Sardegna","Sicilia","TR:Anatólia Central","TR:Egeu","TR:Leste","TR:Outras","TR:Trácia","Toscana","Trentino-Alto Adige","US:California","US:New York","US:Oregon","US:Washington","UY:Norte","UY:Sudeste","UY:Sudoeste","UY:Sul","Umbria","Valle d'Aosta","Veneto","ZA:Northern Cape","ZA:Western Cape"]};
 
 // ---- 14_Settings.js
 /**
@@ -4191,6 +4248,24 @@ var GRAPE_ENCYCLOPEDIA = (function () {
  * - Aromas e relações: só acrescenta o que falta.
  * Pode rodar quantas vezes quiser (idempotente).
  */
+/**
+ * Dados grandes (enciclopédia de uvas, packs de regiões) ficam em src/seed/*.html como texto JS e só são
+ * executados quando há importação — o Apps Script não precisa carregá-los a cada chamada (ver tools/build-seeds.js).
+ * Na prévia e nos testes os arquivos já vêm carregados, e load() não faz nada.
+ */
+var SeedData = (function () {
+  var loaded = {};
+  var CHECK = { grapes: function () { return typeof GRAPE_ENCYCLOPEDIA !== 'undefined'; },
+    regions: function () { return typeof REGION_PACKS !== 'undefined' && REGION_PACKS.length > 0; } };
+  function load(name) {
+    if (loaded[name] || CHECK[name]()) { loaded[name] = true; return; }
+    var code = HtmlService.createHtmlOutputFromFile('seed/' + name).getContent();
+    (0, eval)(code);    // eval indireto: as declarações viram globais (GRAPE_ENCYCLOPEDIA, REGION_PACKS, GEO_PLACES)
+    loaded[name] = true;
+  }
+  return { load: load };
+})();
+
 var SeedEncyclopedia = (function () {
   var REPLACEABLE = { planilha: 1, ia_nao_verificada: 1, pesquisado: 1 };
   var FIELDS = ['color', 'origin', 'main_countries', 'main_regions', 'ripening', 'vigor', 'skin_thickness',
@@ -4205,10 +4280,10 @@ var SeedEncyclopedia = (function () {
    */
   function run(budgetMs) {
     var budget = budgetMs || 8000, t0 = Date.now();
-    var lock = LockService.getScriptLock();
-    if (!lock.tryLock(1000)) return null;
+    if (!Repo.tryLock(1000)) return null;
     try {
       var props = PropertiesService.getScriptProperties();
+      SeedData.load('grapes');
       var E = GRAPE_ENCYCLOPEDIA;
       var prog = JSON.parse(props.getProperty(PROGRESS) || 'null');
       if (!prog || prog.version !== E.version) prog = { version: E.version, index: 0, report: null };
@@ -4338,7 +4413,7 @@ var SeedEncyclopedia = (function () {
       props.setProperty('GRAPE_ENCYCLOPEDIA_VERSION', String(E.version));
       return { done: true, remaining: 0, report: report };
     } finally {
-      lock.releaseLock();
+      Repo.unlock();
     }
   }
 
@@ -4358,8 +4433,8 @@ var SeedEncyclopedia = (function () {
   /** Roda a importação uma vez por versão da enciclopédia (chamado automaticamente pela API). */
   function ensure(budgetMs) {
     var props = PropertiesService.getScriptProperties();
-    if (props.getProperty('GRAPE_ENCYCLOPEDIA_VERSION') === String(GRAPE_ENCYCLOPEDIA.version)) return null;
-    return run(budgetMs || 8000);
+    if (props.getProperty('GRAPE_ENCYCLOPEDIA_VERSION') === String(SEED_MANIFEST.grapes.version)) return null;
+    return run(budgetMs || 8000) || { done: false, busy: true };
   }
 
   /** Importação completa (setup e botão "Reimportar"): chama run em etapas até acabar ou ~4 min. */
@@ -11157,7 +11232,7 @@ var Catalog = (function () {
       ai_enabled: AiProvider.hasKey() && Ctx.isAdmin(),
       me: Auth.publicUser(Ctx.current()),
       is_admin: Ctx.isAdmin(),
-      encyclopedia: { version: GRAPE_ENCYCLOPEDIA.version, grapes: GRAPE_ENCYCLOPEDIA.grapes.length,
+      encyclopedia: { version: SEED_MANIFEST.grapes.version, grapes: SEED_MANIFEST.grapes.count,
         region_packs: SeedRegions.summary() },
       enums: {
         sources: CONFIG.SOURCES, bottleStatuses: CONFIG.BOTTLE_STATUSES, noteKinds: CONFIG.NOTE_KINDS,
@@ -11622,8 +11697,11 @@ var Regions = (function () {
     var wines = Repo.all('wines');
     var top = regs.filter(function (r) { return r.country_id === c.id && !r.parent_id; })
       .sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'pt'); });
+    // Contornos: o navegador busca no arquivo estático do site (geo.js); aqui só a chave de cada região.
+    var geoKeys = {};
+    SEED_MANIFEST.geo_keys.forEach(function (k) { geoKeys[k] = true; });
     var geo = {};
-    top.forEach(function (r) { if (r.geo_key && typeof GEO_REGIONS !== 'undefined' && GEO_REGIONS[r.geo_key]) geo[r.id] = GEO_REGIONS[r.geo_key]; });
+    top.forEach(function (r) { if (r.geo_key && geoKeys[r.geo_key]) geo[r.id] = r.geo_key; });
     return {
       id: c.id, name: c.name, description: c.description, source: c.source, source_ref: c.source_ref, field_refs: c.field_refs || {}, field_sources: c.field_sources || {},
       regions: top.map(function (r) {
@@ -11682,7 +11760,7 @@ var Regions = (function () {
       field_sources: r.field_sources || {}, field_refs: r.field_refs || {},
       grapes: grapeList(r.id),
       producers: prodList(r.id),
-      geo: r.geo_key && typeof GEO_REGIONS !== 'undefined' ? GEO_REGIONS[r.geo_key] || null : null,
+      geo_key: r.geo_key || '',
       subregions: subs.map(function (s) {
         return { id: s.id, name: s.name, classification: s.classification, description: s.description,
           notable_wines: s.notable_wines, lat: s.lat, lng: s.lng, source: s.source, source_ref: s.source_ref,
@@ -11851,7 +11929,7 @@ var SeedRegions = (function () {
     });
   }
 
-  function packs() { return typeof REGION_PACKS !== 'undefined' ? REGION_PACKS : []; }
+  function packs() { SeedData.load('regions'); return typeof REGION_PACKS !== 'undefined' ? REGION_PACKS : []; }
 
   /** Importa todos os packs e soma os relatórios. */
   /**
@@ -11881,6 +11959,13 @@ var SeedRegions = (function () {
    */
   function ensure(maxMs) {
     var props = PropertiesService.getScriptProperties();
+    // Pelo manifesto (pequeno) vê se há algo pendente antes de carregar os packs (grandes).
+    var all = props.getProperties();
+    var pending = SEED_MANIFEST.packs.some(function (m) {
+      var cur = all['REGION_PACK_' + m.code + '_VERSION'] || (m.code === 'IT' ? all.REGION_ENCYCLOPEDIA_VERSION : '');
+      return cur !== String(m.version);
+    });
+    if (!pending) return [];
     var done = [], t0 = Date.now(), limit = maxMs || 20000;
     packs().forEach(function (E) {
       if (done.length && Date.now() - t0 > limit) return;
@@ -11897,7 +11982,7 @@ var SeedRegions = (function () {
   }
 
   function summary() {
-    return packs().map(function (E) { return { code: E.code, country: E.country_of, version: E.version, regions: E.regions.length }; });
+    return SEED_MANIFEST.packs.map(function (m) { return { code: m.code, country: m.country, version: m.version, regions: m.regions }; });
   }
 
   return { run: run, ensure: ensure, summary: summary };
@@ -14439,19 +14524,22 @@ var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|ver
  * Ordem: estrutura da planilha (como sistema) → usuário → limites → permissão → método.
  */
 function dispatch_(method, args, resolveUser) {
+  var T = [Date.now()], mark = function () { T.push(Date.now()); };
   try {
+    if (method === 'debug.ping') return { ok: true, data: 'pong' };
     var fn = API_METHODS[method];
     if (typeof method !== 'string' || !fn || !Object.prototype.hasOwnProperty.call(API_METHODS, method)) throw new Error('Método desconhecido.');
     Ctx.setUser(null);
-    Ctx.asSystem(ensureSchema_);
+    Ctx.asSystem(ensureSchema_); mark();
     if (!PUBLIC_METHODS[method]) {
-      var user = resolveUser();
+      var user = resolveUser(); mark();
       Ctx.setUser(user);
       Auth.rateLimit(user, method);
       if (ADMIN_METHODS.test(method)) Ctx.requireAdmin();
     }
-    var data = fn(args && typeof args === 'object' ? args : {});
-    return { ok: true, data: data === undefined ? null : data };
+    var data = fn(args && typeof args === 'object' ? args : {}); mark();
+    // Tempos por etapa (ms): estrutura, login, método. Ajuda a achar lentidão; não contém dados.
+    return { ok: true, data: data === undefined ? null : data, ms: T.slice(1).map(function (t, i) { return t - T[i]; }) };
   } catch (e) {
     var msg = e && e.message ? e.message : String(e);
     console.error(method, e && e.stack || e);
@@ -14489,6 +14577,12 @@ function doPost(e) {
 
 /** Aplica automaticamente mudanças de schema depois de um `clasp push` (só acrescenta abas/colunas). */
 function ensureSchema_() {
+  // Atalho: se nada mudou desde a última verificação (mesma estrutura e mesmas versões dos dados), não
+  // consulta propriedades nem planilha — economiza ~0,5 s em toda chamada.
+  var sig = CONFIG.SCHEMA_VERSION + '|' + SEED_MANIFEST.grapes.version + '|' +
+    SEED_MANIFEST.packs.map(function (p) { return p.code + p.version; }).join(',');
+  var cache = CacheService.getScriptCache();
+  if (cache.get('seeds_ok') === sig) return;
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('SCHEMA_VERSION') !== String(CONFIG.SCHEMA_VERSION)) {
     Repo.withLock(function () {
@@ -14501,8 +14595,9 @@ function ensureSchema_() {
   }
   try {
     // Em etapas curtas: a primeira abertura depois de uma versão nova não trava o app.
-    SeedEncyclopedia.ensure(8000);
-    SeedRegions.ensure(8000);
+    var g = SeedEncyclopedia.ensure(8000);
+    var r = SeedRegions.ensure(8000);
+    if (g === null && !r.length) cache.put('seeds_ok', sig, 21600);
   } catch (e) {
     // Não bloqueia o app: registra e tenta de novo na próxima chamada.
     console.error('Enciclopédia de uvas', e && e.stack || e);

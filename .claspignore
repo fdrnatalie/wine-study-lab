@@ -1,2 +1,6 @@
 **/00_Local.example.js
 **/.DS_Store
+**/15_SeedGrapes.js
+**/17_SeedRegions*.js
+**/18_Geo*.js
+**/19_GeoPlaces.js
