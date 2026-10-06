@@ -2140,6 +2140,7 @@ var ScaleUtil = (function () {
  * v3 (06/10/2026): fichas completas das uvas que só tinham o nome (vindas dos packs de regiões), começando pelas
  *   mais citadas: origem, história, onde se planta, viticultura, aromas e perfil (Wikipedia + Wine Folly; quando
  *   não há artigo próprio, a Wikipedia em outra língua ou o artigo do vinho do país, com o link em `wiki`).
+ * v4 (06/10/2026): lote 2, mais 38 uvas (Cercial e Kraljevina seguem só com o nome: sem fonte encontrada).
  *
  * Para atualizar: edite este arquivo, aumente `version` e envie (clasp push). A importação roda
  * sozinha na primeira chamada e nunca sobrescreve o que você editou (origem "usuario"/"ia_revisada").
@@ -3527,12 +3528,330 @@ var GRAPE_ENCYCLOPEDIA = (function () {
   ];
 
 
+  var GRAPES_V4 = [
+    // ---------- v3 · lote 2 ----------
+    { name: 'Muscat Ottonel', color: 'branca', wiki: 'Muscat_Ottonel', wf: '',
+      origin: 'França (Loire/Alsácia): primeiro cultivada na Alsácia por Moreau-Robert em 1852; tida como cruzamento de Chasselas com Muscat de Saumur.',
+      synonyms: ['Muskat-Ottonel', 'Muskat Otonel', 'Moscato Ottonel', 'Misket Ottonel'],
+      main_countries: 'França, Áustria, Hungria, Bulgária, Romênia, Moldávia, Croácia, Sérvia',
+      main_regions: 'Alsácia (pode ser rotulada Muscat d\'Alsace, só ou com Muscat à Petits Grains); vinhos doces na Áustria e no Leste Europeu',
+      description: 'Da família das moscatéis: secos aromáticos na Alsácia e na Hungria, e doces na Áustria, Bulgária, Romênia, Moldávia, Croácia e Sérvia.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Kerner', color: 'branca', wiki: 'Kerner_(grape)', wf: '',
+      origin: 'Alemanha, 1929: August Herold cruzou Trollinger (Schiava Grossa) e Riesling em Lauffen (Württemberg). Liberada em 1969; homenageia o poeta e médico Justinus Kerner.',
+      synonyms: ['Weißer Herold'],
+      main_countries: 'Alemanha, Itália, Suíça, Eslovênia', main_regions: '8ª uva mais plantada da Alemanha em 2006 (4.004 ha); Alto Ádige (Itália)',
+      description: 'Branca aromática: amarelo-palha transparente, buquê varietal pronunciado, muitas vezes com um tom de moscatel. Lembra o Riesling no sabor vivo e frutado, mas com menos acidez e mais corpo.',
+      profile: P('', '', '', 'media-', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Loureiro', color: 'branca', wiki: 'Loureiro_(grape)', wf: 'loureiro',
+      origin: 'Noroeste da Península Ibérica (Minho e Galícia).',
+      synonyms: ['Loureira', 'Branco Redondo', 'Marquez', 'Dourado'],
+      main_countries: 'Portugal, Espanha', main_regions: 'Vinho Verde (sobretudo a sub-região do Lima), Galícia (Rías Baixas)',
+      ripening: 'Brotação precoce a média; maturação média a tardia.', vigor: 'Média a forte.',
+      disease_sensitivity: 'Sensível ao oídio e muito sensível à botrytis; sensibilidade média ao míldio.',
+      description: 'Uma das grandes uvas do Vinho Verde: vinhos vivos com pêssego, cítricos maduros e flores brancas, levemente aromáticos (Wine Folly). Bons com bacalhau e caldeiradas. Serviço 3–7 °C; guarda 3–5 anos.',
+      profile: P('seco', 'leve', 'baixo', 'alta', 'baixo..medio'),
+      flavors: 'grapefruit, lima, flor de tília, louro, salinidade',
+      aromas_wf: ['Grapefruit', 'Lima', 'Louro', 'Salino', 'Pêssego'], aromas_wiki: [] },
+
+    { name: 'Petit Manseng', color: 'branca', wiki: 'Petit_Manseng', wf: '',
+      origin: 'Sudoeste da França.',
+      synonyms: ['Petit Mansenc', 'Ichiriota Zuria Tipia'],
+      main_countries: 'França, Espanha', main_regions: 'Jurançon, Pacherenc du Vic-Bilh (perto de Madiran), Gasconha',
+      vigor: 'Rendimento muito baixo (~15 hl/ha).', berry_size: 'Pequena', skin_thickness: 'Grossa',
+      description: 'A de melhor qualidade da família Manseng. Muitas vezes fica na vinha até dezembro para colheita tardia: acumula muito açúcar sem perder a acidez — base dos doces do Jurançon e do Pacherenc du Vic-Bilh.',
+      profile: P('', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Gros Manseng', color: 'branca', wiki: 'Gros_Manseng', wf: '',
+      origin: 'Sudoeste da França (família Manseng).',
+      synonyms: [],
+      main_countries: 'França, Espanha', main_regions: 'Jurançon e Béarn (secos); Pacherenc du Vic-Bilh, Côtes de Gascogne, Floc de Gascogne',
+      description: 'Vinhos de sabor intenso e acidez alta, com damasco e marmelo e notas especiadas e florais. Colhida com 11,5–12% de álcool potencial, dá frutas frescas e flores; colhida mais tarde, vinhos mais ricos. Faz os secos do Jurançon.',
+      profile: P('', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: ['Damasco', 'Marmelo'] },
+
+    { name: 'Athiri', color: 'branca', wiki: 'Athiri', wf: '',
+      origin: 'Grécia (ilhas do Egeu).',
+      synonyms: ['Athiri Aspro', 'Asprathiri'],
+      main_countries: 'Grécia', main_regions: 'Rodes (aparece como "Rhodes" nos rótulos), Santorini e outras ilhas',
+      description: 'Branca de caráter de limão. Faz o Retsina em Rodes e muitas vezes vai em corte com Assyrtiko; em outras áreas, com Vilana e Ladikino.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: ['Limão'] },
+
+    { name: 'Sercial', color: 'branca', wiki: 'Sercial', wf: '',
+      origin: 'Portugal.',
+      synonyms: ['Esgana Cão', 'Esgana'],
+      main_countries: 'Portugal', main_regions: 'Madeira (ponta sul da ilha, em declínio); continente (como Esgana Cão)',
+      ripening: 'Tardia, o que preserva a acidez característica.',
+      description: 'Dá nome ao Madeira mais seco dos quatro estilos clássicos — o mais leve, ácido e delicado, e o que mais demora a amadurecer. No continente chama-se Esgana Cão ("estrangula-cão"). Não confundir com a Cercial (Bairrada, Dão), outra uva.',
+      profile: P('', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Treixadura', color: 'branca', wiki: 'Treixadura', wf: '',
+      origin: 'Noroeste da Península Ibérica (Minho e Galícia).',
+      synonyms: ['Trajadura', 'Trincadente', 'Verdello Rubio'],
+      main_countries: 'Portugal, Espanha', main_regions: 'Vinho Verde (como Trajadura); Ribeiro e Rías Baixas (Galícia)',
+      description: 'Sobretudo uva de corte: dá corpo e aromas leves de limão. Nas Rías Baixas vai com Loureiro e Albariño; no Ribeiro, com Torrontés e Lado; no Vinho Verde, com Alvarinho, Loureiro, Pedernã, Azal e Avesso. O sinônimo "Trincadeira" é compartilhado com a tinta Tinta Amarela.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: ['Limão'] },
+
+    { name: 'Hondarribi Beltza', color: 'tinta', wiki: 'Hondarribi_Beltza', wf: '',
+      origin: 'País Basco (Espanha).',
+      synonyms: ['Hondarrabi Beltza'],
+      main_countries: 'Espanha', main_regions: 'Getaria e Zarautz (Getariako Txakolina), ~170 ha',
+      description: 'A tinta mais importante do País Basco, rara fora dali: faz o Txakoli tinto e rosado (menos comuns que o branco). Muitas vezes plantada em pé franco, sem problemas aparentes de filoxera.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Xarel·lo', color: 'branca', wiki: 'Xarel·lo', wf: 'xarel-lo',
+      origin: 'Espanha (Catalunha).',
+      synonyms: ['Pansa Blanca', 'Cartoixà', 'Premsal Blanca', 'Xarelo'],
+      main_countries: 'Espanha', main_regions: 'Penedès e Cava (8.043 ha em 2008)',
+      description: 'Uma das três uvas tradicionais da Cava (com Macabeo e Parellada): a de sabor mais marcante e mais aromática, que dá acidez alta para equilibrar a riqueza do Macabeo. Nos últimos 20 anos também em varietais e em Cavas de topo. Serviço 3–7 °C; guarda 3–5 anos (Wine Folly).',
+      profile: P('seco', 'leve', 'baixo', 'alta', 'medio'),
+      flavors: 'limão, pêssego, flor de tília, gengibre, amêndoa crua',
+      aromas_wf: ['Limão', 'Pêssego', 'Gengibre', 'Amêndoa'], aromas_wiki: [] },
+
+    { name: 'Parellada', color: 'branca', wiki: 'Parellada', wf: '',
+      origin: 'Espanha (Catalunha).',
+      synonyms: ['Montonec', 'Martorella', 'Perelada'],
+      main_countries: 'Espanha', main_regions: 'Catalunha (Cava, Penedès), ~10.000 ha em 2004',
+      description: 'Uma das três uvas da Cava; também em brancos jovens de corte e, às vezes, em cortes com carvalho com Chardonnay e Sauvignon Blanc. Boa acidez e frescor: ótima para aperitivo.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Poulsard', color: 'tinta', wiki: 'Poulsard', wf: '',
+      origin: 'França (Jura), cultivada desde o século XV.',
+      synonyms: ['Ploussard', 'Plant d\'Arbois', 'Mescle'],
+      main_countries: 'França', main_regions: 'Jura (Arbois, Pupillin — onde se usa "Ploussard")',
+      ripening: 'Brota cedo (sensível a geada de primavera); sujeita a coulure.', bunch_size: 'Compactos, bagas ovais de casca fina',
+      soils: 'No Jura, margas de xisto, calcário e argila.',
+      description: 'Tinta de casca finíssima e pouca cor: dá tintos muito claros (mesmo com maceração longa), vin gris, rosés, blanc de noirs e crémant. Aromas florais marcantes. Já foi a uva mais plantada do Jura.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Jacquère', color: 'branca', wiki: 'Jacquère', wf: '',
+      origin: 'Provavelmente francesa; DNA: um dos pais é a Gouais Blanc.',
+      synonyms: ['Plant des Abymes', 'Cugnette', 'Redin'],
+      main_countries: 'França', main_regions: 'Savoie (Apremont, Abymes, Vin de Savoie), Bugey; ~1.000 ha',
+      vigor: 'Alto rendimento.',
+      description: 'Brancos secos, leves, levemente perfumados e refrescantes; o vinho clássico para acompanhar fondue.',
+      profile: P('seco', 'leve', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Xinomavro', color: 'tinta', wiki: 'Xinomavro', wf: 'xinomavro',
+      origin: 'Grécia (Macedônia). O nome significa "preto ácido".',
+      synonyms: [],
+      main_countries: 'Grécia, China', main_regions: 'Naoussa (PDO desde 1971, 100% Xinomavro), Amyntaio, Goumenissa, Rapsani; 2.239 ha em 2013',
+      description: 'A tinta-símbolo de Naoussa, muitas vezes comparada à Nebbiolo: acidez alta, taninos firmes, cor clara e grande capacidade de guarda (Wine Folly). Serviço 12–15 °C; decantar 1 hora; guarda 10+ anos.',
+      profile: P('seco', 'medio+', 'alto', 'alta', 'medio..alto'),
+      flavors: 'framboesa, calda de ameixa, anis, pimenta-da-jamaica, tabaco',
+      aromas_wf: ['Framboesa', 'Ameixa', 'Anis', 'Tabaco'], aromas_wiki: [] },
+
+    { name: 'Petit Rouge', color: 'tinta', wiki: 'Petit_Rouge', wf: '',
+      origin: 'Itália (Valle d\'Aosta), provavelmente nativa; há dúvida se é a mesma que a suíça Rouge de Valais.',
+      synonyms: ['Oriou', 'Picciourouzzo'],
+      main_countries: 'Itália', main_regions: 'Valle d\'Aosta (Enfer d\'Arvier, Torrette)',
+      ripening: 'Tardia; colhida com acidez baixa.', berry_size: 'Pequena, de cor "empoeirada", quase cinza',
+      description: 'Sobretudo uva de corte no Valle d\'Aosta, onde dá cor escura e notas florais aos tintos normalmente claros da região; há também varietais.',
+      profile: P('', '', '', 'baixa', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Rossese', color: 'tinta', wiki: 'Tibouren', wf: '',
+      origin: 'Provavelmente da Grécia, talvez do Oriente Médio (Pierre Galet); hoje na Provence (Tibouren) e na Ligúria (Rossese di Dolceacqua).',
+      synonyms: ['Rossese di Dolceacqua', 'Tibouren'],
+      main_countries: 'Itália, França', main_regions: 'Dolceacqua (Ligúria, DOP); Provence (rosés)',
+      disease_sensitivity: 'Sensível a coulure; rendimentos muito irregulares, por isso pouco plantada.',
+      description: 'Intensamente aromática, com buquê terroso que Jancis Robinson descreve como "garrigue"; muito usada em rosés na Provence e especialidade local em Dolceacqua. (O nome "Rossese" também designa outras uvas da Ligúria e do Piemonte.)',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: ['Ervas secas'] },
+
+    { name: 'Nero di Troia', color: 'tinta', wiki: 'Uva_di_Troia', wf: '',
+      origin: 'Itália (Puglia); o nome deve vir da cidade de Troia (Foggia), fundada segundo a lenda pelo herói grego Diomedes.',
+      synonyms: ['Uva di Troia', 'Sumarello', 'Uva di Canosa', 'Uva di Barletta'],
+      main_countries: 'Itália', main_regions: 'Norte da Puglia: Castel del Monte, Rosso Barletta, Rosso Canosa, Cacc\'e Mmitte di Lucera, Orta Nova',
+      vigor: 'Bastante vigorosa.', bunch_size: 'Grandes, compactos, piramidais (às vezes alados)', ripening: 'Meia-estação.',
+      description: 'Tinta de bagas violetas que aguenta bem o calor da Puglia. Varietal ou em corte com Bombino Nero, Montepulciano e Sangiovese; base do Castel del Monte.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Catarratto', color: 'branca', wiki: 'Catarratto', wf: 'catarratto',
+      origin: 'Itália (Sicília).',
+      synonyms: ['Catarratto Bianco'],
+      main_countries: 'Itália', main_regions: 'Sicília (a uva mais plantada da ilha); Etna DOC (com Minella Bianca e Carricante)',
+      description: 'Pode dar brancos encorpados com notas de limão. Serviço 7–12 °C; guarda 1–3 anos (Wine Folly).',
+      profile: P('seco', 'medio-', 'baixo', 'media', 'medio'),
+      flavors: 'limão, maçã, pêssego, flores secas, mel',
+      aromas_wf: ['Limão', 'Maçã verde', 'Pêssego', 'Mel'], aromas_wiki: [] },
+
+    { name: 'Malvasia Fina', color: 'branca', wiki: 'Malvasia', wf: 'malvasia-fina',
+      origin: 'Portugal (família Malvasia).',
+      synonyms: ['Boal', 'Bual'],
+      main_countries: 'Portugal', main_regions: 'Madeira (como Boal, uma das quatro uvas do vinho da Madeira); Douro',
+      description: 'Uma das quatro uvas principais do Madeira (Boal, estilo meio-doce). Em vinhos de mesa, aromas intensos e álcool notável (Wine Folly). Serviço 7–12 °C; guarda 10+ anos.',
+      profile: P('doce', 'medio-', 'baixo', 'media-', 'medio..alto'),
+      flavors: 'pêssego branco, flores do campo, amêndoa verde, manjericão, concha',
+      aromas_wf: ['Pêssego', 'Amêndoa', 'Salino'], aromas_wiki: [] },
+
+    { name: 'Roupeiro', color: 'branca', wiki: 'Roupeiro', wf: '',
+      origin: 'Portugal.',
+      synonyms: ['Síria', 'Alva', 'Códega'],
+      main_countries: 'Portugal', main_regions: 'Alentejo (como Alva) e Douro (como Códega)',
+      description: 'Branca portuguesa plantada sobretudo no Alentejo e no Douro.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Zierfandler', color: 'branca', wiki: 'Zierfandler', wf: '',
+      origin: 'Áustria; provavelmente Roter Veltliner × uma uva tipo Traminer.',
+      synonyms: ['Spätrot', 'Cirfandli', 'Zerjavina'],
+      main_countries: 'Áustria, Hungria, Eslovênia', main_regions: 'Thermenregion (Gumpoldskirchen) — 85 dos 98 ha austríacos em 2005',
+      ripening: 'Tardia; propensa à podridão nobre. As bagas avermelham do lado do sol antes da colheita ("Spätrot" = vermelho tardio).',
+      bunch_size: 'Grandes, cônicos, às vezes alados',
+      description: 'Tradicionalmente em corte com a Rotgipfler (o Spätrot-Rotgipfler de Gumpoldskirchen), cada vez mais varietal. Vinhos elegantes, muitas vezes bem doces, com muita acidez e buquê de pistache e amêndoa; envelhecem bem. Talvez esteja na origem do nome "Zinfandel".',
+      profile: P('', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: ['Amêndoa', 'Frutos secos (nozes)'] },
+
+    { name: 'Petite Arvine', color: 'branca', wiki: 'Petite_Arvine', wf: '',
+      origin: 'Suíça (Valais), cultivada desde 1602; o nome sugere origem no vale do Arve (Savoia).',
+      synonyms: ['Arvine'],
+      main_countries: 'Suíça, Itália', main_regions: 'Valais (154 ha em 2009); Valle d\'Aosta',
+      skin_thickness: 'Grossa',
+      description: 'Tida como a melhor branca do Valais. Vinhos ricos em extrato, de textura marcante, secos, meio-secos ou doces.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Graciano', color: 'tinta', wiki: 'Graciano', wf: '',
+      origin: 'Espanha.',
+      synonyms: ['Morrastel', 'Courouillade', 'Minustello'],
+      main_countries: 'Espanha, França, Austrália', main_regions: 'Rioja e Navarra; Languedoc-Roussillon (Morrastel), Córsega (Minustello); Austrália',
+      ripening: 'Tardia (fim de outubro).', vigor: 'Rendimento baixo.', climate: 'Prospera em clima quente e árido.',
+      description: 'Cor vermelha profunda, aroma intenso e ótima capacidade de guarda: peça-chave dos Gran Reservas do Rioja e de Navarra, onde dá estrutura. Na Austrália, varietal ou com Tempranillo.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Courbu', color: 'branca', wiki: 'Courbu', wf: '',
+      origin: 'Sudoeste da França.',
+      synonyms: ['Courbu Blanc', 'Petit Courbu', 'Hondarrabi Zuri'],
+      main_countries: 'França, Espanha', main_regions: 'Jurançon, Béarn, Pacherenc du Vic-Bilh; País Basco espanhol (como Hondarrabi Zuri)',
+      description: 'Nome de três variedades aparentadas do sudoeste da França (Petit Courbu, Courbu Blanc e a tinta Courbu Noir); as fontes nem sempre distinguem Petit Courbu e Courbu Blanc.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Mavrodaphne', color: 'tinta', wiki: 'Mavrodafni', wf: '',
+      origin: 'Grécia (Acaia, norte do Peloponeso). O nome ("louro negro") foi dado por Gustav Clauss, fundador da Achaia Clauss, por volta de 1850.',
+      synonyms: ['Mavrodafni', 'Mavrodaphni'],
+      main_countries: 'Grécia', main_regions: 'Patras (Acaia), Cefalônia',
+      description: 'Tinta e também estilo de vinho doce fortificado "tipo Porto" de Patras: fermentado ao sol, interrompido com destilado e envelhecido. Vinho escuro, quase opaco, com caramelo, chocolate, café, passas e ameixa; às vezes figo, especiarias, nozes, cedro e tabaco. Hoje há também tintos secos.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: ['Caramelo', 'Chocolate', 'Café', 'Uva-passa', 'Ameixa', 'Figo seco', 'Tabaco'] },
+
+    { name: 'Kadarka', color: 'tinta', wiki: 'Kadarka', wf: '',
+      origin: 'Incerta: às vezes tida como húngara; outra hipótese a liga à Skadarsko, dos Bálcãs (lago Skadar).',
+      synonyms: ['Gamza', 'Cadarca', 'Skadarka'],
+      main_countries: 'Hungria, Bulgária, Romênia, Sérvia', main_regions: 'Szekszárd e Eger (Hungria); norte da Bulgária (como Gamza); Romênia',
+      description: 'Uva de longa história; era peça importante do Bikavér ("Sangue de Touro") de Eger e Szekszárd, mas perdeu espaço para Kékfrankos e Portugieser. Popular na Bulgária (Gamza) e na Romênia.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Gamza', color: 'tinta', wiki: 'Kadarka', wf: '',
+      origin: 'Nome búlgaro da Kadarka.',
+      synonyms: ['Kadarka'],
+      main_countries: 'Bulgária', main_regions: 'Norte da Bulgária (Danúbio)',
+      description: 'É a mesma uva que a Kadarka húngara: veja a ficha da Kadarka.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Blauer Wildbacher', color: 'tinta', wiki: 'Wildbacher', wf: '',
+      origin: 'Áustria (Estíria): o nome vem de Wildbach (Deutschlandsberg); variedade muito antiga, talvez celta, registrada desde o século XVI.',
+      synonyms: ['Wildbacher'],
+      main_countries: 'Áustria', main_regions: 'Estíria Ocidental (o rosé Schilcher)',
+      ripening: 'Tardia; rendimentos irregulares.', disease_sensitivity: 'Propensa à podridão; precisa de locais quentes e ventilados.',
+      description: 'Especialidade da Estíria; vinhos com frutas vermelhas e notas herbáceas, de acidez refrescante.',
+      profile: P('', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: ['Framboesa', 'Morango'] },
+
+    { name: 'Dimyat', color: 'branca', wiki: 'Dimiat', wf: '',
+      origin: 'Bulgária (origem exata incerta). DNA: Gouais Blanc × variedade não identificada.',
+      synonyms: ['Dimiat'],
+      main_countries: 'Bulgária', main_regions: 'Sul e leste: Chirpan, Preslav, Shumen, Haskovo, Varna',
+      berry_size: 'Grande; ficam amarelo-acobreadas no pintor', vigor: 'Rendimentos altos se não controlada.',
+      description: 'A 2ª branca mais plantada da Bulgária (depois da Rkatsiteli). Vinhos leves e muito perfumados, de meio-secos a bem doces, servidos bem gelados e bebidos jovens; também destilada para rakia.',
+      profile: P('meio_seco..doce', 'leve', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Mavrud', color: 'tinta', wiki: 'Mavrud', wf: '',
+      origin: 'Bálcãs; o nome vem do grego "mavro" (preto).',
+      synonyms: ['Mavroudi'],
+      main_countries: 'Bulgária, Grécia, Albânia, Romênia', main_regions: 'Trácia búlgara: Asenovgrad e Perushtitsa; também Pazardzhik, Stara Zagora, Chirpan',
+      vigor: 'Rendimento baixo.', berry_size: 'Pequena', ripening: 'Tardia.',
+      description: 'Um dos vinhos locais mais prestigiados da Bulgária: tintos de caráter, tânicos e especiados, com potencial de guarda; varietal ou em corte.',
+      profile: P('', '', 'alto', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Shiroka Melnishka', color: 'tinta', wiki: 'Siroka_Melniska', wf: '',
+      origin: 'Bulgária (região de Melnik, perto da fronteira grega). O nome significa "videira de folha larga de Melnik".',
+      synonyms: ['Melnik', 'Broadleafed Melnik', 'Siroka Melniska'],
+      main_countries: 'Bulgária', main_regions: 'Melnik e vale do Struma, no sudoeste',
+      description: 'Tem afinidade com carvalho, que realça notas de tabaco; especiado e potente, muitas vezes comparado ao Châteauneuf-du-Pape. Era o preferido de Winston Churchill.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: ['Tabaco'] },
+
+    { name: 'Goethe', color: 'branca', wiki: 'Goethe_(grape)', wf: '',
+      origin: 'EUA, meados do século XIX: um dos "Rogers\' Hybrids" de Edward Staniford Rogers (Salem, Massachusetts) — Carter (Vitis labrusca) × Black Hamburg (provavelmente Schiava Grossa). Chamava-se Rogers No. 1.',
+      synonyms: ['Rogers No. 1'],
+      main_countries: 'Brasil', main_regions: 'Vales da Uva Goethe (Urussanga, Santa Catarina)',
+      ripening: 'Tardia; propensa à podridão.', skin_thickness: 'Casca rosa-pálida',
+      description: 'Híbrida labrusca × vinifera; flor feminina, precisa de outra variedade para polinizar. Em Urussanga virou terroir próprio, com Indicação de Procedência (2012) para brancos e espumantes.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Elbling', color: 'branca', wiki: 'Elbling', wf: '',
+      origin: 'Muito antiga; especula-se que seja cultivada no Mosela desde os romanos (a "Vitis alba" de Plínio), sem prova.',
+      synonyms: ['Weißer Elbling', 'Kleinberger'],
+      main_countries: 'Alemanha, Luxemburgo', main_regions: 'Alto Mosela (98,6% dos 583 ha alemães em 2006); Luxemburgo',
+      description: 'Foi a uva mais plantada da Alemanha da Idade Média até o início do século XX. Mosto de pouco açúcar e vinhos de acidez alta, bem neutros: sobretudo base de espumante (Mosel Sekt). Em varietal, lembra uma Silvaner mais leve e ácida.',
+      profile: P('', 'leve', '', 'alta', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Bobal', color: 'tinta', wiki: 'Bobal', wf: 'bobal',
+      origin: 'Espanha (Utiel-Requena, Valência); documentada no século XV. O nome vem do latim "bovale", pela forma de cabeça de touro do cacho.',
+      synonyms: [],
+      main_countries: 'Espanha', main_regions: 'Utiel-Requena (~80% das tintas), Valência, Cuenca, Albacete, Manchuela',
+      description: 'A 3ª tinta mais plantada da Espanha. Vinhos frutados, de taninos macios e final aveludado (Wine Folly). Serviço 15–20 °C; guarda 5–10 anos.',
+      profile: P('seco', 'medio', 'medio', 'media+', 'medio'),
+      flavors: 'amora, romã, alcaçuz, chá preto, cacau',
+      aromas_wf: ['Amora', 'Romã', 'Alcaçuz', 'Chá preto', 'Cacau'], aromas_wiki: [] },
+
+    { name: 'Cayetana Blanca', color: 'branca', wiki: 'Cayetana_blanca', wf: '',
+      origin: 'Talvez do Alentejo (Portugal), onde hoje é rara; citada em 1513 por Gabriel Alonso de Herrera.',
+      synonyms: ['Cayetana', 'Jaén Blanco'],
+      main_countries: 'Espanha, Portugal', main_regions: 'Extremadura e Jerez (destilada para brandy)',
+      description: 'A 3ª branca mais plantada da Espanha (39.919 ha em 2015, 9% da área de brancas).',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Obeideh', color: 'branca', wiki: 'Lebanese_wine', wf: '',
+      origin: 'Líbano (uva nativa).',
+      synonyms: ['Obaideh', 'Obeidi'],
+      main_countries: 'Líbano', main_regions: 'Vale do Bekaa',
+      description: 'Uma das duas brancas nativas do Líbano (com a Merwah). Muito açúcar e pouca acidez: vinhos de textura cremosa, com frescor e mineralidade.',
+      profile: P('', '', '', 'baixa', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Merwah', color: 'branca', wiki: 'Lebanese_wine', wf: '',
+      origin: 'Líbano (uva nativa).',
+      synonyms: [],
+      main_countries: 'Líbano', main_regions: 'Vale do Bekaa, montanhas do Líbano',
+      disease_sensitivity: 'Valorizada pela resistência a doenças.',
+      description: 'Uma das duas brancas nativas do Líbano (com a Obeideh). Vinhos de acidez viva e frutados, com cítricos sutis e notas de nozes.',
+      profile: P('', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: ['Limão', 'Frutos secos (nozes)'] },
+
+    { name: 'Misket Vermelho', color: 'branca', wiki: 'Misket_Cherven', wf: '',
+      origin: 'Bulgária: antiga variedade local dos vales sub-balcânicos.',
+      synonyms: ['Misket Cherven', 'Red Misket'],
+      main_countries: 'Bulgária', main_regions: 'Vale de Sungurlare, Karlovo, Brezovo; também Stara Zagora, Sliven, Yambol, Vratsa',
+      berry_size: 'Pequena, de casca rosa-avermelhada a violeta',
+      description: 'Uva branca de casca rosada que prefere colinas arejadas. Vinho geralmente seco, amarelo-palha com reflexos verdes; os varietais levam o nome do lugar (Sungurlare Misket, Karlovo Misket). Em vinhos de mesa vai em corte com Riesling Italico.',
+      profile: P('seco', '', '', '', ''), aromas_wf: [], aromas_wiki: [] }
+  ];
+
+  var RELATIONS_V3B = [
+    ['parent_of', 'Gouais Blanc', 'Jacquère', 'Jacquère'],
+    ['parent_of', 'Gouais Blanc', 'Dimyat', 'Dimiat'],
+    ['parent_of', 'Riesling', 'Kerner', 'Kerner_(grape)'],
+    ['parent_of', 'Schiava Grossa', 'Kerner', 'Kerner_(grape)'],
+    ['confused_with', 'Xinomavro', 'Nebbiolo', 'Xinomavro',
+      'O Xinomavro de Naoussa é muitas vezes comparado ao Nebbiolo: os dois têm acidez alta, taninos firmes, cor clara e longa guarda. Pela Wine Folly, o Xinomavro puxa para framboesa, calda de ameixa, anis e tabaco; o Nebbiolo, para rosas, alcatrão e cereja.'],
+    ['confused_with', 'Elbling', 'Sylvaner', 'Elbling',
+      'Em varietal, o Elbling é comparado a um Silvaner mais leve e mais ácido; os dois são bem neutros. O Elbling quase sempre vira espumante (Mosel Sekt).'],
+    ['confused_with', 'Kerner', 'Riesling', 'Kerner_(grape)',
+      'O Kerner (filho do Riesling) lembra o Riesling no sabor vivo e frutado, mas tem menos acidez, mais corpo e muitas vezes um tom de moscatel.']
+  ];
+
+
   grapes = grapes.concat(GRAPES_V2);
   relations = relations.concat(RELATIONS_V2);
   grapes = grapes.concat(GRAPES_V3);
   relations = relations.concat(RELATIONS_V3);
+  grapes = grapes.concat(GRAPES_V4);
+  relations = relations.concat(RELATIONS_V3B);
 
-  return { version: 3, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
+  return { version: 4, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
 })();
 
 // ---- 16_SeedImport.js
@@ -13638,10 +13957,11 @@ function gamePage_() {
 
 /** Endereço do jogo (mesmo app, ?page=jogo). */
 function gameUrl_() {
-  try {
-    var url = ScriptApp.getService().getUrl();
-    return url ? url + '?page=jogo' : '';
-  } catch (e) { return ''; }
+  var url = '';
+  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { console.error('gameUrl', e); }
+  // Reserva: endereço do app em 00_Local.js (fora do Git), caso o Google não informe a URL.
+  if (!url && typeof LOCAL_WEBAPP_URL !== 'undefined') url = LOCAL_WEBAPP_URL;
+  return url ? url.replace(/\/dev$/, '/exec') + '?page=jogo' : '';
 }
 
 /** Inclui um arquivo HTML dentro de outro (usado no template). */
