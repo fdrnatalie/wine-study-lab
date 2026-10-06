@@ -240,6 +240,7 @@ GitHub Pages (index.html, jogo.html)  ──POST text/plain {method,args,token}�
 - **Publicação:** `node tools/build-preview.js && node tools/build-site.js` → `build/site/` (app na raiz, demonstração em `/demo`).
   `site.config.json` guarda `apiUrl` (URL /exec) e `clientId` (públicos). No Apps Script: `configurarLogin(clientId, siteUrl)`;
   manifesto com acesso `ANYONE_ANONYMOUS` (a API exige sessão em toda chamada que não seja login).
+  **Até a virada para o site**, o manifesto fica em `MYSELF`: o app do Apps Script funciona só para a dona (admin), com os dados já migrados para a v5.
 
 ---
 

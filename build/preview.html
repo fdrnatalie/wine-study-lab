@@ -12903,8 +12903,11 @@ var Routine = (function () {
     };
   }
 
+  var LABELS = { abv: 'teor alcoólico', classification: 'classificação', production_method: 'método de produção', aging: 'estágio',
+    region_id: 'região', type: 'tipo', color: 'cor' };
+
   function missing_(w, grapeCount) {
-    var m = KEY_FIELDS.filter(function (f) { return Util.isBlank(w[f]); });
+    var m = KEY_FIELDS.filter(function (f) { return Util.isBlank(w[f]); }).map(function (f) { return LABELS[f]; });
     if (!grapeCount) m.push('uvas');
     return m;
   }
