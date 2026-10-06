@@ -98,6 +98,29 @@ var Login = {
   }
 };
 
+/** País → regiões → sub-regiões (listas em cascata nos formulários). */
+var Geo = {
+  byId: function (id) { var L = Store.lookups.regions; for (var i = 0; i < L.length; i++) if (L[i].id === id) return L[i]; return null; },
+  isSub: function (id) { var r = id && Geo.byId(id); return !!(r && r.parent_id); },
+  top: function (id) { var r = id && Geo.byId(id); return r ? (r.parent_id || r.id) : ''; },
+  regions: function (countryId) {
+    return Store.lookups.regions.filter(function (r) { return !r.parent_id && (!countryId || r.country_id === countryId); });
+  },
+  subs: function (regionId, countryId) {
+    return Store.lookups.regions.filter(function (r) { return r.parent_id && (regionId ? r.parent_id === regionId : (!countryId || r.country_id === countryId)); });
+  },
+  label_: function (r, withCountry) { return { id: r.id, name: r.name + (withCountry ? ' (' + Store.name('countries', r.country_id) + ')' : '') }; },
+  regionOptions: function (countryId, sel) {
+    var regs = Geo.regions(countryId);
+    return Components.options(regs.map(function (r) { return Geo.label_(r, !countryId); }), sel, regs.length ? '—' : 'Nenhuma região cadastrada');
+  },
+  subOptions: function (regionId, sel, countryId) {
+    if (!regionId) return '<option value="">Escolha a região primeiro</option>';
+    var subs = Geo.subs(regionId, countryId);
+    return Components.options(subs.map(function (r) { return Geo.label_(r, false); }), sel, subs.length ? '—' : 'Sem sub-regiões cadastradas');
+  }
+};
+
 /** Estado compartilhado: dados de apoio (listas para selects) carregados uma vez. */
 var Store = {
   lookups: null,

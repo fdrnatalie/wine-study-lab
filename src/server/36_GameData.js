@@ -57,12 +57,13 @@ var GameData = (function () {
     function label(r) { var c = cById[r.country_id]; return c ? c.name + ' · ' + r.name : ''; }
     function byPt(a, b) { return a.localeCompare(b, 'pt'); }
 
-    var regionNotes = {};
+    var regionNotes = {}, subParent = {};
     var tops = [], subs = [];
     regions.forEach(function (r) {
       var l = label(r);
       if (!l) return;
       (r.parent_id ? subs : tops).push(l);
+      if (r.parent_id && rById[r.parent_id]) subParent[l] = label(rById[r.parent_id]);
       var note = trusted(r, 'climate') && r.climate ? r.climate : (trusted(r, 'description') ? firstSentences(r.description, 260) : '');
       if (note) regionNotes[l] = note;
     });
@@ -115,6 +116,7 @@ var GameData = (function () {
       grapes: grapeNames.sort(byPt),
       grapeNotes: grapeNotes,
       regionNotes: regionNotes,
+      subParent: subParent,
       wines: wines
     };
   }

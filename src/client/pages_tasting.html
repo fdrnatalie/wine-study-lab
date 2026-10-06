@@ -175,7 +175,9 @@ Pages.tastingPlay = {
           '<div><label class="f">Alternativa 1</label><select class="in" data-grape="1">' + Components.options(grapes, gl[1] || '', '—') + '</select></div>' +
           '<div><label class="f">Alternativa 2</label><select class="in" data-grape="2">' + Components.options(grapes, gl[2] || '', '—') + '</select></div>' +
           '<div><label class="f">País</label><select class="in" data-q="country" id="t-country">' + Components.options(countries, country, '—') + '</select></div>' +
-          '<div><label class="f">Região</label><select class="in" data-q="region" id="t-region">' + regionOptions(country, v('region')) + '</select></div>' +
+          '<div><label class="f">Região</label><select class="in" id="t-region">' + Geo.regionOptions(country, Geo.top(v('region'))) + '</select></div>' +
+          '<div><label class="f">Sub-região (opcional)</label><select class="in" id="t-subregion">' + Geo.subOptions(Geo.top(v('region')), Geo.isSub(v('region')) ? v('region') : '', country) + '</select>' +
+          '<input type="hidden" data-q="region" id="t-region-val" value="' + esc(v('region')) + '"></div>' +
           '<div><label class="f">Safra</label><input class="in" type="number" data-q="vintage" value="' + esc(v('vintage')) + '" placeholder="ex.: 2021"></div>' +
           '<div><label class="f">Teor alcoólico estimado (%)</label><input class="in" type="number" step="0.5" data-q="abv" value="' + esc(v('abv')) + '" placeholder="ex.: 13,5"></div>' +
           '<div><label class="f">Estilo</label><input class="in" data-q="style" value="' + esc(v('style')) + '" placeholder="ex.: tinto jovem, sem madeira"></div>' +
@@ -192,13 +194,12 @@ Pages.tastingPlay = {
       '<div class="t-nav"><button class="btn" data-action="prev"' + (S.step === 0 ? ' disabled' : '') + '>← Anterior</button>' +
       (last ? '<button class="btn primary" data-action="complete">' + (s.completed ? 'Salvar' : 'Concluir garrafa #' + s.number) + '</button>'
         : '<button class="btn primary" data-action="next">Próximo →</button>') + '</div></div>';
-    var c = document.getElementById('t-country');
-    if (c) c.addEventListener('change', function () { document.getElementById('t-region').innerHTML = regionOptions(c.value, ''); });
-
-    function regionOptions(countryId, sel) {
-      var regs = Store.lookups.regions.filter(function (r) { return !countryId || r.country_id === countryId; });
-      return Components.options(regs.map(function (r) { return { id: r.id, name: r.name + (countryId ? '' : ' (' + Store.name('countries', r.country_id) + ')') }; }), sel, regs.length ? '—' : 'Nenhuma região cadastrada');
-    }
+    // País → só as regiões dele; região → só as sub-regiões dela. A resposta guardada é a mais específica.
+    var c = document.getElementById('t-country'), rg = document.getElementById('t-region'), sb = document.getElementById('t-subregion');
+    function sync() { document.getElementById('t-region-val').value = (sb && sb.value) || (rg && rg.value) || ''; }
+    if (c) c.addEventListener('change', function () { rg.innerHTML = Geo.regionOptions(c.value, ''); sb.innerHTML = Geo.subOptions('', '', c.value); sync(); });
+    if (rg) rg.addEventListener('change', function () { sb.innerHTML = Geo.subOptions(rg.value, '', c.value); sync(); });
+    if (sb) sb.addEventListener('change', sync);
     function summary() {
       var a = S.answers[s.id];
       function lab(c, scale) { return a[c] && a[c].value ? Store.scaleLabel(scale || c, a[c].value) : '—'; }

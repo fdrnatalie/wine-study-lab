@@ -219,13 +219,13 @@ Pages.wineEdit = {
         '<p class="sub">Preencha só o que você sabe. Campos vazios aparecem como “Informação não cadastrada”.</p></div></div>' +
         '<form data-action="save" class="panel">' + LabelScan.html() +
         '<datalist id="dl-countries">' + L.countries.map(o).join('') + '</datalist>' +
-        '<datalist id="dl-regions">' + L.regions.map(o).join('') + '</datalist>' +
+        '<datalist id="dl-regions"></datalist><datalist id="dl-subregions"></datalist>' +
         '<datalist id="dl-producers">' + L.producers.map(o).join('') + '</datalist>' +
         '<datalist id="dl-grapes">' + L.grapes.map(o).join('') + '</datalist>' +
         '<h3 style="margin-top:0">Identidade</h3><div class="form-grid">' +
         inp('name', 'Nome do vinho *', w.name, 'wide') + inp('producer', 'Produtor', w.producer, '', 'dl-producers') +
         inp('country', 'País', w.country, '', 'dl-countries') + inp('region', 'Região', w.region, '', 'dl-regions') +
-        inp('subregion', 'Sub-região', w.subregion, '', 'dl-regions') + inp('appellation', 'Denominação', w.appellation) +
+        inp('subregion', 'Sub-região', w.subregion, '', 'dl-subregions') + inp('appellation', 'Denominação', w.appellation) +
         inp('vintage', 'Safra', w.vintage, '', null, 'number') + inp('classification', 'Classificação', w.classification) +
         sel('color', 'Cor', COLOR_LABELS, w.color) + sel('type', 'Tipo', TYPE_LABELS, w.type) +
         inp('price', 'Preço', w.price, '', null, 'number') + inp('price_currency', 'Moeda (BRL, USD…)', w.price_currency) +
@@ -257,6 +257,23 @@ Pages.wineEdit = {
   },
   mount: function (root) {
     var form = root.querySelector('form[data-action=save]');
+    // País → só as regiões dele; região → só as sub-regiões dela (listas de sugestão).
+    if (form && form.elements.country) {
+      var key = function (s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); };
+      var find = function (list, name) { var k = key(name); for (var i = 0; i < list.length; i++) if (key(list[i].name) === k) return list[i]; return null; };
+      var opt = function (r) { return '<option value="' + esc(r.name) + '">'; };
+      var refresh = function () {
+        var country = find(Store.lookups.countries, form.elements.country.value);
+        var regs = Geo.regions(country ? country.id : '');
+        document.getElementById('dl-regions').innerHTML = regs.map(opt).join('');
+        var region = find(regs, form.elements.region.value);
+        document.getElementById('dl-subregions').innerHTML = (region ? Geo.subs(region.id) : Geo.subs('', country ? country.id : '')).map(opt).join('');
+      };
+      form.elements.country.addEventListener('input', refresh);
+      form.elements.region.addEventListener('input', refresh);
+      form.addEventListener('labelapplied', refresh);
+      refresh();
+    }
     // Campo preenchido pela foto e depois editado à mão volta a ser "informado por você".
     if (form) form.addEventListener('input', function (e) { LabelScan.touched(form, e.target); });
     // Enter no campo do código busca a ficha (em vez de salvar o formulário).

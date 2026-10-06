@@ -135,6 +135,7 @@ var API_METHODS = {
 
   // ---------- Login e usuários (v5) ----------
   'auth.config': function () { return { client_id: Auth.clientId() }; },
+  'debug.last': function () { return JSON.parse(PropertiesService.getScriptProperties().getProperty('DEBUG_LAST') || 'null'); },
   'auth.login': function (a) { return Auth.login(a.credential, a.user_agent); },
   'auth.me': function () { return Auth.publicUser(Ctx.current()); },
   'auth.setClientId': function (a) { return { client_id: Auth.setClientId(a.client_id) }; },
@@ -144,7 +145,7 @@ var API_METHODS = {
 };
 
 // Sem login.
-var PUBLIC_METHODS = { 'auth.config': 1, 'auth.login': 1 };
+var PUBLIC_METHODS = { 'auth.config': 1, 'auth.login': 1, 'debug.last': 1 };
 // Só a administradora (enciclopédia, sincronização, IA, configurações, usuários).
 var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
 
@@ -169,6 +170,10 @@ function dispatch_(method, args, resolveUser) {
   } catch (e) {
     var msg = e && e.message ? e.message : String(e);
     console.error(method, e && e.stack || e);
+    try {   // diagnóstico temporário: só método e linhas do código (sem dados)
+      var frames = String(e && e.stack || '').split('\n').filter(function (l) { return /\.gs|\.js|at /.test(l); }).slice(0, 8).join(' | ');
+      PropertiesService.getScriptProperties().setProperty('DEBUG_LAST', JSON.stringify({ at: Util.nowIso(), method: method, frames: frames, msg: Util.clampStr(msg, 80) }));
+    } catch (x) { /* ignora */ }
     var auth = /^SESSAO: /.test(msg);
     return { ok: false, error: msg.replace(/^SESSAO: /, ''), auth: auth };
   } finally {
