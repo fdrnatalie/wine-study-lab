@@ -69,12 +69,15 @@
     get: function (k) { return cache[k] === undefined ? null : cache[k]; },
     getAll: function (keys) { var o = {}; keys.forEach(function (k) { if (cache[k] !== undefined) o[k] = cache[k]; }); return o; },
     putAll: function (o) { Object.keys(o).forEach(function (k) { cache[k] = o[k]; }); },
+    put: function (k, v) { cache[k] = String(v); },
     remove: function (k) { delete cache[k]; }
   }; } };
   g.LockService = { getScriptLock: function () { return { waitLock: function () {}, releaseLock: function () {} }; } };
   var props = {};
+  var scriptProps = props;
   g.PropertiesService = { getScriptProperties: function () { return {
-    getProperty: function (k) { return props[k] || null; }, setProperty: function (k, v) { props[k] = v; }
+    getProperty: function (k) { return props[k] || null; }, setProperty: function (k, v) { props[k] = v; },
+    deleteProperty: function (k) { delete props[k]; }
   }; } };
   g.Session = {
     getActiveUser: function () { return { getEmail: function () { return 'dev@local'; } }; },
@@ -83,6 +86,42 @@
 
   // Resposta SIMULADA da API da Anthropic (mesma estrutura de uma resposta real).
   g.Utilities = { sleep: function () {} };
+  // SHA-256 em JS puro (só para a simulação; o Apps Script tem o seu).
+  function sha256Bytes(str) {
+    var bytes = unescape(encodeURIComponent(str)).split('').map(function (c) { return c.charCodeAt(0); });
+    var K = [], H = [], i, j;
+    function frac(x) { return ((x - Math.floor(x)) * 4294967296) | 0; }
+    for (var n = 2, c = 0; c < 64; n++) { var p = true; for (j = 2; j * j <= n; j++) if (n % j === 0) { p = false; break; } if (p) { if (c < 8) H[c] = frac(Math.pow(n, 1 / 2)); K[c++] = frac(Math.pow(n, 1 / 3)); } }
+    var l = bytes.length * 8; bytes.push(0x80); while (bytes.length % 64 !== 56) bytes.push(0);
+    for (i = 7; i >= 0; i--) bytes.push(i > 3 ? 0 : (l >>> (i * 8)) & 0xff);
+    function r(x, n) { return (x >>> n) | (x << (32 - n)); }
+    for (i = 0; i < bytes.length; i += 64) {
+      var w = [];
+      for (j = 0; j < 16; j++) w[j] = (bytes[i + j * 4] << 24) | (bytes[i + j * 4 + 1] << 16) | (bytes[i + j * 4 + 2] << 8) | bytes[i + j * 4 + 3];
+      for (j = 16; j < 64; j++) { var s0 = r(w[j - 15], 7) ^ r(w[j - 15], 18) ^ (w[j - 15] >>> 3), s1 = r(w[j - 2], 17) ^ r(w[j - 2], 19) ^ (w[j - 2] >>> 10); w[j] = (w[j - 16] + s0 + w[j - 7] + s1) | 0; }
+      var a = H.slice();
+      for (j = 0; j < 64; j++) {
+        var t1 = (a[7] + (r(a[4], 6) ^ r(a[4], 11) ^ r(a[4], 25)) + ((a[4] & a[5]) ^ (~a[4] & a[6])) + K[j] + w[j]) | 0;
+        var t2 = ((r(a[0], 2) ^ r(a[0], 13) ^ r(a[0], 22)) + ((a[0] & a[1]) ^ (a[0] & a[2]) ^ (a[1] & a[2]))) | 0;
+        a = [(t1 + t2) | 0, a[0], a[1], a[2], (a[3] + t1) | 0, a[4], a[5], a[6]];
+      }
+      for (j = 0; j < 8; j++) H[j] = (H[j] + a[j]) | 0;
+    }
+    var out = [];
+    H.forEach(function (h) { for (var k = 3; k >= 0; k--) { var b = (h >>> (k * 8)) & 0xff; out.push(b > 127 ? b - 256 : b); } });
+    return out;
+  }
+  g.Utilities.DigestAlgorithm = { SHA_256: 'SHA_256' };
+  g.Utilities.Charset = { UTF_8: 'UTF_8' };
+  g.Utilities.computeDigest = function (alg, value) { return sha256Bytes(String(value)); };
+  g.Utilities.getUuid = function () {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (ch) { var v = Math.random() * 16 | 0; return (ch === 'x' ? v : (v & 3 | 8)).toString(16); });
+  };
+  g.ContentService = { MimeType: { JSON: 'json' }, createTextOutput: function (t) { return { text: t, setMimeType: function () { return this; }, getContent: function () { return t; } }; } };
+  // Login SIMULADO: credencial "mock.<base64 do JSON {email,name}>.sig" → tokeninfo responde com esses dados.
+  g.__mockCredential = function (email, name) {
+    return 'mock.' + btoa(JSON.stringify({ email: email, name: name || email })).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_') + '.sig';
+  };
   // OCR SIMULADO do Google Drive (foto do rótulo): devolve sempre o mesmo texto de demonstração.
   var DEMO_LABEL = 'Rótulo de demonstração (OCR simulado)\nCANTINA DEMO\nBAROLO\nDenominazione di Origine Controllata e Garantita\n' +
     'NEBBIOLO\nVendemmia 2019\n14,5% vol\n750 ml\nVino rosso\nPRODOTTO IN ITALIA';
@@ -92,6 +131,12 @@
   g.Utilities.base64Decode = function (b64) { return b64; };
   g.Drive = { Files: { create: function () { return { id: 'OCR_MOCK' }; } } };
   g.UrlFetchApp = { fetch: function (url, opts) {
+    if (/oauth2\.googleapis\.com\/tokeninfo/.test(url)) {
+      var cred = decodeURIComponent(url.split('id_token=')[1]);
+      var p = JSON.parse(atob(cred.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      var info = { aud: scriptProps.GOOGLE_CLIENT_ID, iss: 'https://accounts.google.com', email: p.email, email_verified: 'true', name: p.name, exp: String(Math.floor(Date.now() / 1000) + 3600) };
+      return { getResponseCode: function () { return 200; }, getContentText: function () { return JSON.stringify(info); } };
+    }
     if (/googleapis\.com\/drive/.test(url)) {
       return { getResponseCode: function () { return 200; }, getContentText: function () { return /export/.test(url) ? DEMO_LABEL : ''; } };
     }

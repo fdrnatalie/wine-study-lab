@@ -45,7 +45,7 @@ var Stats = (function () {
         bottles_available: bottles.filter(function (b) { return b.status === 'disponivel'; }).length,
         bottles_total: bottles.length,
         notes: Repo.all('notes').length,
-        ai_pending: Enrichment.pendingCount()
+        ai_pending: Ctx.isAdmin() ? Enrichment.pendingCount() : 0
       },
       avg_score: avg,
       series: scored.map(function (t) { return { date: t.date, score: t.score, id: t.id }; }),

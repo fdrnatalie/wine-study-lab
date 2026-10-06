@@ -100,8 +100,54 @@ Pages.search = {
 };
 
 /* ============================== CONFIGURAÇÕES ============================== */
+Pages.users = {
+  render: function () {
+    if (!Store.lookups.is_admin) return Components.empty('Somente a administradora.', '');
+    return API.call('users.list').then(function (list) {
+      var html = '<div class="page-head"><div><div class="eyebrow">Sistema</div><h1>Usuários</h1>' +
+        '<p class="sub">' + plural(list.length, 'conta', 'contas') + '. Qualquer conta Google pode entrar; bloqueie quem não deveria usar o app. ' +
+        'Os dados pessoais (garrafinhas, degustações, anotações) de cada um ficam separados.</p></div></div>';
+      html += '<div class="tbl-wrap panel"><table class="tbl"><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Último acesso</th><th>Situação</th><th></th></tr></thead><tbody>' +
+        list.map(function (u) {
+          return '<tr><td>' + esc(u.name || '—') + '</td><td>' + esc(u.email) + '</td><td>' + (u.role === 'admin' ? 'administradora' : 'membro') + '</td>' +
+            '<td class="nowrap">' + (u.last_seen_at ? fmtDate(u.last_seen_at, true) : '—') + '</td>' +
+            '<td>' + (u.status === 'ativo' ? '<span class="src usuario">ativo</span>' : '<span class="src ia">bloqueado</span>') + '</td>' +
+            '<td>' + (u.role === 'admin' ? '' : '<button class="btn small" data-action="user-status" data-id="' + esc(u.id) + '" data-status="' + (u.status === 'ativo' ? 'bloqueado' : 'ativo') + '">' +
+              (u.status === 'ativo' ? 'Bloquear' : 'Desbloquear') + '</button>') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+      return html;
+    });
+  },
+  actions: {
+    'user-status': function (btn) {
+      var st = btn.getAttribute('data-status');
+      if (st === 'bloqueado' && !confirm('Bloquear esta conta? A pessoa sai na hora e não consegue entrar de novo até você desbloquear. Os dados dela não são apagados.')) return;
+      UI.busy(btn, true);
+      return API.call('users.setStatus', { id: btn.getAttribute('data-id'), status: st }).then(function () {
+        UI.toast(st === 'bloqueado' ? 'Conta bloqueada.' : 'Conta desbloqueada.');
+        Router.render();
+      }).catch(function (e) { UI.busy(btn, false); throw e; });
+    }
+  }
+};
+
+/** Configurações de quem não é administradora: conta e informações. */
+function memberSettings_() {
+  var me = Store.lookups.me || {};
+  var enc = Store.lookups.encyclopedia || {};
+  return '<div class="page-head"><div><div class="eyebrow">Sistema</div><h1>Configurações</h1></div></div>' +
+    '<section class="panel"><h2 style="margin-top:0">Sua conta</h2><div class="fields">' +
+    Components.field('Nome', me.name) + Components.field('E-mail', me.email) + '</div>' +
+    '<p class="muted">Suas garrafinhas, degustações, anotações e “Minhas notas” dos vinhos são só suas. ' +
+    'A enciclopédia (uvas, regiões) e o catálogo de vinhos são compartilhados: você pode cadastrar vinhos e editar os que cadastrou.</p>' +
+    (API.remote() ? '<button class="btn" data-action="logout">Sair da conta</button>' : '') + '</section>' +
+    '<section class="panel"><h2 style="margin-top:0">Enciclopédia</h2><p class="muted">' + (enc.grapes || 0) + ' uvas pesquisadas e regiões de ' +
+    (enc.region_packs || []).length + ' países, com fontes citadas em cada dado. Mantida pela administradora.</p></section>';
+}
+
 Pages.settings = {
   render: function () {
+    if (!Store.lookups.is_admin) return memberSettings_();
     return Promise.all([API.call('settings.get'), API.call('ai.status')]).then(function (res) {
       var s = res[0], ai = res[1];
       var st = {};

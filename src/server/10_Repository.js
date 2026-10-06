@@ -62,15 +62,40 @@ var Repo = (function () {
     }
   }
 
-  /** Todos os registros da tabela (cópia rasa — pode ser modificada pelo chamador). */
-  function all(entity) {
+  function load_(entity) {
     if (!memo[entity]) {
       var cached = Cache.get(entity);
       memo[entity] = cached || readSheet_(entity);
       if (!cached) Cache.put(entity, memo[entity]);
     }
-    return memo[entity].map(function (r) { return Object.assign({}, r); });
+    return memo[entity];
   }
+
+  /**
+   * Registros VISÍVEIS para o usuário atual (cópia rasa — pode ser modificada pelo chamador).
+   * Tabelas pessoais vêm filtradas pelo dono (Policy); as demais vêm inteiras.
+   */
+  function all(entity) {
+    var rows = load_(entity);
+    var scope = Policy.scope(entity);
+    if ((scope === 'personal' || scope === 'system') && !Ctx.isSystem()) rows = rows.filter(function (r) { return Policy.canRead(entity, r); });
+    return rows.map(function (r) { return Object.assign({}, r); });
+  }
+
+  /** Sem filtro de usuário: só para checagens internas de permissão. */
+  function getRaw(entity, id) {
+    var rows = load_(entity);
+    for (var i = 0; i < rows.length; i++) if (rows[i].id === id) return Object.assign({}, rows[i]);
+    return null;
+  }
+
+  function rowObj_(header, row, types) {
+    var o = {};
+    for (var c = 0; c < header.length; c++) if (header[c]) o[header[c]] = fromCell(row[c], types[header[c]] || 'string');
+    return o;
+  }
+
+  function deny_() { throw new Error('Você não tem permissão para alterar este registro.'); }
 
   function readSheet_(entity) {
     var values = sheet(entity).getDataRange().getValues();
@@ -115,8 +140,14 @@ var Repo = (function () {
     var header = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
     var types = typesOf(entity);
     var now = Util.nowIso();
+    if (!Ctx.isSystem()) {
+      var mine = Policy.isPersonal(entity) ? all(entity).length
+        : entity === 'wines' ? load_(entity).filter(function (w) { return w.created_by === Ctx.userId(); }).length : 0;
+      Policy.checkQuota(entity, records.length, mine);
+    }
     var saved = records.map(function (r) {
-      var o = Object.assign({}, r);
+      var o = Policy.stampInsert(entity, Object.assign({}, r));
+      if (!Policy.canWrite(entity, o, true)) deny_();
       o.id = o.id || Util.newId(def(entity).prefix);
       o.created_at = o.created_at || now;
       o.updated_at = now;
@@ -144,7 +175,8 @@ var Repo = (function () {
     patches.forEach(function (p) {
       var ri = rowById[p.id];
       if (ri === undefined) return;
-      var patch = Object.assign({}, p, { updated_at: now });
+      if (!Policy.canWrite(entity, rowObj_(header, values[ri], types), false)) deny_();
+      var patch = Policy.cleanPatch(entity, Object.assign({}, p, { updated_at: now }));
       for (var k in patch) {
         var c = header.indexOf(k);
         if (c < 0 || k === 'id' || k === 'created_at') continue;
@@ -167,9 +199,15 @@ var Repo = (function () {
     ids.forEach(function (id) { set[id] = true; });
     var sh = sheet(entity);
     var values = sh.getDataRange().getValues();
-    var idCol = values[0].map(String).indexOf('id');
+    var header = values[0].map(String);
+    var idCol = header.indexOf('id');
+    var types = typesOf(entity);
     var rows = [];
-    for (var i = 1; i < values.length; i++) if (set[values[i][idCol]]) rows.push(i + 1);
+    for (var i = 1; i < values.length; i++) {
+      if (!set[values[i][idCol]]) continue;
+      if (!Policy.canWrite(entity, rowObj_(header, values[i], types), false)) deny_();
+      rows.push(i + 1);
+    }
     for (var j = rows.length - 1; j >= 0; j--) sh.deleteRow(rows[j]);
     if (rows.length) invalidate_(entity);
     return rows.length;
@@ -184,6 +222,6 @@ var Repo = (function () {
 
   function spreadsheet() { return ss(); }
 
-  return { all: all, get: get, where: where, insert: insert, update: update, remove: remove,
+  return { all: all, getRaw: getRaw, get: get, where: where, insert: insert, update: update, remove: remove,
     withLock: withLock, spreadsheet: spreadsheet };
 })();

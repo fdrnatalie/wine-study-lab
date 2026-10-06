@@ -52,7 +52,8 @@ Pages.wine = {
         (w.grapes.length ? '<div class="chips" style="margin-top:10px">' + w.grapes.map(function (g) {
           return '<a class="chip" href="#/uvas/' + g.id + '">' + esc(g.name) + (g.percent ? ' · ' + fmtNum(g.percent, 0) + '%' : '') + '</a>';
         }).join('') + '</div>' : '') +
-        '</div><div class="btn-row">' + (Store.lookups.ai_enabled ? '<button class="btn" data-action="ai-research">✦ Pesquisar com IA</button>' : '') + '<a class="btn" href="#/vinhos/' + w.id + '/editar">Editar</a></div></div>';
+        '</div><div class="btn-row">' + (Store.lookups.ai_enabled ? '<button class="btn" data-action="ai-research">✦ Pesquisar com IA</button>' : '') + (w.can_edit ? '<a class="btn" href="#/vinhos/' + w.id + '/editar">Editar</a>' : '<button class="btn" data-action="my-notes">Minhas notas</button>') + '</div></div>' +
+        (w.can_edit ? '' : '<p class="small muted" style="margin:-8px 0 16px">Ficha do catálogo comum: só quem cadastrou pode editar. Suas notas e garrafinhas são só suas.</p>');
 
       html += '<div class="grid two"><section class="panel"><h3 style="margin-top:0">Identidade</h3><div class="fields">' +
         Components.field('Produtor', w.producer, { source: fs.producer_id }) +
@@ -81,7 +82,7 @@ Pages.wine = {
       var pr = w.profile;
       html += '<section class="panel" style="margin-top:16px"><div class="page-head" style="margin-bottom:12px"><div><h3 style="margin:0">Perfil de referência</h3>' +
         '<div class="muted small">É o gabarito usado para corrigir acidez, tanino, corpo, aromas… nas degustações às cegas.</div></div>' +
-        '<button class="btn small" data-action="edit-profile">' + (pr ? 'Editar perfil' : 'Cadastrar perfil') + '</button></div>';
+        (w.can_edit ? '<button class="btn small" data-action="edit-profile">' + (pr ? 'Editar perfil' : 'Cadastrar perfil') + '</button>' : '') + '</div>';
       if (pr && !w.profile_trusted) {
         html += '<div class="callout warn" style="margin-bottom:16px">Este perfil veio de uma fonte <b>não verificada</b> (' + esc(Components.SOURCE_LABELS[pr.source] || pr.source) + '). ' +
           'Ele não é usado como gabarito. Revise os valores e salve com a origem correta (ficha técnica, pesquisa ou sua avaliação) para ativá-lo.</div>';
@@ -128,6 +129,19 @@ Pages.wine = {
     'edit-profile': function () {
       var w = Pages.wine.data;
       ProfileEditor.open('wine', w.id, w.profile, w.aromas, function () { Router.render(); });
+    },
+    'my-notes': function () {
+      var w = Pages.wine.data;
+      var m = UI.modal('<h2>Minhas notas</h2><p class="muted small">Só você vê.</p><form><textarea class="in" name="my_notes" rows="8">' + esc(w.my_notes || '') + '</textarea>' +
+        '<div class="btn-row" style="justify-content:flex-end;margin-top:14px"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn primary">Salvar</button></div></form>', { sticky: true });
+      m.querySelector('form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var btn = e.target.querySelector('button.primary');
+        UI.busy(btn, true);
+        API.call('wines.save', { wine: { id: w.id, name: w.name, my_notes: e.target.my_notes.value } }).then(function () {
+          UI.closeModal(); UI.toast('Notas salvas.'); Router.render();
+        }).catch(function (err) { UI.busy(btn, false); UI.error(err); });
+      });
     }
   }
 };

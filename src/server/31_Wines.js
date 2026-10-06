@@ -6,7 +6,7 @@ var Wines = (function () {
   var TEXT_FIELDS = {
     type: 40, color: 40, residual_sugar: 60, acidity_gl: 60, production_method: 300, aging: 300, oak: 200,
     aging_time: 120, classification: 120, price_currency: 5, serving_temp: 60, pairing: 1000,
-    curiosities: 3000, technical_notes: 5000, my_notes: 5000
+    curiosities: 3000, technical_notes: 5000
   };
 
   function context_() {
@@ -60,6 +60,11 @@ var Wines = (function () {
     out.bottles = bottles.map(function (b) { return { id: b.id, number: b.number, status: b.status }; });
     var results = Repo.where('tasting_results', { wine_id: id });
     out.my_results = Scoring.aggregate(results, Settings.getNumber('near_credit', 0.5));
+    // Catálogo comum: notas são de cada usuário; editar a ficha só o autor ou a administradora.
+    var mine = Repo.where('wine_notes', { wine_id: id })[0];
+    out.my_notes = mine ? mine.my_notes : '';
+    out.can_edit = Policy.wineEditor(id);
+    delete out.created_by;
     out.times_tasted = Object.keys(Util.groupBy(results, 'sample_id')).length;
     return out;
   }
@@ -70,6 +75,12 @@ var Wines = (function () {
     var isNew = !input.id;
     var existing = isNew ? null : Repo.get('wines', Validate.id(input.id));
     if (!isNew && !existing) throw new Error('Vinho não encontrado.');
+    var myNotes = Validate.str(input.my_notes, 5000, 'Minhas notas');
+    if (!isNew && !Policy.wineEditor(existing.id)) {
+      // Quem não é autor da ficha só grava as próprias notas.
+      saveNotes_(existing.id, myNotes);
+      return get(existing.id);
+    }
 
     var rec = { name: Validate.required(input.name, 200, 'Nome do vinho') };
     var country = Catalog.resolveByName('countries', input.country);
@@ -116,7 +127,14 @@ var Wines = (function () {
     }
 
     if (Array.isArray(input.grapes)) setGrapes_(saved.id, input.grapes);
+    saveNotes_(saved.id, myNotes);
     return get(saved.id);
+  }
+
+  function saveNotes_(wineId, text) {
+    var cur = Repo.where('wine_notes', { wine_id: wineId })[0];
+    if (cur) { if (cur.my_notes !== text) Repo.update('wine_notes', [{ id: cur.id, my_notes: text }]); }
+    else if (text) Repo.insert('wine_notes', [{ wine_id: wineId, my_notes: text, source: 'usuario' }]);
   }
 
   var ORIGIN_FIELDS = { producer: 'producer_id', country: 'country_id', region: 'region_id', subregion: 'subregion_id', appellation: 'appellation_id' };

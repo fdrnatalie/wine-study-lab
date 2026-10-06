@@ -55,7 +55,9 @@ var Catalog = (function () {
       aromas: Repo.all('aromas').sort(function (a, b) { return a.order - b.order; }).map(pick_('id', 'name', 'category', 'subcategory')),
       scales: Settings.scales(),
       rules: Settings.rules(),
-      ai_enabled: AiProvider.hasKey(),
+      ai_enabled: AiProvider.hasKey() && Ctx.isAdmin(),
+      me: Auth.publicUser(Ctx.current()),
+      is_admin: Ctx.isAdmin(),
       encyclopedia: { version: GRAPE_ENCYCLOPEDIA.version, grapes: GRAPE_ENCYCLOPEDIA.grapes.length,
         region_packs: SeedRegions.summary() },
       enums: {
@@ -81,6 +83,11 @@ var Catalog = (function () {
       return r.name_key === key && (!scopeKey || r[scopeKey] === extra[scopeKey]);
     })[0];
     if (found) return found;
+    // Enciclopédia (países, regiões, uvas): só a administradora cria. Os demais escolhem da lista.
+    if (Policy.scope(entity) === 'admin' && !Ctx.isAdmin()) {
+      var LABEL = { countries: 'País', regions: 'Região', grapes: 'Uva' };
+      throw new Error((LABEL[entity] || entity) + ' "' + name + '" não está na enciclopédia. Escolha uma opção da lista.');
+    }
     return Repo.insert(entity, [Object.assign({ name: name, name_key: key, source: 'usuario' }, extra || {})])[0];
   }
 

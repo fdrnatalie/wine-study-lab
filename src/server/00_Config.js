@@ -11,7 +11,7 @@
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 4,
+  SCHEMA_VERSION: 5,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -81,7 +81,14 @@ var SCHEMA = {
     'name', 'import_key', 'producer_id', 'country_id', 'region_id', 'subregion_id', 'appellation_id',
     'vintage:number', 'type', 'color', 'abv:number', 'residual_sugar', 'acidity_gl', 'production_method',
     'aging', 'oak', 'aging_time', 'classification', 'price:number', 'price_currency',
-    'serving_temp', 'pairing', 'curiosities', 'technical_notes', 'my_notes'] },
+    'serving_temp', 'pairing', 'curiosities', 'technical_notes', 'my_notes',
+    // v5: autor da ficha (catálogo comum: só o autor e a administradora editam; vazio = administradora).
+    // my_notes ficou só como histórico: as notas pessoais de cada usuário estão em wine_notes.
+    'created_by'] },
+
+  // v5: notas pessoais de cada usuário sobre um vinho do catálogo comum.
+  wine_notes: { sheet: 'db_wine_notes', prefix: 'WNT', cols: [
+    'user_id', 'wine_id', 'my_notes'] },
 
   // Castas de uma região/sub-região. role: principal | secundaria
   region_grapes: { sheet: 'db_region_grapes', prefix: 'RGG', cols: [
@@ -97,36 +104,36 @@ var SCHEMA = {
 
   // ---------- Adega ----------
   bottling_batches: { sheet: 'db_bottling_batches', prefix: 'BAT', cols: [
-    'wine_id', 'date:date', 'original_volume_ml:number', 'bottle_volume_ml:number',
+    'user_id', 'wine_id', 'date:date', 'original_volume_ml:number', 'bottle_volume_ml:number',
     'bottle_count:number', 'numbering', 'opened_at:date', 'notes'] },
 
   bottles: { sheet: 'db_bottles', prefix: 'BTL', cols: [
-    'number:number', 'wine_id', 'batch_id', 'volume_ml:number', 'status', 'status_changed_at:date', 'notes'] },
+    'user_id', 'number:number', 'wine_id', 'batch_id', 'volume_ml:number', 'status', 'status_changed_at:date', 'notes'] },
 
   // ---------- Degustação ----------
   tastings: { sheet: 'db_tastings', prefix: 'TST', cols: [
-    'title', 'date:date', 'status', 'difficulty', 'theme', 'filters:json',
+    'user_id', 'title', 'date:date', 'status', 'difficulty', 'theme', 'filters:json',
     'scoring_snapshot:json', 'score:number', 'revealed_at:date', 'notes'] },
 
   tasting_samples: { sheet: 'db_tasting_samples', prefix: 'TSS', cols: [
-    'tasting_id', 'bottle_id', 'position:number', 'score:number', 'completed:bool'] },
+    'user_id', 'tasting_id', 'bottle_id', 'position:number', 'score:number', 'completed:bool'] },
 
   // Uma linha por critério respondido. value = texto; value_json para listas (aromas, uvas).
   tasting_answers: { sheet: 'db_tasting_answers', prefix: 'TSA', cols: [
-    'tasting_id', 'sample_id', 'criterion', 'value', 'value_json:json'] },
+    'user_id', 'tasting_id', 'sample_id', 'criterion', 'value', 'value_json:json'] },
 
   // Uma linha por critério corrigido. Guarda dimensões desnormalizadas (uva, país…)
   // para que "Minha Evolução" seja calculada sem reprocessar degustações.
   tasting_results: { sheet: 'db_tasting_results', prefix: 'TSR', cols: [
-    'tasting_id', 'sample_id', 'wine_id', 'criterion', 'given', 'expected', 'state',
+    'user_id', 'tasting_id', 'sample_id', 'wine_id', 'criterion', 'given', 'expected', 'state',
     'points:number', 'max_points:number', 'grape_ids:json', 'country_id', 'region_id', 'date:date'] },
 
   // ---------- Estudo ----------
   notes: { sheet: 'db_notes', prefix: 'NOT', cols: [
-    'title', 'body', 'kind', 'import_key', 'date:date', 'pinned:bool'] },
+    'user_id', 'title', 'body', 'kind', 'import_key', 'date:date', 'pinned:bool'] },
 
   note_links: { sheet: 'db_note_links', prefix: 'NTL', cols: [
-    'note_id', 'entity_type', 'entity_id'] },
+    'user_id', 'note_id', 'entity_type', 'entity_id'] },
 
   // ---------- Sistema ----------
   settings: { sheet: 'db_settings', prefix: 'SET', cols: [
@@ -154,5 +161,29 @@ var SCHEMA = {
     'web_searches:number', 'cost_usd:number', 'proposals:number', 'status', 'error'] },
 
   import_log: { sheet: 'db_import_log', prefix: 'IMP', cols: [
-    'run_at:date', 'level', 'message', 'details:json'] }
+    'run_at:date', 'level', 'message', 'details:json'] },
+
+  // ---------- Usuários (v5) ----------
+  // role: admin | membro. status: ativo | bloqueado. Login pelo Google (sem senha guardada aqui).
+  users: { sheet: 'db_users', prefix: 'USR', cols: [
+    'email', 'name', 'picture', 'role', 'status', 'last_seen_at:date'] },
+
+  // Sessões do login: guardamos só o hash SHA-256 do token, nunca o token.
+  sessions: { sheet: 'db_sessions', prefix: 'SES', cols: [
+    'token_hash', 'user_id', 'expires_at:date', 'user_agent'] }
+};
+
+/**
+ * Quem pode ler/escrever cada tabela (aplicado no Repository; ver 03_Context.js):
+ * - personal: cada usuário só vê e altera as próprias linhas (coluna user_id).
+ * - catalog : todos leem; todos criam; só o autor do vinho ou a administradora alteram.
+ * - admin   : todos leem; só a administradora altera (enciclopédia e configurações).
+ * - system  : só o próprio sistema (login).
+ */
+var SCOPES = {
+  personal: ['bottling_batches', 'bottles', 'tastings', 'tasting_samples', 'tasting_answers', 'tasting_results',
+    'notes', 'note_links', 'wine_notes'],
+  catalog: ['wines', 'wine_grapes', 'producers', 'appellations', 'profiles', 'entity_aromas'],
+  system: ['users', 'sessions']
+  // as demais: admin
 };

@@ -331,6 +331,16 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
   .label-row { grid-template-columns: auto minmax(0, 1fr); }
   .label-row > :nth-child(3), .label-row-ev { grid-column: 1 / -1; }
 }
+
+/* Login (site) */
+.login-screen { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px; background: var(--bg); }
+.login-card { max-width: 420px; width: 100%; text-align: center; background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 32px 24px; }
+.login-card .mark { width: 48px; height: 48px; color: var(--ink); }
+.login-card h1 { margin: 8px 0 6px; font-size: 2.2rem; }
+.login-btn { display: flex; justify-content: center; margin: 22px 0 8px; min-height: 44px; }
+.nav-user { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--ink-2); font-size: .85rem; }
+.nav-user img { width: 26px; height: 26px; border-radius: 50%; }
+.nav-user span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>
 
 </head>
@@ -406,12 +416,15 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
     get: function (k) { return cache[k] === undefined ? null : cache[k]; },
     getAll: function (keys) { var o = {}; keys.forEach(function (k) { if (cache[k] !== undefined) o[k] = cache[k]; }); return o; },
     putAll: function (o) { Object.keys(o).forEach(function (k) { cache[k] = o[k]; }); },
+    put: function (k, v) { cache[k] = String(v); },
     remove: function (k) { delete cache[k]; }
   }; } };
   g.LockService = { getScriptLock: function () { return { waitLock: function () {}, releaseLock: function () {} }; } };
   var props = {};
+  var scriptProps = props;
   g.PropertiesService = { getScriptProperties: function () { return {
-    getProperty: function (k) { return props[k] || null; }, setProperty: function (k, v) { props[k] = v; }
+    getProperty: function (k) { return props[k] || null; }, setProperty: function (k, v) { props[k] = v; },
+    deleteProperty: function (k) { delete props[k]; }
   }; } };
   g.Session = {
     getActiveUser: function () { return { getEmail: function () { return 'dev@local'; } }; },
@@ -420,6 +433,42 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 
   // Resposta SIMULADA da API da Anthropic (mesma estrutura de uma resposta real).
   g.Utilities = { sleep: function () {} };
+  // SHA-256 em JS puro (só para a simulação; o Apps Script tem o seu).
+  function sha256Bytes(str) {
+    var bytes = unescape(encodeURIComponent(str)).split('').map(function (c) { return c.charCodeAt(0); });
+    var K = [], H = [], i, j;
+    function frac(x) { return ((x - Math.floor(x)) * 4294967296) | 0; }
+    for (var n = 2, c = 0; c < 64; n++) { var p = true; for (j = 2; j * j <= n; j++) if (n % j === 0) { p = false; break; } if (p) { if (c < 8) H[c] = frac(Math.pow(n, 1 / 2)); K[c++] = frac(Math.pow(n, 1 / 3)); } }
+    var l = bytes.length * 8; bytes.push(0x80); while (bytes.length % 64 !== 56) bytes.push(0);
+    for (i = 7; i >= 0; i--) bytes.push(i > 3 ? 0 : (l >>> (i * 8)) & 0xff);
+    function r(x, n) { return (x >>> n) | (x << (32 - n)); }
+    for (i = 0; i < bytes.length; i += 64) {
+      var w = [];
+      for (j = 0; j < 16; j++) w[j] = (bytes[i + j * 4] << 24) | (bytes[i + j * 4 + 1] << 16) | (bytes[i + j * 4 + 2] << 8) | bytes[i + j * 4 + 3];
+      for (j = 16; j < 64; j++) { var s0 = r(w[j - 15], 7) ^ r(w[j - 15], 18) ^ (w[j - 15] >>> 3), s1 = r(w[j - 2], 17) ^ r(w[j - 2], 19) ^ (w[j - 2] >>> 10); w[j] = (w[j - 16] + s0 + w[j - 7] + s1) | 0; }
+      var a = H.slice();
+      for (j = 0; j < 64; j++) {
+        var t1 = (a[7] + (r(a[4], 6) ^ r(a[4], 11) ^ r(a[4], 25)) + ((a[4] & a[5]) ^ (~a[4] & a[6])) + K[j] + w[j]) | 0;
+        var t2 = ((r(a[0], 2) ^ r(a[0], 13) ^ r(a[0], 22)) + ((a[0] & a[1]) ^ (a[0] & a[2]) ^ (a[1] & a[2]))) | 0;
+        a = [(t1 + t2) | 0, a[0], a[1], a[2], (a[3] + t1) | 0, a[4], a[5], a[6]];
+      }
+      for (j = 0; j < 8; j++) H[j] = (H[j] + a[j]) | 0;
+    }
+    var out = [];
+    H.forEach(function (h) { for (var k = 3; k >= 0; k--) { var b = (h >>> (k * 8)) & 0xff; out.push(b > 127 ? b - 256 : b); } });
+    return out;
+  }
+  g.Utilities.DigestAlgorithm = { SHA_256: 'SHA_256' };
+  g.Utilities.Charset = { UTF_8: 'UTF_8' };
+  g.Utilities.computeDigest = function (alg, value) { return sha256Bytes(String(value)); };
+  g.Utilities.getUuid = function () {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (ch) { var v = Math.random() * 16 | 0; return (ch === 'x' ? v : (v & 3 | 8)).toString(16); });
+  };
+  g.ContentService = { MimeType: { JSON: 'json' }, createTextOutput: function (t) { return { text: t, setMimeType: function () { return this; }, getContent: function () { return t; } }; } };
+  // Login SIMULADO: credencial "mock.<base64 do JSON {email,name}>.sig" → tokeninfo responde com esses dados.
+  g.__mockCredential = function (email, name) {
+    return 'mock.' + btoa(JSON.stringify({ email: email, name: name || email })).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_') + '.sig';
+  };
   // OCR SIMULADO do Google Drive (foto do rótulo): devolve sempre o mesmo texto de demonstração.
   var DEMO_LABEL = 'Rótulo de demonstração (OCR simulado)\nCANTINA DEMO\nBAROLO\nDenominazione di Origine Controllata e Garantita\n' +
     'NEBBIOLO\nVendemmia 2019\n14,5% vol\n750 ml\nVino rosso\nPRODOTTO IN ITALIA';
@@ -429,6 +478,12 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
   g.Utilities.base64Decode = function (b64) { return b64; };
   g.Drive = { Files: { create: function () { return { id: 'OCR_MOCK' }; } } };
   g.UrlFetchApp = { fetch: function (url, opts) {
+    if (/oauth2\.googleapis\.com\/tokeninfo/.test(url)) {
+      var cred = decodeURIComponent(url.split('id_token=')[1]);
+      var p = JSON.parse(atob(cred.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      var info = { aud: scriptProps.GOOGLE_CLIENT_ID, iss: 'https://accounts.google.com', email: p.email, email_verified: 'true', name: p.name, exp: String(Math.floor(Date.now() / 1000) + 3600) };
+      return { getResponseCode: function () { return 200; }, getContentText: function () { return JSON.stringify(info); } };
+    }
     if (/googleapis\.com\/drive/.test(url)) {
       return { getResponseCode: function () { return 200; }, getContentText: function () { return /export/.test(url) ? DEMO_LABEL : ''; } };
     }
@@ -582,7 +637,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 4,
+  SCHEMA_VERSION: 5,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -652,7 +707,14 @@ var SCHEMA = {
     'name', 'import_key', 'producer_id', 'country_id', 'region_id', 'subregion_id', 'appellation_id',
     'vintage:number', 'type', 'color', 'abv:number', 'residual_sugar', 'acidity_gl', 'production_method',
     'aging', 'oak', 'aging_time', 'classification', 'price:number', 'price_currency',
-    'serving_temp', 'pairing', 'curiosities', 'technical_notes', 'my_notes'] },
+    'serving_temp', 'pairing', 'curiosities', 'technical_notes', 'my_notes',
+    // v5: autor da ficha (catálogo comum: só o autor e a administradora editam; vazio = administradora).
+    // my_notes ficou só como histórico: as notas pessoais de cada usuário estão em wine_notes.
+    'created_by'] },
+
+  // v5: notas pessoais de cada usuário sobre um vinho do catálogo comum.
+  wine_notes: { sheet: 'db_wine_notes', prefix: 'WNT', cols: [
+    'user_id', 'wine_id', 'my_notes'] },
 
   // Castas de uma região/sub-região. role: principal | secundaria
   region_grapes: { sheet: 'db_region_grapes', prefix: 'RGG', cols: [
@@ -668,36 +730,36 @@ var SCHEMA = {
 
   // ---------- Adega ----------
   bottling_batches: { sheet: 'db_bottling_batches', prefix: 'BAT', cols: [
-    'wine_id', 'date:date', 'original_volume_ml:number', 'bottle_volume_ml:number',
+    'user_id', 'wine_id', 'date:date', 'original_volume_ml:number', 'bottle_volume_ml:number',
     'bottle_count:number', 'numbering', 'opened_at:date', 'notes'] },
 
   bottles: { sheet: 'db_bottles', prefix: 'BTL', cols: [
-    'number:number', 'wine_id', 'batch_id', 'volume_ml:number', 'status', 'status_changed_at:date', 'notes'] },
+    'user_id', 'number:number', 'wine_id', 'batch_id', 'volume_ml:number', 'status', 'status_changed_at:date', 'notes'] },
 
   // ---------- Degustação ----------
   tastings: { sheet: 'db_tastings', prefix: 'TST', cols: [
-    'title', 'date:date', 'status', 'difficulty', 'theme', 'filters:json',
+    'user_id', 'title', 'date:date', 'status', 'difficulty', 'theme', 'filters:json',
     'scoring_snapshot:json', 'score:number', 'revealed_at:date', 'notes'] },
 
   tasting_samples: { sheet: 'db_tasting_samples', prefix: 'TSS', cols: [
-    'tasting_id', 'bottle_id', 'position:number', 'score:number', 'completed:bool'] },
+    'user_id', 'tasting_id', 'bottle_id', 'position:number', 'score:number', 'completed:bool'] },
 
   // Uma linha por critério respondido. value = texto; value_json para listas (aromas, uvas).
   tasting_answers: { sheet: 'db_tasting_answers', prefix: 'TSA', cols: [
-    'tasting_id', 'sample_id', 'criterion', 'value', 'value_json:json'] },
+    'user_id', 'tasting_id', 'sample_id', 'criterion', 'value', 'value_json:json'] },
 
   // Uma linha por critério corrigido. Guarda dimensões desnormalizadas (uva, país…)
   // para que "Minha Evolução" seja calculada sem reprocessar degustações.
   tasting_results: { sheet: 'db_tasting_results', prefix: 'TSR', cols: [
-    'tasting_id', 'sample_id', 'wine_id', 'criterion', 'given', 'expected', 'state',
+    'user_id', 'tasting_id', 'sample_id', 'wine_id', 'criterion', 'given', 'expected', 'state',
     'points:number', 'max_points:number', 'grape_ids:json', 'country_id', 'region_id', 'date:date'] },
 
   // ---------- Estudo ----------
   notes: { sheet: 'db_notes', prefix: 'NOT', cols: [
-    'title', 'body', 'kind', 'import_key', 'date:date', 'pinned:bool'] },
+    'user_id', 'title', 'body', 'kind', 'import_key', 'date:date', 'pinned:bool'] },
 
   note_links: { sheet: 'db_note_links', prefix: 'NTL', cols: [
-    'note_id', 'entity_type', 'entity_id'] },
+    'user_id', 'note_id', 'entity_type', 'entity_id'] },
 
   // ---------- Sistema ----------
   settings: { sheet: 'db_settings', prefix: 'SET', cols: [
@@ -725,7 +787,31 @@ var SCHEMA = {
     'web_searches:number', 'cost_usd:number', 'proposals:number', 'status', 'error'] },
 
   import_log: { sheet: 'db_import_log', prefix: 'IMP', cols: [
-    'run_at:date', 'level', 'message', 'details:json'] }
+    'run_at:date', 'level', 'message', 'details:json'] },
+
+  // ---------- Usuários (v5) ----------
+  // role: admin | membro. status: ativo | bloqueado. Login pelo Google (sem senha guardada aqui).
+  users: { sheet: 'db_users', prefix: 'USR', cols: [
+    'email', 'name', 'picture', 'role', 'status', 'last_seen_at:date'] },
+
+  // Sessões do login: guardamos só o hash SHA-256 do token, nunca o token.
+  sessions: { sheet: 'db_sessions', prefix: 'SES', cols: [
+    'token_hash', 'user_id', 'expires_at:date', 'user_agent'] }
+};
+
+/**
+ * Quem pode ler/escrever cada tabela (aplicado no Repository; ver 03_Context.js):
+ * - personal: cada usuário só vê e altera as próprias linhas (coluna user_id).
+ * - catalog : todos leem; todos criam; só o autor do vinho ou a administradora alteram.
+ * - admin   : todos leem; só a administradora altera (enciclopédia e configurações).
+ * - system  : só o próprio sistema (login).
+ */
+var SCOPES = {
+  personal: ['bottling_batches', 'bottles', 'tastings', 'tasting_samples', 'tasting_answers', 'tasting_results',
+    'notes', 'note_links', 'wine_notes'],
+  catalog: ['wines', 'wine_grapes', 'producers', 'appellations', 'profiles', 'entity_aromas'],
+  system: ['users', 'sessions']
+  // as demais: admin
 };
 
 // ---- 01_Util.js
@@ -877,30 +963,344 @@ var Util = (function () {
 
 // ---- 02_Auth.js
 /**
- * Autenticação. O Web App é publicado como "Executar como: eu / Acesso: somente eu",
- * o que já impede outras contas de abrir o app. Esta checagem é uma segunda barreira:
- * toda chamada da API confere o e-mail ativo com o dono gravado na instalação.
+ * Autenticação e usuários (v5: vários usuários).
+ *
+ * - Login com Google (Google Identity Services no navegador): o servidor recebe o "ID token",
+ *   confere no próprio Google (tokeninfo) se foi emitido para o NOSSO cliente OAuth, e cria uma
+ *   sessão. O app nunca vê nem guarda senha.
+ * - Sessão: token aleatório entregue ao navegador; na planilha fica só o hash SHA-256.
+ * - Cadastro aberto: qualquer conta Google com e-mail verificado entra como "membro".
+ *   A dona (OWNER_EMAIL, gravado no setup) é sempre "admin". Usuários podem ser bloqueados.
+ * - O app antigo dentro do Apps Script (google.script.run) continua funcionando só para a dona.
  */
 var Auth = (function () {
-  function ownerEmail() {
-    return PropertiesService.getScriptProperties().getProperty('OWNER_EMAIL');
-  }
+  var CLIENT_PROP = 'GOOGLE_CLIENT_ID';
+  var SESSION_DAYS = 30;
+  var CACHE_SECONDS = 6 * 60 * 60;
+  var ISSUERS = ['accounts.google.com', 'https://accounts.google.com'];
 
-  function assertOwner() {
-    var owner = ownerEmail();
-    if (!owner) throw new Error('O sistema ainda não foi instalado. Execute a função setup() no editor do Apps Script.');
-    var me = Session.getActiveUser().getEmail();
-    if (!me || me.toLowerCase() !== owner.toLowerCase()) throw new Error('Acesso negado.');
-  }
+  function props_() { return PropertiesService.getScriptProperties(); }
+  function cache_() { return CacheService.getScriptCache(); }
+
+  function ownerEmail() { return props_().getProperty('OWNER_EMAIL'); }
 
   function registerOwner() {
     var me = Session.getEffectiveUser().getEmail();
     if (!me) throw new Error('Não foi possível identificar o usuário.');
-    PropertiesService.getScriptProperties().setProperty('OWNER_EMAIL', me);
+    props_().setProperty('OWNER_EMAIL', me);
     return me;
   }
 
-  return { assertOwner: assertOwner, registerOwner: registerOwner, ownerEmail: ownerEmail };
+  function clientId() { return props_().getProperty(CLIENT_PROP) || ''; }
+
+  function setClientId(id) {
+    id = String(id || '').trim();
+    if (!/^[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com$/.test(id)) throw new Error('ID do cliente OAuth inválido.');
+    props_().setProperty(CLIENT_PROP, id);
+    return id;
+  }
+
+  function sha256_(s) {
+    return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, s, Utilities.Charset.UTF_8)
+      .map(function (b) { return ('0' + (b & 0xff).toString(16)).slice(-2); }).join('');
+  }
+
+  function publicUser(u) {
+    return u ? { id: u.id, email: u.email, name: u.name || '', picture: u.picture || '', role: u.role } : null;
+  }
+
+  function findByEmail_(email) {
+    var key = String(email).toLowerCase();
+    return Repo.all('users').filter(function (u) { return String(u.email).toLowerCase() === key; })[0] || null;
+  }
+
+  /** Garante o usuário administradora (a dona da planilha). */
+  function ensureAdmin() {
+    return Ctx.asSystem(function () {
+      var email = ownerEmail();
+      if (!email) throw new Error('O sistema ainda não foi instalado. Execute a função setup() no editor do Apps Script.');
+      var u = findByEmail_(email);
+      if (!u) u = Repo.insert('users', [{ email: email, name: '', role: 'admin', status: 'ativo', source: 'sistema' }])[0];
+      else if (u.role !== 'admin') { Repo.update('users', [{ id: u.id, role: 'admin' }]); u.role = 'admin'; }
+      return u;
+    });
+  }
+
+  /** Confere o ID token no Google. Devolve {email, name, picture}. */
+  function verifyGoogle_(credential) {
+    var cid = clientId();
+    if (!cid) throw new Error('O login com Google ainda não foi configurado (falta o ID do cliente OAuth).');
+    if (typeof credential !== 'string' || credential.length > 4096 || !/^[\w-]+\.[\w-]+\.[\w-]+$/.test(credential)) throw new Error('Login inválido.');
+    var res = UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(credential), { muteHttpExceptions: true });
+    if (res.getResponseCode() !== 200) throw new Error('Login expirado ou inválido. Tente entrar de novo.');
+    var t = JSON.parse(res.getContentText());
+    if (t.aud !== cid || ISSUERS.indexOf(t.iss) < 0 || String(t.email_verified) !== 'true' || Number(t.exp) * 1000 < Date.now()) {
+      throw new Error('Login inválido.');
+    }
+    return { email: String(t.email).toLowerCase(), name: Util.clampStr(t.name || '', 120), picture: /^https:\/\//.test(t.picture || '') ? Util.clampStr(t.picture, 500) : '' };
+  }
+
+  function login(credential, userAgent) {
+    var g = verifyGoogle_(credential);
+    return Ctx.asSystem(function () {
+      return Repo.withLock(function () {
+        var owner = String(ownerEmail() || '').toLowerCase();
+        var u = findByEmail_(g.email);
+        if (!u) {
+          u = Repo.insert('users', [{ email: g.email, name: g.name, picture: g.picture, role: g.email === owner ? 'admin' : 'membro',
+            status: 'ativo', last_seen_at: Util.nowIso(), source: 'sistema' }])[0];
+        } else {
+          if (u.status === 'bloqueado') throw new Error('Esta conta foi bloqueada.');
+          Repo.update('users', [{ id: u.id, name: g.name || u.name, picture: g.picture || u.picture, last_seen_at: Util.nowIso() }]);
+        }
+        var token = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '');
+        var hash = sha256_(token);
+        var expires = new Date(Date.now() + SESSION_DAYS * 864e5).toISOString();
+        Repo.insert('sessions', [{ token_hash: hash, user_id: u.id, expires_at: expires, user_agent: Util.clampStr(userAgent || '', 200), source: 'sistema' }]);
+        cache_().put('ses:' + hash, JSON.stringify({ user_id: u.id, expires_at: expires }), CACHE_SECONDS);
+        return { token: token, user: publicUser(Repo.get('users', u.id)) };
+      });
+    });
+  }
+
+  /** Usuário da sessão (ou erro). */
+  function fromToken(token) {
+    if (typeof token !== 'string' || !/^[0-9a-f]{64}$/.test(token)) throw new Error('SESSAO: Faça login para continuar.');
+    var hash = sha256_(token);
+    return Ctx.asSystem(function () {
+      var s = null, c = cache_().get('ses:' + hash);
+      if (c) s = JSON.parse(c);
+      else {
+        var row = Repo.all('sessions').filter(function (x) { return x.token_hash === hash; })[0];
+        if (row) { s = { user_id: row.user_id, expires_at: row.expires_at }; cache_().put('ses:' + hash, JSON.stringify(s), CACHE_SECONDS); }
+      }
+      if (!s || new Date(s.expires_at).getTime() < Date.now()) throw new Error('SESSAO: Sua sessão expirou. Entre de novo.');
+      var u = Repo.get('users', s.user_id);
+      if (!u || u.status !== 'ativo') throw new Error('SESSAO: Acesso não liberado.');
+      return u;
+    });
+  }
+
+  function logout(token) {
+    if (typeof token !== 'string' || !/^[0-9a-f]{64}$/.test(token)) return true;
+    var hash = sha256_(token);
+    cache_().remove('ses:' + hash);
+    Ctx.asSystem(function () {
+      var ids = Repo.all('sessions').filter(function (x) { return x.token_hash === hash; }).map(function (x) { return x.id; });
+      Repo.remove('sessions', ids);
+    });
+    return true;
+  }
+
+  /** App antigo (HtmlService): só a dona, identificada pela conta Google ativa. */
+  function fromGoogleSession() {
+    var owner = ownerEmail();
+    if (!owner) throw new Error('O sistema ainda não foi instalado. Execute a função setup() no editor do Apps Script.');
+    var me = Session.getActiveUser().getEmail();
+    if (!me || me.toLowerCase() !== owner.toLowerCase()) throw new Error('Acesso negado.');
+    return ensureAdmin();
+  }
+
+  /** Mantido por compatibilidade (página do jogo no Apps Script). */
+  function assertOwner() { Ctx.setUser(fromGoogleSession()); }
+
+  /** Limite de chamadas por minuto (cadastro aberto). */
+  function rateLimit(user, method) {
+    if (!user || user.role === 'admin') return;
+    var c = cache_();
+    var minute = Math.floor(Date.now() / 60000);
+    var k = 'rl:' + user.id + ':' + minute;
+    var n = Number(c.get(k) || 0) + 1;
+    c.put(k, String(n), 120);
+    if (n > 120) throw new Error('Muitas ações em pouco tempo. Espere um minuto.');
+    if (method === 'label.read') {
+      var hk = 'rlh:' + user.id + ':' + Math.floor(Date.now() / 3600000);
+      var h = Number(c.get(hk) || 0) + 1;
+      c.put(hk, String(h), 3700);
+      if (h > 30) throw new Error('Limite de leituras de rótulo por hora atingido.');
+    }
+  }
+
+  // ---------- Administração ----------
+  function listUsers() {
+    Ctx.requireAdmin();
+    return Ctx.asSystem(function () {
+      return Repo.all('users').map(function (u) {
+        return { id: u.id, email: u.email, name: u.name, role: u.role, status: u.status, last_seen_at: u.last_seen_at, created_at: u.created_at };
+      }).sort(function (a, b) { return String(b.last_seen_at).localeCompare(String(a.last_seen_at)); });
+    });
+  }
+
+  function setStatus(id, status) {
+    Ctx.requireAdmin();
+    Validate.oneOf(status, ['ativo', 'bloqueado'], 'situação');
+    return Ctx.asSystem(function () {
+      var u = Repo.get('users', Validate.id(id));
+      if (!u) throw new Error('Usuário não encontrado.');
+      if (u.role === 'admin') throw new Error('A administradora não pode ser bloqueada.');
+      Repo.update('users', [{ id: u.id, status: status }]);
+      if (status === 'bloqueado') {
+        var sess = Repo.all('sessions').filter(function (s) { return s.user_id === u.id; });
+        sess.forEach(function (s) { cache_().remove('ses:' + s.token_hash); });
+        Repo.remove('sessions', sess.map(function (s) { return s.id; }));
+      }
+      return listUsers();
+    });
+  }
+
+  return { ownerEmail: ownerEmail, registerOwner: registerOwner, clientId: clientId, setClientId: setClientId,
+    ensureAdmin: ensureAdmin, login: login, fromToken: fromToken, logout: logout, fromGoogleSession: fromGoogleSession,
+    assertOwner: assertOwner, rateLimit: rateLimit, publicUser: publicUser, listUsers: listUsers, setStatus: setStatus };
+})();
+
+// ---- 03_Context.js
+/**
+ * Contexto da chamada (quem está usando) e política de acesso por tabela.
+ *
+ * Toda chamada da API define o usuário (Ctx.setUser) ANTES de tocar em dados.
+ * O Repository consulta Policy em toda leitura/escrita, então nenhum serviço consegue
+ * ler ou alterar dados pessoais de outra pessoa por engano (ou por um id forjado).
+ *
+ * Ctx.asSystem(fn) roda fn sem filtro (instalação, migrações, sementes da enciclopédia, login).
+ */
+var Ctx = (function () {
+  var user = null;
+  var system = 0;
+
+  function setUser(u) { user = u || null; }
+  function current() { return user; }
+  function userId() { return user ? user.id : ''; }
+  function isAdmin() { return system > 0 || !!(user && user.role === 'admin'); }
+  function isSystem() { return system > 0; }
+
+  function asSystem(fn) {
+    system++;
+    try { return fn(); } finally { system--; }
+  }
+
+  function requireUser() {
+    if (!user && !system) throw new Error('Faça login para continuar.');
+    return user;
+  }
+
+  function requireAdmin() {
+    if (!isAdmin()) throw new Error('Somente a administradora pode fazer isso.');
+  }
+
+  return { setUser: setUser, current: current, userId: userId, isAdmin: isAdmin, isSystem: isSystem,
+    asSystem: asSystem, requireUser: requireUser, requireAdmin: requireAdmin };
+})();
+
+var Policy = (function () {
+  var scopeOf_ = null;
+  // Limites por usuário (cadastro aberto: evita que uma conta encha a planilha).
+  var MAX_PERSONAL_ROWS = 20000;
+  var MAX_WINES_PER_MEMBER = 2000;
+
+  function scope(entity) {
+    if (!scopeOf_) {
+      scopeOf_ = {};
+      Object.keys(SCOPES).forEach(function (s) { SCOPES[s].forEach(function (e) { scopeOf_[e] = s; }); });
+    }
+    return scopeOf_[entity] || 'admin';
+  }
+
+  function isPersonal(entity) { return scope(entity) === 'personal'; }
+
+  /** Linha visível para o usuário atual? */
+  function canRead(entity, row) {
+    if (Ctx.isSystem()) return true;
+    var s = scope(entity);
+    if (s === 'personal') return !!row.user_id && row.user_id === Ctx.userId();
+    if (s === 'system') return false;
+    return true;
+  }
+
+  /** Quem pode alterar a linha de catálogo (vinho e o que pertence a ele). */
+  function wineEditor_(wineId) {
+    if (Ctx.isAdmin()) return true;
+    var w = Repo.getRaw('wines', wineId);
+    return !!(w && w.created_by && w.created_by === Ctx.userId());
+  }
+
+  function canWrite(entity, row, isInsert) {
+    if (Ctx.isSystem()) return true;
+    if (!Ctx.current()) return false;
+    var s = scope(entity);
+    if (s === 'system') return false;
+    if (s === 'personal') return isInsert || row.user_id === Ctx.userId();
+    if (s === 'admin') return Ctx.isAdmin();
+    // catálogo
+    switch (entity) {
+      case 'wines': return isInsert || wineEditor_(row.id);
+      case 'wine_grapes': return wineEditor_(row.wine_id);
+      case 'profiles':
+      case 'entity_aromas': return row.entity_type === 'wine' ? wineEditor_(row.entity_id) : Ctx.isAdmin();
+      case 'producers':
+      case 'appellations': return isInsert || Ctx.isAdmin();
+    }
+    return Ctx.isAdmin();
+  }
+
+  /** Ajusta um registro novo: dono/autor vêm sempre do contexto, nunca do navegador. */
+  function stampInsert(entity, rec) {
+    if (isPersonal(entity) && !(Ctx.isSystem() && rec.user_id)) rec.user_id = Ctx.userId();
+    if (entity === 'wines' && !Ctx.isSystem()) rec.created_by = Ctx.userId();
+    return rec;
+  }
+
+  /** Um patch nunca troca o dono de uma linha. */
+  function cleanPatch(entity, patch) {
+    if (Ctx.isSystem()) return patch;
+    delete patch.user_id;
+    delete patch.created_by;
+    return patch;
+  }
+
+  function checkQuota(entity, adding, mineCount) {
+    if (Ctx.isAdmin()) return;
+    if (isPersonal(entity) && mineCount + adding > MAX_PERSONAL_ROWS) throw new Error('Limite de registros da sua conta atingido.');
+    if (entity === 'wines' && mineCount + adding > MAX_WINES_PER_MEMBER) throw new Error('Limite de vinhos cadastrados pela sua conta atingido.');
+  }
+
+  return { scope: scope, isPersonal: isPersonal, canRead: canRead, canWrite: canWrite, stampInsert: stampInsert,
+    cleanPatch: cleanPatch, checkQuota: checkQuota, wineEditor: wineEditor_ };
+})();
+
+// ---- 04_Migrations.js
+/**
+ * Migrações de dados (só acrescentam/preenchem; nunca apagam). Idempotentes: rodar de novo não muda nada.
+ *
+ * v5 (vários usuários):
+ *  - cria a usuária administradora (a dona da planilha);
+ *  - linhas pessoais antigas (garrafinhas, degustações, notas…) sem dono passam a ser da administradora;
+ *  - "Minhas notas" de cada vinho viram notas pessoais da administradora (wine_notes).
+ *    A coluna antiga my_notes fica intacta, como histórico.
+ */
+var Migrations = (function () {
+  function run() {
+    return Ctx.asSystem(function () {
+      var report = [];
+      if (!Auth.ownerEmail()) return report;      // instalação ainda não feita
+      var admin = Auth.ensureAdmin();
+      SCOPES.personal.forEach(function (entity) {
+        var orphans = Repo.all(entity).filter(function (r) { return !r.user_id; });
+        if (!orphans.length) return;
+        Repo.update(entity, orphans.map(function (r) { return { id: r.id, user_id: admin.id }; }));
+        report.push(entity + ': ' + orphans.length + ' linha(s) → ' + admin.email);
+      });
+      var have = {};
+      Repo.all('wine_notes').forEach(function (n) { have[n.user_id + '|' + n.wine_id] = true; });
+      var notes = Repo.all('wines').filter(function (w) { return !Util.isBlank(w.my_notes) && !have[admin.id + '|' + w.id]; })
+        .map(function (w) { return { user_id: admin.id, wine_id: w.id, my_notes: w.my_notes, source: 'usuario' }; });
+      if (notes.length) {
+        Repo.insert('wine_notes', notes);
+        report.push('wine_notes: ' + notes.length + ' nota(s) copiadas de my_notes');
+      }
+      return report;
+    });
+  }
+  return { run: run };
 })();
 
 // ---- 10_Repository.js
@@ -968,15 +1368,40 @@ var Repo = (function () {
     }
   }
 
-  /** Todos os registros da tabela (cópia rasa — pode ser modificada pelo chamador). */
-  function all(entity) {
+  function load_(entity) {
     if (!memo[entity]) {
       var cached = Cache.get(entity);
       memo[entity] = cached || readSheet_(entity);
       if (!cached) Cache.put(entity, memo[entity]);
     }
-    return memo[entity].map(function (r) { return Object.assign({}, r); });
+    return memo[entity];
   }
+
+  /**
+   * Registros VISÍVEIS para o usuário atual (cópia rasa — pode ser modificada pelo chamador).
+   * Tabelas pessoais vêm filtradas pelo dono (Policy); as demais vêm inteiras.
+   */
+  function all(entity) {
+    var rows = load_(entity);
+    var scope = Policy.scope(entity);
+    if ((scope === 'personal' || scope === 'system') && !Ctx.isSystem()) rows = rows.filter(function (r) { return Policy.canRead(entity, r); });
+    return rows.map(function (r) { return Object.assign({}, r); });
+  }
+
+  /** Sem filtro de usuário: só para checagens internas de permissão. */
+  function getRaw(entity, id) {
+    var rows = load_(entity);
+    for (var i = 0; i < rows.length; i++) if (rows[i].id === id) return Object.assign({}, rows[i]);
+    return null;
+  }
+
+  function rowObj_(header, row, types) {
+    var o = {};
+    for (var c = 0; c < header.length; c++) if (header[c]) o[header[c]] = fromCell(row[c], types[header[c]] || 'string');
+    return o;
+  }
+
+  function deny_() { throw new Error('Você não tem permissão para alterar este registro.'); }
 
   function readSheet_(entity) {
     var values = sheet(entity).getDataRange().getValues();
@@ -1021,8 +1446,14 @@ var Repo = (function () {
     var header = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
     var types = typesOf(entity);
     var now = Util.nowIso();
+    if (!Ctx.isSystem()) {
+      var mine = Policy.isPersonal(entity) ? all(entity).length
+        : entity === 'wines' ? load_(entity).filter(function (w) { return w.created_by === Ctx.userId(); }).length : 0;
+      Policy.checkQuota(entity, records.length, mine);
+    }
     var saved = records.map(function (r) {
-      var o = Object.assign({}, r);
+      var o = Policy.stampInsert(entity, Object.assign({}, r));
+      if (!Policy.canWrite(entity, o, true)) deny_();
       o.id = o.id || Util.newId(def(entity).prefix);
       o.created_at = o.created_at || now;
       o.updated_at = now;
@@ -1050,7 +1481,8 @@ var Repo = (function () {
     patches.forEach(function (p) {
       var ri = rowById[p.id];
       if (ri === undefined) return;
-      var patch = Object.assign({}, p, { updated_at: now });
+      if (!Policy.canWrite(entity, rowObj_(header, values[ri], types), false)) deny_();
+      var patch = Policy.cleanPatch(entity, Object.assign({}, p, { updated_at: now }));
       for (var k in patch) {
         var c = header.indexOf(k);
         if (c < 0 || k === 'id' || k === 'created_at') continue;
@@ -1073,9 +1505,15 @@ var Repo = (function () {
     ids.forEach(function (id) { set[id] = true; });
     var sh = sheet(entity);
     var values = sh.getDataRange().getValues();
-    var idCol = values[0].map(String).indexOf('id');
+    var header = values[0].map(String);
+    var idCol = header.indexOf('id');
+    var types = typesOf(entity);
     var rows = [];
-    for (var i = 1; i < values.length; i++) if (set[values[i][idCol]]) rows.push(i + 1);
+    for (var i = 1; i < values.length; i++) {
+      if (!set[values[i][idCol]]) continue;
+      if (!Policy.canWrite(entity, rowObj_(header, values[i], types), false)) deny_();
+      rows.push(i + 1);
+    }
     for (var j = rows.length - 1; j >= 0; j--) sh.deleteRow(rows[j]);
     if (rows.length) invalidate_(entity);
     return rows.length;
@@ -1090,7 +1528,7 @@ var Repo = (function () {
 
   function spreadsheet() { return ss(); }
 
-  return { all: all, get: get, where: where, insert: insert, update: update, remove: remove,
+  return { all: all, getRaw: getRaw, get: get, where: where, insert: insert, update: update, remove: remove,
     withLock: withLock, spreadsheet: spreadsheet };
 })();
 
@@ -9298,7 +9736,9 @@ var Catalog = (function () {
       aromas: Repo.all('aromas').sort(function (a, b) { return a.order - b.order; }).map(pick_('id', 'name', 'category', 'subcategory')),
       scales: Settings.scales(),
       rules: Settings.rules(),
-      ai_enabled: AiProvider.hasKey(),
+      ai_enabled: AiProvider.hasKey() && Ctx.isAdmin(),
+      me: Auth.publicUser(Ctx.current()),
+      is_admin: Ctx.isAdmin(),
       encyclopedia: { version: GRAPE_ENCYCLOPEDIA.version, grapes: GRAPE_ENCYCLOPEDIA.grapes.length,
         region_packs: SeedRegions.summary() },
       enums: {
@@ -9324,6 +9764,11 @@ var Catalog = (function () {
       return r.name_key === key && (!scopeKey || r[scopeKey] === extra[scopeKey]);
     })[0];
     if (found) return found;
+    // Enciclopédia (países, regiões, uvas): só a administradora cria. Os demais escolhem da lista.
+    if (Policy.scope(entity) === 'admin' && !Ctx.isAdmin()) {
+      var LABEL = { countries: 'País', regions: 'Região', grapes: 'Uva' };
+      throw new Error((LABEL[entity] || entity) + ' "' + name + '" não está na enciclopédia. Escolha uma opção da lista.');
+    }
     return Repo.insert(entity, [Object.assign({ name: name, name_key: key, source: 'usuario' }, extra || {})])[0];
   }
 
@@ -9412,7 +9857,7 @@ var Wines = (function () {
   var TEXT_FIELDS = {
     type: 40, color: 40, residual_sugar: 60, acidity_gl: 60, production_method: 300, aging: 300, oak: 200,
     aging_time: 120, classification: 120, price_currency: 5, serving_temp: 60, pairing: 1000,
-    curiosities: 3000, technical_notes: 5000, my_notes: 5000
+    curiosities: 3000, technical_notes: 5000
   };
 
   function context_() {
@@ -9466,6 +9911,11 @@ var Wines = (function () {
     out.bottles = bottles.map(function (b) { return { id: b.id, number: b.number, status: b.status }; });
     var results = Repo.where('tasting_results', { wine_id: id });
     out.my_results = Scoring.aggregate(results, Settings.getNumber('near_credit', 0.5));
+    // Catálogo comum: notas são de cada usuário; editar a ficha só o autor ou a administradora.
+    var mine = Repo.where('wine_notes', { wine_id: id })[0];
+    out.my_notes = mine ? mine.my_notes : '';
+    out.can_edit = Policy.wineEditor(id);
+    delete out.created_by;
     out.times_tasted = Object.keys(Util.groupBy(results, 'sample_id')).length;
     return out;
   }
@@ -9476,6 +9926,12 @@ var Wines = (function () {
     var isNew = !input.id;
     var existing = isNew ? null : Repo.get('wines', Validate.id(input.id));
     if (!isNew && !existing) throw new Error('Vinho não encontrado.');
+    var myNotes = Validate.str(input.my_notes, 5000, 'Minhas notas');
+    if (!isNew && !Policy.wineEditor(existing.id)) {
+      // Quem não é autor da ficha só grava as próprias notas.
+      saveNotes_(existing.id, myNotes);
+      return get(existing.id);
+    }
 
     var rec = { name: Validate.required(input.name, 200, 'Nome do vinho') };
     var country = Catalog.resolveByName('countries', input.country);
@@ -9522,7 +9978,14 @@ var Wines = (function () {
     }
 
     if (Array.isArray(input.grapes)) setGrapes_(saved.id, input.grapes);
+    saveNotes_(saved.id, myNotes);
     return get(saved.id);
+  }
+
+  function saveNotes_(wineId, text) {
+    var cur = Repo.where('wine_notes', { wine_id: wineId })[0];
+    if (cur) { if (cur.my_notes !== text) Repo.update('wine_notes', [{ id: cur.id, my_notes: text }]); }
+    else if (text) Repo.insert('wine_notes', [{ wine_id: wineId, my_notes: text, source: 'usuario' }]);
   }
 
   var ORIGIN_FIELDS = { producer: 'producer_id', country: 'country_id', region: 'region_id', subregion: 'subregion_id', appellation: 'appellation_id' };
@@ -11205,7 +11668,7 @@ var Stats = (function () {
         bottles_available: bottles.filter(function (b) { return b.status === 'disponivel'; }).length,
         bottles_total: bottles.length,
         notes: Repo.all('notes').length,
-        ai_pending: Enrichment.pendingCount()
+        ai_pending: Ctx.isAdmin() ? Enrichment.pendingCount() : 0
       },
       avg_score: avg,
       series: scored.map(function (t) { return { date: t.date, score: t.score, id: t.id }; }),
@@ -11933,9 +12396,11 @@ var Enrichment = (function () {
 // ---- 99_Api.js
 /**
  * Pontos de entrada do Apps Script:
- *  - doGet()  : serve a interface web.
- *  - api()    : ÚNICA função chamada pelo navegador (google.script.run.api).
- *               Confere o dono, valida o método numa lista fechada e padroniza erros.
+ *  - doPost() : API JSON usada pelo site (GitHub Pages). Cada chamada traz o token da sessão
+ *               (login com Google, ver 02_Auth.js); métodos numa lista fechada; erros padronizados.
+ *  - api()    : a mesma API para a interface antiga servida pelo Apps Script (google.script.run),
+ *               que só a dona usa.
+ *  - doGet()  : interface antiga + página do jogo.
  *  - setup()  : instalação (rodar uma vez pelo editor).
  *  - onOpen() : menu "Wine Study Lab" na planilha.
  */
@@ -11950,8 +12415,8 @@ function doGet(e) {
 
 /** Jogo "Degustação às Cegas" (FDR Wine Lab), aberto em outra aba, com os catálogos da planilha. */
 function gamePage_() {
+  Ctx.asSystem(ensureSchema_);
   Auth.assertOwner();
-  ensureSchema_();
   var t = HtmlService.createTemplateFromFile('game/index');
   t.gameData = GameData.json();
   return t.evaluate()
@@ -12012,7 +12477,7 @@ var API_METHODS = {
   'search': function (a) { return Search.run(a.q); },
 
   'settings.get': function () {
-    return { settings: Repo.all('settings'), rules: Settings.rules(), scales: Settings.scales(), last_log: Import.lastLog(60) };
+    return { settings: Repo.all('settings'), rules: Settings.rules(), scales: Settings.scales(), last_log: Ctx.isAdmin() ? Import.lastLog(60) : [] };
   },
   'settings.saveRules': function (a) { return Settings.saveRules(a.rules); },
   'settings.set': function (a) {
@@ -12051,22 +12516,70 @@ var API_METHODS = {
     var r = Enrichment.review(a.ids, a.action, a.edits);
     r.lookups = Catalog.lookups();
     return r;
-  }
+  },
+
+  // ---------- Login e usuários (v5) ----------
+  'auth.config': function () { return { client_id: Auth.clientId() }; },
+  'auth.login': function (a) { return Auth.login(a.credential, a.user_agent); },
+  'auth.me': function () { return Auth.publicUser(Ctx.current()); },
+  'auth.setClientId': function (a) { return { client_id: Auth.setClientId(a.client_id) }; },
+  'users.list': function () { return Auth.listUsers(); },
+  'users.setStatus': function (a) { return Auth.setStatus(a.id, a.status); },
+  'game.data': function () { return GameData.build(); }
 };
 
-function api(method, args) {
+// Sem login.
+var PUBLIC_METHODS = { 'auth.config': 1, 'auth.login': 1 };
+// Só a administradora (enciclopédia, sincronização, IA, configurações, usuários).
+var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|label\.ai$|grapes\.(save|verify)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
+
+/**
+ * Executa um método da API. resolveUser() identifica quem chama (sessão ou conta Google).
+ * Ordem: estrutura da planilha (como sistema) → usuário → limites → permissão → método.
+ */
+function dispatch_(method, args, resolveUser) {
   try {
-    Auth.assertOwner();
-    ensureSchema_();
     var fn = API_METHODS[method];
-    if (!fn) throw new Error('Método desconhecido.');
-    var data = fn(args || {});
-    // Serialização explícita: evita problemas do google.script.run com Date/undefined.
-    return JSON.stringify({ ok: true, data: data === undefined ? null : data });
+    if (typeof method !== 'string' || !fn || !Object.prototype.hasOwnProperty.call(API_METHODS, method)) throw new Error('Método desconhecido.');
+    Ctx.setUser(null);
+    Ctx.asSystem(ensureSchema_);
+    if (!PUBLIC_METHODS[method]) {
+      var user = resolveUser();
+      Ctx.setUser(user);
+      Auth.rateLimit(user, method);
+      if (ADMIN_METHODS.test(method)) Ctx.requireAdmin();
+    }
+    var data = fn(args && typeof args === 'object' ? args : {});
+    return { ok: true, data: data === undefined ? null : data };
   } catch (e) {
+    var msg = e && e.message ? e.message : String(e);
     console.error(method, e && e.stack || e);
-    return JSON.stringify({ ok: false, error: e && e.message ? e.message : String(e) });
+    var auth = /^SESSAO: /.test(msg);
+    return { ok: false, error: msg.replace(/^SESSAO: /, ''), auth: auth };
+  } finally {
+    Ctx.setUser(null);
   }
+}
+
+function api(method, args) {
+  // Serialização explícita: evita problemas do google.script.run com Date/undefined.
+  return JSON.stringify(dispatch_(method, args, Auth.fromGoogleSession));
+}
+
+/**
+ * API do site. Corpo (text/plain, para evitar "preflight" de CORS): {"method", "args", "token"}.
+ * Resposta: {"ok", "data"} ou {"ok": false, "error", "auth"} (auth = sessão inválida → refazer login).
+ */
+function doPost(e) {
+  var out;
+  try {
+    var body = JSON.parse(e && e.postData && e.postData.contents || '{}');
+    if (body.method === 'auth.logout') out = { ok: true, data: Auth.logout(body.token) };
+    else out = dispatch_(body.method, body.args, function () { return Auth.fromToken(body.token); });
+  } catch (err) {
+    out = { ok: false, error: 'Requisição inválida.' };
+  }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
 }
 
 /** Aplica automaticamente mudanças de schema depois de um `clasp push` (só acrescenta abas/colunas). */
@@ -12076,6 +12589,7 @@ function ensureSchema_() {
     Repo.withLock(function () {
       Schema.ensure();
       Seeds.run();
+      Migrations.run();
       Settings.set('schema_version', CONFIG.SCHEMA_VERSION);
     });
     props.setProperty('SCHEMA_VERSION', String(CONFIG.SCHEMA_VERSION));
@@ -12095,10 +12609,13 @@ function ensureSchema_() {
  * e faz a primeira sincronização com as abas originais.
  */
 function setup() {
+  return Ctx.asSystem(function () {
   var owner = Auth.registerOwner();
   var schema = Schema.ensure();
   PropertiesService.getScriptProperties().setProperty('SCHEMA_VERSION', String(CONFIG.SCHEMA_VERSION));
   var seeds = Seeds.run();
+  Migrations.run();
+  Ctx.setUser(Auth.ensureAdmin());   // o que a sincronização importar pertence à dona
   var sync = Import.run();
   SeedEncyclopedia.ensure();
   SeedRegions.ensure(240000);
@@ -12106,14 +12623,25 @@ function setup() {
     'Sementes: ' + (seeds.join('; ') || 'nenhuma'), 'Sincronização: ' + JSON.stringify(sync.stats)].join('\n');
   console.log(msg);
   return msg;
+  });
+}
+
+/** Configura o login com Google (rode no editor uma vez, com o ID do cliente OAuth). */
+function configurarLogin(clientId) {
+  var id = Auth.setClientId(clientId || '');
+  console.log('Login configurado para o cliente ' + id);
+  return id;
 }
 
 /** Atualiza o schema após mudanças no código (acrescenta abas/colunas novas). Seguro de rodar sempre. */
 function migrate() {
-  var r = Schema.ensure();
-  Settings.set('schema_version', CONFIG.SCHEMA_VERSION);
-  PropertiesService.getScriptProperties().setProperty('SCHEMA_VERSION', String(CONFIG.SCHEMA_VERSION));
-  console.log(r.join('\n') || 'Schema já atualizado.');
+  Ctx.asSystem(function () {
+    var r = Schema.ensure();
+    var m = Migrations.run();
+    Settings.set('schema_version', CONFIG.SCHEMA_VERSION);
+    PropertiesService.getScriptProperties().setProperty('SCHEMA_VERSION', String(CONFIG.SCHEMA_VERSION));
+    console.log(r.concat(m).join('\n') || 'Schema já atualizado.');
+  });
 }
 
 function onOpen() {
@@ -12124,6 +12652,8 @@ function onOpen() {
 }
 
 function menuSync_() {
+  Ctx.asSystem(ensureSchema_);
+  Ctx.setUser(Auth.ensureAdmin());
   var r = Import.run();
   SpreadsheetApp.getUi().alert('Sincronização concluída', JSON.stringify(r.stats, null, 2), SpreadsheetApp.getUi().ButtonSet.OK);
 }
@@ -12160,8 +12690,21 @@ console.log(setup());
    Páginas se registram em Pages[nome] = { render(params), mount?(root, params), actions? }.
    ============================================================ */
 
+/**
+ * Chamadas ao servidor.
+ * - Site (GitHub Pages): window.WSL_CONFIG.apiUrl → POST para o Apps Script (doPost) com o token da sessão.
+ * - Dentro do Apps Script (interface antiga / demonstração): google.script.run.api.
+ */
+var SessionStore = {
+  KEY: 'wsl-session',
+  token: function () { try { return localStorage.getItem(SessionStore.KEY) || ''; } catch (e) { return ''; } },
+  set: function (t) { try { if (t) localStorage.setItem(SessionStore.KEY, t); else localStorage.removeItem(SessionStore.KEY); } catch (e) { /* sem armazenamento */ } }
+};
+
 var API = {
+  remote: function () { return !!(window.WSL_CONFIG && window.WSL_CONFIG.apiUrl); },
   call: function (method, args) {
+    if (API.remote()) return API.post_(method, args);
     return new Promise(function (resolve, reject) {
       google.script.run
         .withSuccessHandler(function (s) {
@@ -12172,6 +12715,72 @@ var API = {
         .withFailureHandler(function (e) { reject(e instanceof Error ? e : new Error(String(e && e.message || e))); })
         .api(method, args || {});
     });
+  },
+  post_: function (method, args) {
+    // text/plain evita a checagem prévia de CORS (o Apps Script não responde a OPTIONS).
+    return fetch(window.WSL_CONFIG.apiUrl, {
+      method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ method: method, args: args || {}, token: SessionStore.token() })
+    }).then(function (res) {
+      if (!res.ok) throw new Error('Servidor indisponível (' + res.status + '). Tente de novo.');
+      return res.json();
+    }, function () { throw new Error('Sem conexão com o servidor.'); }).then(function (r) {
+      if (r.ok) return r.data;
+      if (r.auth) { SessionStore.set(''); Login.show(r.error); }
+      throw new Error(r.error || 'Erro no servidor.');
+    });
+  }
+};
+
+/** Tela de login (só no site). Usa o botão oficial "Fazer login com o Google". */
+var Login = {
+  shown: false,
+  show: function (msg) {
+    if (Login.shown) { Login.message(msg); return; }
+    Login.shown = true;
+    var el = document.createElement('div');
+    el.id = 'login';
+    el.className = 'login-screen';
+    el.innerHTML = '<div class="login-card"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 3h14c0 7-2 12-7 13-5-1-7-6-7-13Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.2 8h11.6c-.5 4.3-2.4 6.7-5.8 7.3-3.4-.6-5.3-3-5.8-7.3Z" fill="var(--wine)"/><path d="M16 16v10M11 28h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>' +
+      '<h1 class="serif">Wine Study Lab</h1><p class="muted">Laboratório de degustação e estudo de vinhos. Entre com a sua conta Google: suas garrafinhas, degustações e anotações ficam só para você.</p>' +
+      '<div id="login-btn" class="login-btn"></div><p class="small muted" id="login-msg"></p>' +
+      '<p class="small muted">Não guardamos senha. Usamos só seu nome e e-mail do Google para identificar sua conta.</p></div>';
+    document.body.appendChild(el);
+    Login.message(msg);
+    Login.loadGis_().then(function () {
+      google.accounts.id.initialize({ client_id: window.WSL_CONFIG.clientId, callback: Login.onCredential_, ux_mode: 'popup' });
+      google.accounts.id.renderButton(document.getElementById('login-btn'), { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'pt-BR' });
+    }).catch(function () { Login.message('Não consegui carregar o login do Google. Verifique a conexão.'); });
+  },
+  message: function (msg) { var m = document.getElementById('login-msg'); if (m) m.textContent = msg || ''; },
+  loadGis_: function () {
+    if (window.google && google.accounts && google.accounts.id) return Promise.resolve();
+    return new Promise(function (resolve, reject) {
+      var sc = document.createElement('script');
+      sc.src = 'https://accounts.google.com/gsi/client';
+      sc.async = true; sc.onload = resolve; sc.onerror = reject;
+      document.head.appendChild(sc);
+    });
+  },
+  onCredential_: function (resp) {
+    Login.message('Entrando…');
+    API.call('auth.login', { credential: resp.credential, user_agent: navigator.userAgent.slice(0, 200) }).then(function (r) {
+      SessionStore.set(r.token);
+      var el = document.getElementById('login');
+      if (el) el.remove();
+      Login.shown = false;
+      App.start();
+    }).catch(function (e) { Login.message(e.message); });
+  },
+  logout: function () {
+    var t = SessionStore.token();
+    SessionStore.set('');
+    if (API.remote() && t) {
+      fetch(window.WSL_CONFIG.apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ method: 'auth.logout', token: t }) }).catch(function () {});
+    }
+    try { google.accounts.id.disableAutoSelect(); } catch (e) { /* sem GIS */ }
+    location.hash = '';
+    location.reload();
   }
 };
 
@@ -12223,6 +12832,7 @@ var Router = {
     [/^\/degustacao\/([A-Z]{3}_[0-9A-Z]+)\/resultado$/, 'tastingReport', ['id']],
     [/^\/degustacao\/([A-Z]{3}_[0-9A-Z]+)$/, 'tastingPlay', ['id']],
     [/^\/caderno$/, 'notes'],
+    [/^\/usuarios$/, 'users'],
     [/^\/config$/, 'settings'],
     [/^\/revisao$/, 'review']
   ],
@@ -12388,6 +12998,7 @@ var Nav = {
     grape: '<circle cx="8" cy="8" r="2.2"/><circle cx="12.2" cy="8" r="2.2"/><circle cx="10.1" cy="11.6" r="2.2"/><circle cx="10.1" cy="15.2" r="2"/><path d="M10 3.5V6M10 3.5c1.5-1.3 3.5-1.3 4.5-.5"/>',
     bottle: '<path d="M8.5 2h3v4c2 1 2.5 2.5 2.5 4v8H6v-8c0-1.5.5-3 2.5-4z"/><path d="M6 11h8"/>',
     split: '<path d="M10 2v5M10 7 5 12v6M10 7l5 5v6M10 7v11"/>',
+    users: '<circle cx="7.5" cy="7" r="2.8"/><path d="M2.5 16.5c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5"/><circle cx="14" cy="7.5" r="2.2"/><path d="M13.5 12c2 .1 3.5 1.4 4 4"/>',
     eye: '<path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z"/><circle cx="10" cy="10" r="2.3"/>',
     target: '<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.5"/><circle cx="10" cy="10" r=".8" fill="currentColor"/>',
     history: '<path d="M3.5 10a6.5 6.5 0 1 0 2-4.7M3 3v3.5h3.5"/><path d="M10 6.5V10l2.5 1.5"/>',
@@ -12405,7 +13016,7 @@ var Nav = {
     ['Degustação', [['#/degustacao/nova', 'target', 'Nova degustação', /^\/degustacao\/nova/], ['#/degustacao/historico', 'history', 'Histórico', /^\/degustacao\/(historico|[A-Z])/],
       // Jogo em outra aba (mantém o formato próprio dele); o endereço vem do servidor.
       ['@game', 'eye', 'Degustação às cegas (jogo) ↗', /^$^/]]],
-    [null, [['#/caderno', 'note', 'Meu Caderno', /^\/caderno/], ['#/config', 'gear', 'Configurações', /^\/config/]]]
+    [null, [['#/caderno', 'note', 'Meu Caderno', /^\/caderno/], ['#/usuarios', 'users', 'Usuários', /^\/usuarios/], ['#/config', 'gear', 'Configurações', /^\/config/]]]
   ],
   render: function () {
     var html = '';
@@ -12415,9 +13026,11 @@ var Nav = {
       else html += '<div style="height:10px"></div>';
       g[1].forEach(function (it) {
         if (it[0] === '#/revisao' && !ai) return;
+        if (it[0] === '#/usuarios' && !(Store.lookups && Store.lookups.is_admin)) return;
         var ext = it[0] === '@game';
-        if (ext && !Store.app.game_url) return;
-        html += '<a class="item" href="' + esc(ext ? Store.app.game_url : it[0]) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + ' data-match="' + it[3].source + '">' +
+        var gameUrl = (window.WSL_CONFIG && window.WSL_CONFIG.gameUrl) || Store.app.game_url;
+        if (ext && !gameUrl) return;
+        html += '<a class="item" href="' + esc(ext ? gameUrl : it[0]) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + ' data-match="' + it[3].source + '">' +
           '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">' + Nav.icons[it[1]] + '</svg>' + it[2] + '</a>';
       });
     });
@@ -12430,8 +13043,10 @@ var Nav = {
   },
   foot: function () {
     var d = Store.dashboard;
-    var s = d && d.last_sync_at ? 'Sincronizado em ' + fmtDate(d.last_sync_at, true) : 'Ainda não sincronizado';
-    document.getElementById('nav-foot').innerHTML = esc(s);
+    var me = Store.lookups && Store.lookups.me;
+    var s = Store.lookups && Store.lookups.is_admin ? (d && d.last_sync_at ? 'Sincronizado em ' + fmtDate(d.last_sync_at, true) : 'Ainda não sincronizado') : '';
+    document.getElementById('nav-foot').innerHTML = (me ? '<div class="nav-user">' + (me.picture ? '<img src="' + esc(me.picture) + '" alt="" referrerpolicy="no-referrer">' : '') +
+      '<span>' + esc(me.name || me.email) + '</span>' + (API.remote() ? '<button class="btn ghost small" data-action="logout">Sair</button>' : '') + '</div>' : '') + esc(s);
   }
 };
 
@@ -12439,7 +13054,8 @@ var Nav = {
 var GlobalActions = {
   'nav-toggle': function () { document.getElementById('nav').classList.toggle('open'); },
   'go': function (el) { Router.go(el.getAttribute('data-to')); },
-  'close-modal': function () { UI.closeModal(); }
+  'close-modal': function () { UI.closeModal(); },
+  'logout': function () { Login.logout(); }
 };
 
 function dispatch(el, ev) {
@@ -12493,6 +13109,7 @@ GlobalActions['global-search'] = function (form) {
 var App = {
   start: function () {
     Nav.render();
+    if (API.remote() && !SessionStore.token()) { Login.show(); return; }
     API.call('bootstrap').then(function (b) {
       Store.lookups = b.lookups;
       Store.dashboard = b.dashboard;
@@ -12502,6 +13119,7 @@ var App = {
       AiUI.setBadge(b.dashboard.counts.ai_pending);
       Router.init();
     }).catch(function (e) {
+      if (Login.shown) return;
       document.getElementById('view').innerHTML = '<div class="empty"><span class="serif">Não foi possível abrir o laboratório.</span>' + esc(e.message) + '</div>';
     });
   }
@@ -12809,8 +13427,54 @@ Pages.search = {
 };
 
 /* ============================== CONFIGURAÇÕES ============================== */
+Pages.users = {
+  render: function () {
+    if (!Store.lookups.is_admin) return Components.empty('Somente a administradora.', '');
+    return API.call('users.list').then(function (list) {
+      var html = '<div class="page-head"><div><div class="eyebrow">Sistema</div><h1>Usuários</h1>' +
+        '<p class="sub">' + plural(list.length, 'conta', 'contas') + '. Qualquer conta Google pode entrar; bloqueie quem não deveria usar o app. ' +
+        'Os dados pessoais (garrafinhas, degustações, anotações) de cada um ficam separados.</p></div></div>';
+      html += '<div class="tbl-wrap panel"><table class="tbl"><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Último acesso</th><th>Situação</th><th></th></tr></thead><tbody>' +
+        list.map(function (u) {
+          return '<tr><td>' + esc(u.name || '—') + '</td><td>' + esc(u.email) + '</td><td>' + (u.role === 'admin' ? 'administradora' : 'membro') + '</td>' +
+            '<td class="nowrap">' + (u.last_seen_at ? fmtDate(u.last_seen_at, true) : '—') + '</td>' +
+            '<td>' + (u.status === 'ativo' ? '<span class="src usuario">ativo</span>' : '<span class="src ia">bloqueado</span>') + '</td>' +
+            '<td>' + (u.role === 'admin' ? '' : '<button class="btn small" data-action="user-status" data-id="' + esc(u.id) + '" data-status="' + (u.status === 'ativo' ? 'bloqueado' : 'ativo') + '">' +
+              (u.status === 'ativo' ? 'Bloquear' : 'Desbloquear') + '</button>') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+      return html;
+    });
+  },
+  actions: {
+    'user-status': function (btn) {
+      var st = btn.getAttribute('data-status');
+      if (st === 'bloqueado' && !confirm('Bloquear esta conta? A pessoa sai na hora e não consegue entrar de novo até você desbloquear. Os dados dela não são apagados.')) return;
+      UI.busy(btn, true);
+      return API.call('users.setStatus', { id: btn.getAttribute('data-id'), status: st }).then(function () {
+        UI.toast(st === 'bloqueado' ? 'Conta bloqueada.' : 'Conta desbloqueada.');
+        Router.render();
+      }).catch(function (e) { UI.busy(btn, false); throw e; });
+    }
+  }
+};
+
+/** Configurações de quem não é administradora: conta e informações. */
+function memberSettings_() {
+  var me = Store.lookups.me || {};
+  var enc = Store.lookups.encyclopedia || {};
+  return '<div class="page-head"><div><div class="eyebrow">Sistema</div><h1>Configurações</h1></div></div>' +
+    '<section class="panel"><h2 style="margin-top:0">Sua conta</h2><div class="fields">' +
+    Components.field('Nome', me.name) + Components.field('E-mail', me.email) + '</div>' +
+    '<p class="muted">Suas garrafinhas, degustações, anotações e “Minhas notas” dos vinhos são só suas. ' +
+    'A enciclopédia (uvas, regiões) e o catálogo de vinhos são compartilhados: você pode cadastrar vinhos e editar os que cadastrou.</p>' +
+    (API.remote() ? '<button class="btn" data-action="logout">Sair da conta</button>' : '') + '</section>' +
+    '<section class="panel"><h2 style="margin-top:0">Enciclopédia</h2><p class="muted">' + (enc.grapes || 0) + ' uvas pesquisadas e regiões de ' +
+    (enc.region_packs || []).length + ' países, com fontes citadas em cada dado. Mantida pela administradora.</p></section>';
+}
+
 Pages.settings = {
   render: function () {
+    if (!Store.lookups.is_admin) return memberSettings_();
     return Promise.all([API.call('settings.get'), API.call('ai.status')]).then(function (res) {
       var s = res[0], ai = res[1];
       var st = {};
@@ -13009,7 +13673,8 @@ Pages.wine = {
         (w.grapes.length ? '<div class="chips" style="margin-top:10px">' + w.grapes.map(function (g) {
           return '<a class="chip" href="#/uvas/' + g.id + '">' + esc(g.name) + (g.percent ? ' · ' + fmtNum(g.percent, 0) + '%' : '') + '</a>';
         }).join('') + '</div>' : '') +
-        '</div><div class="btn-row">' + (Store.lookups.ai_enabled ? '<button class="btn" data-action="ai-research">✦ Pesquisar com IA</button>' : '') + '<a class="btn" href="#/vinhos/' + w.id + '/editar">Editar</a></div></div>';
+        '</div><div class="btn-row">' + (Store.lookups.ai_enabled ? '<button class="btn" data-action="ai-research">✦ Pesquisar com IA</button>' : '') + (w.can_edit ? '<a class="btn" href="#/vinhos/' + w.id + '/editar">Editar</a>' : '<button class="btn" data-action="my-notes">Minhas notas</button>') + '</div></div>' +
+        (w.can_edit ? '' : '<p class="small muted" style="margin:-8px 0 16px">Ficha do catálogo comum: só quem cadastrou pode editar. Suas notas e garrafinhas são só suas.</p>');
 
       html += '<div class="grid two"><section class="panel"><h3 style="margin-top:0">Identidade</h3><div class="fields">' +
         Components.field('Produtor', w.producer, { source: fs.producer_id }) +
@@ -13038,7 +13703,7 @@ Pages.wine = {
       var pr = w.profile;
       html += '<section class="panel" style="margin-top:16px"><div class="page-head" style="margin-bottom:12px"><div><h3 style="margin:0">Perfil de referência</h3>' +
         '<div class="muted small">É o gabarito usado para corrigir acidez, tanino, corpo, aromas… nas degustações às cegas.</div></div>' +
-        '<button class="btn small" data-action="edit-profile">' + (pr ? 'Editar perfil' : 'Cadastrar perfil') + '</button></div>';
+        (w.can_edit ? '<button class="btn small" data-action="edit-profile">' + (pr ? 'Editar perfil' : 'Cadastrar perfil') + '</button>' : '') + '</div>';
       if (pr && !w.profile_trusted) {
         html += '<div class="callout warn" style="margin-bottom:16px">Este perfil veio de uma fonte <b>não verificada</b> (' + esc(Components.SOURCE_LABELS[pr.source] || pr.source) + '). ' +
           'Ele não é usado como gabarito. Revise os valores e salve com a origem correta (ficha técnica, pesquisa ou sua avaliação) para ativá-lo.</div>';
@@ -13085,6 +13750,19 @@ Pages.wine = {
     'edit-profile': function () {
       var w = Pages.wine.data;
       ProfileEditor.open('wine', w.id, w.profile, w.aromas, function () { Router.render(); });
+    },
+    'my-notes': function () {
+      var w = Pages.wine.data;
+      var m = UI.modal('<h2>Minhas notas</h2><p class="muted small">Só você vê.</p><form><textarea class="in" name="my_notes" rows="8">' + esc(w.my_notes || '') + '</textarea>' +
+        '<div class="btn-row" style="justify-content:flex-end;margin-top:14px"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn primary">Salvar</button></div></form>', { sticky: true });
+      m.querySelector('form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var btn = e.target.querySelector('button.primary');
+        UI.busy(btn, true);
+        API.call('wines.save', { wine: { id: w.id, name: w.name, my_notes: e.target.my_notes.value } }).then(function () {
+          UI.closeModal(); UI.toast('Notas salvas.'); Router.render();
+        }).catch(function (err) { UI.busy(btn, false); UI.error(err); });
+      });
     }
   }
 };

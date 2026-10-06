@@ -1,13 +1,21 @@
 /**
  * Pontos de entrada do Apps Script:
- *  - doGet()  : serve a interface web.
- *  - api()    : ÚNICA função chamada pelo navegador (google.script.run.api).
- *               Confere o dono, valida o método numa lista fechada e padroniza erros.
+ *  - doPost() : API JSON usada pelo site (GitHub Pages). Cada chamada traz o token da sessão
+ *               (login com Google, ver 02_Auth.js); métodos numa lista fechada; erros padronizados.
+ *  - api()    : a mesma API para a interface antiga servida pelo Apps Script (google.script.run),
+ *               que só a dona usa.
+ *  - doGet()  : interface antiga + página do jogo.
  *  - setup()  : instalação (rodar uma vez pelo editor).
  *  - onOpen() : menu "Wine Study Lab" na planilha.
  */
 
 function doGet(e) {
+  // Depois que o site com login entra no ar, este endereço só aponta para ele.
+  var site = PropertiesService.getScriptProperties().getProperty('SITE_URL');
+  if (site) {
+    return HtmlService.createHtmlOutput('<p style="font:16px system-ui;margin:40px">O Wine Study Lab agora fica em ' +
+      '<a target="_top" href="' + site.replace(/"/g, '') + '">' + site.replace(/</g, '') + '</a>.</p>').setTitle(CONFIG.APP_NAME);
+  }
   if (e && e.parameter && e.parameter.page === 'jogo') return gamePage_();
   var t = HtmlService.createTemplateFromFile('client/index');
   return t.evaluate()
@@ -17,8 +25,8 @@ function doGet(e) {
 
 /** Jogo "Degustação às Cegas" (FDR Wine Lab), aberto em outra aba, com os catálogos da planilha. */
 function gamePage_() {
+  Ctx.asSystem(ensureSchema_);
   Auth.assertOwner();
-  ensureSchema_();
   var t = HtmlService.createTemplateFromFile('game/index');
   t.gameData = GameData.json();
   return t.evaluate()
@@ -79,7 +87,7 @@ var API_METHODS = {
   'search': function (a) { return Search.run(a.q); },
 
   'settings.get': function () {
-    return { settings: Repo.all('settings'), rules: Settings.rules(), scales: Settings.scales(), last_log: Import.lastLog(60) };
+    return { settings: Repo.all('settings'), rules: Settings.rules(), scales: Settings.scales(), last_log: Ctx.isAdmin() ? Import.lastLog(60) : [] };
   },
   'settings.saveRules': function (a) { return Settings.saveRules(a.rules); },
   'settings.set': function (a) {
@@ -118,22 +126,70 @@ var API_METHODS = {
     var r = Enrichment.review(a.ids, a.action, a.edits);
     r.lookups = Catalog.lookups();
     return r;
-  }
+  },
+
+  // ---------- Login e usuários (v5) ----------
+  'auth.config': function () { return { client_id: Auth.clientId() }; },
+  'auth.login': function (a) { return Auth.login(a.credential, a.user_agent); },
+  'auth.me': function () { return Auth.publicUser(Ctx.current()); },
+  'auth.setClientId': function (a) { return { client_id: Auth.setClientId(a.client_id) }; },
+  'users.list': function () { return Auth.listUsers(); },
+  'users.setStatus': function (a) { return Auth.setStatus(a.id, a.status); },
+  'game.data': function () { return GameData.build(); }
 };
 
-function api(method, args) {
+// Sem login.
+var PUBLIC_METHODS = { 'auth.config': 1, 'auth.login': 1 };
+// Só a administradora (enciclopédia, sincronização, IA, configurações, usuários).
+var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|label\.ai$|grapes\.(save|verify)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
+
+/**
+ * Executa um método da API. resolveUser() identifica quem chama (sessão ou conta Google).
+ * Ordem: estrutura da planilha (como sistema) → usuário → limites → permissão → método.
+ */
+function dispatch_(method, args, resolveUser) {
   try {
-    Auth.assertOwner();
-    ensureSchema_();
     var fn = API_METHODS[method];
-    if (!fn) throw new Error('Método desconhecido.');
-    var data = fn(args || {});
-    // Serialização explícita: evita problemas do google.script.run com Date/undefined.
-    return JSON.stringify({ ok: true, data: data === undefined ? null : data });
+    if (typeof method !== 'string' || !fn || !Object.prototype.hasOwnProperty.call(API_METHODS, method)) throw new Error('Método desconhecido.');
+    Ctx.setUser(null);
+    Ctx.asSystem(ensureSchema_);
+    if (!PUBLIC_METHODS[method]) {
+      var user = resolveUser();
+      Ctx.setUser(user);
+      Auth.rateLimit(user, method);
+      if (ADMIN_METHODS.test(method)) Ctx.requireAdmin();
+    }
+    var data = fn(args && typeof args === 'object' ? args : {});
+    return { ok: true, data: data === undefined ? null : data };
   } catch (e) {
+    var msg = e && e.message ? e.message : String(e);
     console.error(method, e && e.stack || e);
-    return JSON.stringify({ ok: false, error: e && e.message ? e.message : String(e) });
+    var auth = /^SESSAO: /.test(msg);
+    return { ok: false, error: msg.replace(/^SESSAO: /, ''), auth: auth };
+  } finally {
+    Ctx.setUser(null);
   }
+}
+
+function api(method, args) {
+  // Serialização explícita: evita problemas do google.script.run com Date/undefined.
+  return JSON.stringify(dispatch_(method, args, Auth.fromGoogleSession));
+}
+
+/**
+ * API do site. Corpo (text/plain, para evitar "preflight" de CORS): {"method", "args", "token"}.
+ * Resposta: {"ok", "data"} ou {"ok": false, "error", "auth"} (auth = sessão inválida → refazer login).
+ */
+function doPost(e) {
+  var out;
+  try {
+    var body = JSON.parse(e && e.postData && e.postData.contents || '{}');
+    if (body.method === 'auth.logout') out = { ok: true, data: Auth.logout(body.token) };
+    else out = dispatch_(body.method, body.args, function () { return Auth.fromToken(body.token); });
+  } catch (err) {
+    out = { ok: false, error: 'Requisição inválida.' };
+  }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
 }
 
 /** Aplica automaticamente mudanças de schema depois de um `clasp push` (só acrescenta abas/colunas). */
@@ -143,6 +199,7 @@ function ensureSchema_() {
     Repo.withLock(function () {
       Schema.ensure();
       Seeds.run();
+      Migrations.run();
       Settings.set('schema_version', CONFIG.SCHEMA_VERSION);
     });
     props.setProperty('SCHEMA_VERSION', String(CONFIG.SCHEMA_VERSION));
@@ -162,10 +219,13 @@ function ensureSchema_() {
  * e faz a primeira sincronização com as abas originais.
  */
 function setup() {
+  return Ctx.asSystem(function () {
   var owner = Auth.registerOwner();
   var schema = Schema.ensure();
   PropertiesService.getScriptProperties().setProperty('SCHEMA_VERSION', String(CONFIG.SCHEMA_VERSION));
   var seeds = Seeds.run();
+  Migrations.run();
+  Ctx.setUser(Auth.ensureAdmin());   // o que a sincronização importar pertence à dona
   var sync = Import.run();
   SeedEncyclopedia.ensure();
   SeedRegions.ensure(240000);
@@ -173,14 +233,32 @@ function setup() {
     'Sementes: ' + (seeds.join('; ') || 'nenhuma'), 'Sincronização: ' + JSON.stringify(sync.stats)].join('\n');
   console.log(msg);
   return msg;
+  });
+}
+
+/**
+ * Configura o login com Google (rode no editor uma vez): ID do cliente OAuth e endereço do site.
+ * Ex.: configurarLogin('123-abc.apps.googleusercontent.com', 'https://fdrnatalie.github.io/wine-study-lab/')
+ */
+function configurarLogin(clientId, siteUrl) {
+  var id = Auth.setClientId(clientId || '');
+  if (siteUrl) {
+    if (!/^https:\/\/[^\s"<>]+$/.test(siteUrl)) throw new Error('Endereço do site inválido.');
+    PropertiesService.getScriptProperties().setProperty('SITE_URL', siteUrl);
+  }
+  console.log('Login configurado para o cliente ' + id + (siteUrl ? ' · site ' + siteUrl : ''));
+  return id;
 }
 
 /** Atualiza o schema após mudanças no código (acrescenta abas/colunas novas). Seguro de rodar sempre. */
 function migrate() {
-  var r = Schema.ensure();
-  Settings.set('schema_version', CONFIG.SCHEMA_VERSION);
-  PropertiesService.getScriptProperties().setProperty('SCHEMA_VERSION', String(CONFIG.SCHEMA_VERSION));
-  console.log(r.join('\n') || 'Schema já atualizado.');
+  Ctx.asSystem(function () {
+    var r = Schema.ensure();
+    var m = Migrations.run();
+    Settings.set('schema_version', CONFIG.SCHEMA_VERSION);
+    PropertiesService.getScriptProperties().setProperty('SCHEMA_VERSION', String(CONFIG.SCHEMA_VERSION));
+    console.log(r.concat(m).join('\n') || 'Schema já atualizado.');
+  });
 }
 
 function onOpen() {
@@ -191,6 +269,8 @@ function onOpen() {
 }
 
 function menuSync_() {
+  Ctx.asSystem(ensureSchema_);
+  Ctx.setUser(Auth.ensureAdmin());
   var r = Import.run();
   SpreadsheetApp.getUi().alert('Sincronização concluída', JSON.stringify(r.stats, null, 2), SpreadsheetApp.getUi().ButtonSet.OK);
 }

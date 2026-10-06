@@ -4,8 +4,21 @@
    Páginas se registram em Pages[nome] = { render(params), mount?(root, params), actions? }.
    ============================================================ */
 
+/**
+ * Chamadas ao servidor.
+ * - Site (GitHub Pages): window.WSL_CONFIG.apiUrl → POST para o Apps Script (doPost) com o token da sessão.
+ * - Dentro do Apps Script (interface antiga / demonstração): google.script.run.api.
+ */
+var SessionStore = {
+  KEY: 'wsl-session',
+  token: function () { try { return localStorage.getItem(SessionStore.KEY) || ''; } catch (e) { return ''; } },
+  set: function (t) { try { if (t) localStorage.setItem(SessionStore.KEY, t); else localStorage.removeItem(SessionStore.KEY); } catch (e) { /* sem armazenamento */ } }
+};
+
 var API = {
+  remote: function () { return !!(window.WSL_CONFIG && window.WSL_CONFIG.apiUrl); },
   call: function (method, args) {
+    if (API.remote()) return API.post_(method, args);
     return new Promise(function (resolve, reject) {
       google.script.run
         .withSuccessHandler(function (s) {
@@ -16,6 +29,72 @@ var API = {
         .withFailureHandler(function (e) { reject(e instanceof Error ? e : new Error(String(e && e.message || e))); })
         .api(method, args || {});
     });
+  },
+  post_: function (method, args) {
+    // text/plain evita a checagem prévia de CORS (o Apps Script não responde a OPTIONS).
+    return fetch(window.WSL_CONFIG.apiUrl, {
+      method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ method: method, args: args || {}, token: SessionStore.token() })
+    }).then(function (res) {
+      if (!res.ok) throw new Error('Servidor indisponível (' + res.status + '). Tente de novo.');
+      return res.json();
+    }, function () { throw new Error('Sem conexão com o servidor.'); }).then(function (r) {
+      if (r.ok) return r.data;
+      if (r.auth) { SessionStore.set(''); Login.show(r.error); }
+      throw new Error(r.error || 'Erro no servidor.');
+    });
+  }
+};
+
+/** Tela de login (só no site). Usa o botão oficial "Fazer login com o Google". */
+var Login = {
+  shown: false,
+  show: function (msg) {
+    if (Login.shown) { Login.message(msg); return; }
+    Login.shown = true;
+    var el = document.createElement('div');
+    el.id = 'login';
+    el.className = 'login-screen';
+    el.innerHTML = '<div class="login-card"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M9 3h14c0 7-2 12-7 13-5-1-7-6-7-13Z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.2 8h11.6c-.5 4.3-2.4 6.7-5.8 7.3-3.4-.6-5.3-3-5.8-7.3Z" fill="var(--wine)"/><path d="M16 16v10M11 28h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>' +
+      '<h1 class="serif">Wine Study Lab</h1><p class="muted">Laboratório de degustação e estudo de vinhos. Entre com a sua conta Google: suas garrafinhas, degustações e anotações ficam só para você.</p>' +
+      '<div id="login-btn" class="login-btn"></div><p class="small muted" id="login-msg"></p>' +
+      '<p class="small muted">Não guardamos senha. Usamos só seu nome e e-mail do Google para identificar sua conta.</p></div>';
+    document.body.appendChild(el);
+    Login.message(msg);
+    Login.loadGis_().then(function () {
+      google.accounts.id.initialize({ client_id: window.WSL_CONFIG.clientId, callback: Login.onCredential_, ux_mode: 'popup' });
+      google.accounts.id.renderButton(document.getElementById('login-btn'), { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'pt-BR' });
+    }).catch(function () { Login.message('Não consegui carregar o login do Google. Verifique a conexão.'); });
+  },
+  message: function (msg) { var m = document.getElementById('login-msg'); if (m) m.textContent = msg || ''; },
+  loadGis_: function () {
+    if (window.google && google.accounts && google.accounts.id) return Promise.resolve();
+    return new Promise(function (resolve, reject) {
+      var sc = document.createElement('script');
+      sc.src = 'https://accounts.google.com/gsi/client';
+      sc.async = true; sc.onload = resolve; sc.onerror = reject;
+      document.head.appendChild(sc);
+    });
+  },
+  onCredential_: function (resp) {
+    Login.message('Entrando…');
+    API.call('auth.login', { credential: resp.credential, user_agent: navigator.userAgent.slice(0, 200) }).then(function (r) {
+      SessionStore.set(r.token);
+      var el = document.getElementById('login');
+      if (el) el.remove();
+      Login.shown = false;
+      App.start();
+    }).catch(function (e) { Login.message(e.message); });
+  },
+  logout: function () {
+    var t = SessionStore.token();
+    SessionStore.set('');
+    if (API.remote() && t) {
+      fetch(window.WSL_CONFIG.apiUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ method: 'auth.logout', token: t }) }).catch(function () {});
+    }
+    try { google.accounts.id.disableAutoSelect(); } catch (e) { /* sem GIS */ }
+    location.hash = '';
+    location.reload();
   }
 };
 
@@ -67,6 +146,7 @@ var Router = {
     [/^\/degustacao\/([A-Z]{3}_[0-9A-Z]+)\/resultado$/, 'tastingReport', ['id']],
     [/^\/degustacao\/([A-Z]{3}_[0-9A-Z]+)$/, 'tastingPlay', ['id']],
     [/^\/caderno$/, 'notes'],
+    [/^\/usuarios$/, 'users'],
     [/^\/config$/, 'settings'],
     [/^\/revisao$/, 'review']
   ],
@@ -232,6 +312,7 @@ var Nav = {
     grape: '<circle cx="8" cy="8" r="2.2"/><circle cx="12.2" cy="8" r="2.2"/><circle cx="10.1" cy="11.6" r="2.2"/><circle cx="10.1" cy="15.2" r="2"/><path d="M10 3.5V6M10 3.5c1.5-1.3 3.5-1.3 4.5-.5"/>',
     bottle: '<path d="M8.5 2h3v4c2 1 2.5 2.5 2.5 4v8H6v-8c0-1.5.5-3 2.5-4z"/><path d="M6 11h8"/>',
     split: '<path d="M10 2v5M10 7 5 12v6M10 7l5 5v6M10 7v11"/>',
+    users: '<circle cx="7.5" cy="7" r="2.8"/><path d="M2.5 16.5c.6-3 2.6-4.5 5-4.5s4.4 1.5 5 4.5"/><circle cx="14" cy="7.5" r="2.2"/><path d="M13.5 12c2 .1 3.5 1.4 4 4"/>',
     eye: '<path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z"/><circle cx="10" cy="10" r="2.3"/>',
     target: '<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3.5"/><circle cx="10" cy="10" r=".8" fill="currentColor"/>',
     history: '<path d="M3.5 10a6.5 6.5 0 1 0 2-4.7M3 3v3.5h3.5"/><path d="M10 6.5V10l2.5 1.5"/>',
@@ -249,7 +330,7 @@ var Nav = {
     ['Degustação', [['#/degustacao/nova', 'target', 'Nova degustação', /^\/degustacao\/nova/], ['#/degustacao/historico', 'history', 'Histórico', /^\/degustacao\/(historico|[A-Z])/],
       // Jogo em outra aba (mantém o formato próprio dele); o endereço vem do servidor.
       ['@game', 'eye', 'Degustação às cegas (jogo) ↗', /^$^/]]],
-    [null, [['#/caderno', 'note', 'Meu Caderno', /^\/caderno/], ['#/config', 'gear', 'Configurações', /^\/config/]]]
+    [null, [['#/caderno', 'note', 'Meu Caderno', /^\/caderno/], ['#/usuarios', 'users', 'Usuários', /^\/usuarios/], ['#/config', 'gear', 'Configurações', /^\/config/]]]
   ],
   render: function () {
     var html = '';
@@ -259,9 +340,11 @@ var Nav = {
       else html += '<div style="height:10px"></div>';
       g[1].forEach(function (it) {
         if (it[0] === '#/revisao' && !ai) return;
+        if (it[0] === '#/usuarios' && !(Store.lookups && Store.lookups.is_admin)) return;
         var ext = it[0] === '@game';
-        if (ext && !Store.app.game_url) return;
-        html += '<a class="item" href="' + esc(ext ? Store.app.game_url : it[0]) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + ' data-match="' + it[3].source + '">' +
+        var gameUrl = (window.WSL_CONFIG && window.WSL_CONFIG.gameUrl) || Store.app.game_url;
+        if (ext && !gameUrl) return;
+        html += '<a class="item" href="' + esc(ext ? gameUrl : it[0]) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + ' data-match="' + it[3].source + '">' +
           '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">' + Nav.icons[it[1]] + '</svg>' + it[2] + '</a>';
       });
     });
@@ -274,8 +357,10 @@ var Nav = {
   },
   foot: function () {
     var d = Store.dashboard;
-    var s = d && d.last_sync_at ? 'Sincronizado em ' + fmtDate(d.last_sync_at, true) : 'Ainda não sincronizado';
-    document.getElementById('nav-foot').innerHTML = esc(s);
+    var me = Store.lookups && Store.lookups.me;
+    var s = Store.lookups && Store.lookups.is_admin ? (d && d.last_sync_at ? 'Sincronizado em ' + fmtDate(d.last_sync_at, true) : 'Ainda não sincronizado') : '';
+    document.getElementById('nav-foot').innerHTML = (me ? '<div class="nav-user">' + (me.picture ? '<img src="' + esc(me.picture) + '" alt="" referrerpolicy="no-referrer">' : '') +
+      '<span>' + esc(me.name || me.email) + '</span>' + (API.remote() ? '<button class="btn ghost small" data-action="logout">Sair</button>' : '') + '</div>' : '') + esc(s);
   }
 };
 
@@ -283,7 +368,8 @@ var Nav = {
 var GlobalActions = {
   'nav-toggle': function () { document.getElementById('nav').classList.toggle('open'); },
   'go': function (el) { Router.go(el.getAttribute('data-to')); },
-  'close-modal': function () { UI.closeModal(); }
+  'close-modal': function () { UI.closeModal(); },
+  'logout': function () { Login.logout(); }
 };
 
 function dispatch(el, ev) {
@@ -337,6 +423,7 @@ GlobalActions['global-search'] = function (form) {
 var App = {
   start: function () {
     Nav.render();
+    if (API.remote() && !SessionStore.token()) { Login.show(); return; }
     API.call('bootstrap').then(function (b) {
       Store.lookups = b.lookups;
       Store.dashboard = b.dashboard;
@@ -346,6 +433,7 @@ var App = {
       AiUI.setBadge(b.dashboard.counts.ai_pending);
       Router.init();
     }).catch(function (e) {
+      if (Login.shown) return;
       document.getElementById('view').innerHTML = '<div class="empty"><span class="serif">Não foi possível abrir o laboratório.</span>' + esc(e.message) + '</div>';
     });
   }

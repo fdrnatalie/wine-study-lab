@@ -212,6 +212,35 @@ enciclopédia, ex.: região de uma sub-região), `ia_nao_verificada`. Se você e
 ele vira `usuario`. Campos e uvas `ia_nao_verificada` **não entram no gabarito** das degustações
 (`Tastings.truthFor_`) até serem revisados.
 
+### D11. Vários usuários + site no GitHub ligado ao Apps Script — ✅ implementado (v5)
+**Por quê:** com contas Gmail pessoais, um Web App que executa como a dona não recebe o e-mail de quem
+acessa; executar como cada usuário exigiria compartilhar a planilha inteira. Solução: o site (GitHub Pages)
+é só a interface; o Apps Script vira uma API JSON (`doPost`), e o login é feito com o Google no navegador.
+
+```
+GitHub Pages (index.html, jogo.html)  ──POST text/plain {method,args,token}──▶  Apps Script doPost (executa como a dona)
+   botão "Fazer login com o Google"                                              │ Auth: confere o ID token no Google (tokeninfo,
+   → auth.login(credential) → token de sessão (localStorage)                     │ aud = nosso cliente OAuth), cria sessão (hash SHA-256)
+                                                                                 ▼
+                                                                         Planilha (privada)
+```
+- **Cadastro aberto** (qualquer conta Google com e-mail verificado entra como `membro`); a dona é `admin`.
+  Proteções: limite de 120 chamadas/min por usuário, 30 leituras de rótulo/hora, teto de linhas por conta,
+  teto global de logins/min, e bloqueio de usuário (derruba as sessões). Tela **Usuários** (admin).
+- **Escopo por tabela** (`SCOPES` em 00_Config.js, aplicado no Repository via `Policy`, 03_Context.js):
+  `personal` (garrafinhas, degustações, notas, caderno, `wine_notes`) — cada um só vê/altera o que é seu, mesmo com id forjado;
+  `catalog` (vinhos e o que pertence a eles) — todos leem e criam; só o autor (`created_by`) ou a admin editam;
+  `admin` (enciclopédia, configurações, IA) — todos leem, só a admin altera; `system` (usuários, sessões).
+  Membros escolhem país/região/uva da enciclopédia (não criam novos).
+- **IA** só para a admin (a chave é dela). OCR do rótulo (grátis) para todos.
+- **Migração v5** (`04_Migrations.js`): dados pessoais existentes → usuária admin; `my_notes` → `wine_notes`.
+- **Testes:** `node tests/multiuser.js` (isolamento, permissões, bloqueio, logout) sobre o servidor real com a planilha simulada.
+- **Crescimento:** planilha + cotas do Apps Script (todas contam na conta da dona) servem bem para dezenas de usuários.
+  Para centenas, trocar o Repository por um banco (Firestore/Supabase); a interface fala só com `API.call`.
+- **Publicação:** `node tools/build-preview.js && node tools/build-site.js` → `build/site/` (app na raiz, demonstração em `/demo`).
+  `site.config.json` guarda `apiUrl` (URL /exec) e `clientId` (públicos). No Apps Script: `configurarLogin(clientId, siteUrl)`;
+  manifesto com acesso `ANYONE_ANONYMOUS` (a API exige sessão em toda chamada que não seja login).
+
 ---
 
 ## 4. Modelo de dados (abas `db_*`)
