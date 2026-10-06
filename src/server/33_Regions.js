@@ -227,6 +227,12 @@ var SeedRegions = (function () {
         rs.subregions.forEach(function (ss) {
           var subs = Repo.all('regions').filter(function (x) { return x.parent_id === reg.id; });
           var sub = subs.filter(function (x) { return x.name_key === Util.normKey(ss.name); })[0];
+          // Sub-região renomeada numa versão nova do pack (só se ainda for dado pesquisado, nunca o que você editou).
+          var old = !sub && ss.renamed_from ? subs.filter(function (x) { return x.name_key === Util.normKey(ss.renamed_from) && x.source === 'pesquisado'; })[0] : null;
+          if (old) {
+            Repo.update('regions', [{ id: old.id, name: ss.name, name_key: Util.normKey(ss.name) }]);
+            sub = Repo.get('regions', old.id);
+          }
           var pt = typeof GEO_PLACES !== 'undefined' ? GEO_PLACES[ss.place] : null;
           if (!sub) {
             sub = Repo.insert('regions', [{ name: ss.name, name_key: Util.normKey(ss.name), country_id: country.id, parent_id: reg.id,

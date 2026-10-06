@@ -232,6 +232,22 @@ var GEO_PLACES = {
 -29.2562,
 -51.5269
 ],
+"Pinto Bandeira, Rio Grande do Sul, Brazil": [
+-29.0977,
+-51.4498
+],
+"Flores da Cunha, Rio Grande do Sul, Brazil": [
+-29.0301,
+-51.1833
+],
+"Monte Belo do Sul, Rio Grande do Sul, Brazil": [
+-29.1392,
+-51.6548
+],
+"Farroupilha, Rio Grande do Sul, Brazil": [
+-29.2265,
+-51.3468
+],
 "Santana do Livramento, Rio Grande do Sul, Brazil": [
 -30.8894,
 -55.5318
@@ -247,6 +263,50 @@ var GEO_PLACES = {
 "São Joaquim, Santa Catarina, Brazil": [
 -28.2925,
 -49.9353
+],
+"Urussanga, Santa Catarina, Brazil": [
+-28.4922,
+-49.3538
+],
+"Videira, Santa Catarina, Brazil": [
+-27.0054,
+-51.1534
+],
+"Bituruna, Paraná, Brazil": [
+-26.1613,
+-51.5533
+],
+"Curitiba, Paraná, Brazil": [
+-25.4296,
+-49.2713
+],
+"São Roque, São Paulo, Brazil": [
+-23.5305,
+-47.1355
+],
+"Jundiaí, São Paulo, Brazil": [
+-23.1888,
+-46.8845
+],
+"Três Corações, Minas Gerais, Brazil": [
+-21.6956,
+-45.2544
+],
+"Andradas, Minas Gerais, Brazil": [
+-22.0693,
+-46.5708
+],
+"Viçosa, Minas Gerais, Brazil": [
+-20.7539,
+-42.8816
+],
+"Diamantina, Minas Gerais, Brazil": [
+-18.2441,
+-43.6006
+],
+"Lagoa Grande, Pernambuco, Brazil": [
+-8.9931,
+-40.2716
 ],
 "Petrolina, Pernambuco, Brazil": [
 -9.3817,

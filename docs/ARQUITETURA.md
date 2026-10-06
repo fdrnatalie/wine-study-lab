@@ -443,5 +443,11 @@ Regras que mantêm o sistema crescendo bem:
 - Packs US, AR, CL, BR, UY, CA, MX, AU, NZ, ZA, CN, JP, IL, LB: todos os 32 países da planilha agora têm regiões.
 - Mapas em `18_GeoWorld.js` (`tools/make-geo-ne.py <geojson> mundo`).
 
+**Brasil v2 (06/10/2026)**
+- 6 regiões (RS, SC, PR, SP, MG, Vale do São Francisco) e 23 sub-regiões, com as Indicações Geográficas e suas regras
+  (uvas autorizadas, métodos, estágio mínimo). Fontes: catálogo MAPA/Embrapa "Vinhos brasileiros com Indicação Geográfica",
+  Embrapa Uva e Vinho, Brasil de Vinhos, notícias das concessões do INPI e Wikipedia (pt).
+- `renamed_from` numa sub-região do pack renomeia o registro antigo (se ainda for "pesquisado") em vez de duplicar.
+
 **Próximo**: Minha Evolução (gráficos por uva/região/país/critério/mês, "o que mais erro"),
 Treinar (quiz, adivinhe a uva/região, revisão), Wine World (mapa com Leaflet + OpenStreetMap).

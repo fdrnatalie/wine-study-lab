@@ -80,6 +80,7 @@ WORLD = {
     "CL:Sul": ("CL", N("Ñuble", "Bío-Bío", "La Araucanía"), True),
     "BR:Rio Grande do Sul": ("BR", N("Rio Grande do Sul"), True), "BR:Santa Catarina": ("BR", N("Santa Catarina"), True),
     "BR:São Francisco": ("BR", N("Pernambuco"), False),
+    "BR:Paraná": ("BR", N("Paraná"), False), "BR:São Paulo": ("BR", N("São Paulo"), False), "BR:Minas Gerais": ("BR", N("Minas Gerais"), False),
     "UY:Sul": ("UY", N("Canelones", "Montevideo", "San José"), True), "UY:Sudoeste": ("UY", N("Colonia", "Soriano"), False),
     "UY:Norte": ("UY", N("Artigas", "Salto", "Rivera"), True), "UY:Sudeste": ("UY", N("Maldonado"), False),
     "CA:Ontario": ("CA", N("Ontario"), True), "CA:British Columbia": ("CA", N("British Columbia"), True),
