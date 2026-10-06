@@ -112,7 +112,7 @@ var API_METHODS = {
   'regions.country': function (a) { return Regions.country(a.id); },
   'regions.get': function (a) { return Regions.get(a.id); },
   'seed.regions': function (p) { var r = SeedRegions.run(!(p && p.resume)); r.lookups = Catalog.lookups(); return r; },
-  'seed.grapes': function () { var r = SeedEncyclopedia.run(); r.lookups = Catalog.lookups(); return r; },
+  'seed.grapes': function () { var x = SeedEncyclopedia.runAll(true); var r = Object.assign({}, x.report || {}, { remaining: x.remaining }); r.lookups = Catalog.lookups(); return r; },
 
   'ai.status': function () { return Enrichment.status(); },
   'ai.setKey': function (a) { AiProvider.setKey(a.key); return Enrichment.status(); },
@@ -172,7 +172,7 @@ function dispatch_(method, args, resolveUser) {
     console.error(method, e && e.stack || e);
     try {   // diagnóstico temporário: só método e linhas do código (sem dados)
       var frames = String(e && e.stack || '').split('\n').filter(function (l) { return /\.gs|\.js|at /.test(l); }).slice(0, 8).join(' | ');
-      PropertiesService.getScriptProperties().setProperty('DEBUG_LAST', JSON.stringify({ at: Util.nowIso(), method: method, frames: frames, msg: Util.clampStr(msg, 80) }));
+      PropertiesService.getScriptProperties().setProperty('DEBUG_LAST', JSON.stringify({ at: Util.nowIso(), method: method, frames: frames }));
     } catch (x) { /* ignora */ }
     var auth = /^SESSAO: /.test(msg);
     return { ok: false, error: msg.replace(/^SESSAO: /, ''), auth: auth };
@@ -215,8 +215,9 @@ function ensureSchema_() {
     props.setProperty('SCHEMA_VERSION', String(CONFIG.SCHEMA_VERSION));
   }
   try {
-    SeedEncyclopedia.ensure();
-    SeedRegions.ensure();
+    // Em etapas curtas: a primeira abertura depois de uma versão nova não trava o app.
+    SeedEncyclopedia.ensure(8000);
+    SeedRegions.ensure(8000);
   } catch (e) {
     // Não bloqueia o app: registra e tenta de novo na próxima chamada.
     console.error('Enciclopédia de uvas', e && e.stack || e);
@@ -237,7 +238,7 @@ function setup() {
   Migrations.run();
   Ctx.setUser(Auth.ensureAdmin());   // o que a sincronização importar pertence à dona
   var sync = Import.run();
-  SeedEncyclopedia.ensure();
+  SeedEncyclopedia.runAll();
   SeedRegions.ensure(240000);
   var msg = ['Dono: ' + owner, 'Abas: ' + (schema.join('; ') || 'nenhuma alteração'),
     'Sementes: ' + (seeds.join('; ') || 'nenhuma'), 'Sincronização: ' + JSON.stringify(sync.stats)].join('\n');

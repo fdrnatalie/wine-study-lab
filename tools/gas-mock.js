@@ -72,7 +72,7 @@
     put: function (k, v) { cache[k] = String(v); },
     remove: function (k) { delete cache[k]; }
   }; } };
-  g.LockService = { getScriptLock: function () { return { waitLock: function () {}, releaseLock: function () {} }; } };
+  g.LockService = { getScriptLock: function () { return { waitLock: function () {}, tryLock: function () { return true; }, releaseLock: function () {} }; } };
   var props = {};
   var scriptProps = props;
   g.PropertiesService = { getScriptProperties: function () { return {

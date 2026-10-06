@@ -13,10 +13,23 @@ var SeedEncyclopedia = (function () {
   var FIELDS = ['color', 'origin', 'main_countries', 'main_regions', 'ripening', 'vigor', 'skin_thickness',
     'berry_size', 'bunch_size', 'disease_sensitivity', 'climate', 'soils', 'description'];
 
-  function run() {
-    return Repo.withLock(function () {
+  var PROGRESS = 'GRAPE_ENC_PROGRESS';
+
+  /**
+   * Importa em etapas: cada chamada trabalha no máximo budgetMs e guarda onde parou
+   * (a planilha não fica travada por minutos na primeira abertura depois de uma versão nova).
+   * Devolve { done: bool, remaining, report } ou null se outra execução já está importando.
+   */
+  function run(budgetMs) {
+    var budget = budgetMs || 8000, t0 = Date.now();
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(1000)) return null;
+    try {
+      var props = PropertiesService.getScriptProperties();
       var E = GRAPE_ENCYCLOPEDIA;
-      var report = { grapes_new: 0, grapes_updated: 0, profiles: 0, aromas: 0, relations: 0, aromas_vocab: 0, skipped_fields: 0 };
+      var prog = JSON.parse(props.getProperty(PROGRESS) || 'null');
+      if (!prog || prog.version !== E.version) prog = { version: E.version, index: 0, report: null };
+      var report = prog.report || { grapes_new: 0, grapes_updated: 0, profiles: 0, aromas: 0, relations: 0, aromas_vocab: 0, skipped_fields: 0 };
 
       // 1. Vocabulário extra de aromas.
       var vocab = Util.indexBy(Repo.all('aromas'), 'name_key');
@@ -28,8 +41,10 @@ var SeedEncyclopedia = (function () {
       report.aromas_vocab = newVocab.length;
       var aromaByName = Util.indexBy(Repo.all('aromas'), 'name');
 
-      // 2. Uvas.
-      E.grapes.forEach(function (s) {
+      // 2. Uvas (a partir de onde parou).
+      for (; prog.index < E.grapes.length; prog.index++) {
+        if (Date.now() - t0 > budget) break;
+        (function (s) {
         var wikiUrl = /^https?:\/\//.test(s.wiki) ? s.wiki : E.WIKI + s.wiki, wfUrl = s.wf ? E.WF + s.wf + '/' : '';
         var rec = exactByName_(s.name) || Enrichment.findGrape(s.name) || s.synonyms.map(function (x) { return exactByName_(x); }).filter(Boolean)[0] || null;
         var values = {};
@@ -93,7 +108,13 @@ var SeedEncyclopedia = (function () {
         });
         Repo.insert('entity_aromas', add);
         report.aromas += add.length;
-      });
+        })(E.grapes[prog.index]);
+      }
+      if (prog.index < E.grapes.length) {
+        prog.report = report;
+        props.setProperty(PROGRESS, JSON.stringify(prog));
+        return { done: false, remaining: E.grapes.length - prog.index, report: report };
+      }
 
       // 3. Relações.
       var rels = Repo.all('grape_relationships');
@@ -130,8 +151,12 @@ var SeedEncyclopedia = (function () {
 
       Settings.set('grape_encyclopedia_version', E.version);
       Repo.insert('import_log', [{ run_at: Util.nowIso(), level: 'ok', message: 'Enciclopédia de uvas v' + E.version + ' importada.', details: report, source: 'sistema' }]);
-      return report;
-    });
+      props.deleteProperty(PROGRESS);
+      props.setProperty('GRAPE_ENCYCLOPEDIA_VERSION', String(E.version));
+      return { done: true, remaining: 0, report: report };
+    } finally {
+      lock.releaseLock();
+    }
   }
 
   function exactByName_(name) {
@@ -148,13 +173,24 @@ var SeedEncyclopedia = (function () {
   }
 
   /** Roda a importação uma vez por versão da enciclopédia (chamado automaticamente pela API). */
-  function ensure() {
+  function ensure(budgetMs) {
     var props = PropertiesService.getScriptProperties();
     if (props.getProperty('GRAPE_ENCYCLOPEDIA_VERSION') === String(GRAPE_ENCYCLOPEDIA.version)) return null;
-    var r = run();
-    props.setProperty('GRAPE_ENCYCLOPEDIA_VERSION', String(GRAPE_ENCYCLOPEDIA.version));
-    return r;
+    return run(budgetMs || 8000);
   }
 
-  return { run: run, ensure: ensure };
+  /** Importação completa (setup e botão "Reimportar"): chama run em etapas até acabar ou ~4 min. */
+  function runAll(restart) {
+    var props = PropertiesService.getScriptProperties();
+    if (restart) { props.deleteProperty(PROGRESS); props.deleteProperty('GRAPE_ENCYCLOPEDIA_VERSION'); }
+    var t0 = Date.now(), r = null;
+    while (Date.now() - t0 < 240000) {
+      r = run(30000);
+      if (!r) Utilities.sleep(2000);
+      else if (r.done) break;
+    }
+    return r || { done: false, remaining: -1 };
+  }
+
+  return { run: run, ensure: ensure, runAll: runAll };
 })();
