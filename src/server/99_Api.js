@@ -36,10 +36,11 @@ function gamePage_() {
 
 /** Endereço do jogo (mesmo app, ?page=jogo). */
 function gameUrl_() {
-  try {
-    var url = ScriptApp.getService().getUrl();
-    return url ? url + '?page=jogo' : '';
-  } catch (e) { return ''; }
+  var url = '';
+  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { console.error('gameUrl', e); }
+  // Reserva: endereço do app em 00_Local.js (fora do Git), caso o Google não informe a URL.
+  if (!url && typeof LOCAL_WEBAPP_URL !== 'undefined') url = LOCAL_WEBAPP_URL;
+  return url ? url.replace(/\/dev$/, '/exec') + '?page=jogo' : '';
 }
 
 /** Inclui um arquivo HTML dentro de outro (usado no template). */

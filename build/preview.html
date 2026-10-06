@@ -350,6 +350,9 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .lesson.faz-sentido, .lesson.dica { border-left-color: var(--hit); }
 .lesson.reconhecer, .lesson.clima, .lesson.regiao { border-left-color: var(--info); }
 .ean-box { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.pick-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.pick-btl { min-width: 54px; padding: 8px 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--paper); color: var(--ink); font-weight: 600; cursor: pointer; }
+.pick-btl.on { background: var(--wine); border-color: var(--wine); color: #fff; }
 </style>
 
 </head>
@@ -13478,10 +13481,11 @@ function gamePage_() {
 
 /** Endereço do jogo (mesmo app, ?page=jogo). */
 function gameUrl_() {
-  try {
-    var url = ScriptApp.getService().getUrl();
-    return url ? url + '?page=jogo' : '';
-  } catch (e) { return ''; }
+  var url = '';
+  try { url = ScriptApp.getService().getUrl() || ''; } catch (e) { console.error('gameUrl', e); }
+  // Reserva: endereço do app em 00_Local.js (fora do Git), caso o Google não informe a URL.
+  if (!url && typeof LOCAL_WEBAPP_URL !== 'undefined') url = LOCAL_WEBAPP_URL;
+  return url ? url.replace(/\/dev$/, '/exec') + '?page=jogo' : '';
 }
 
 /** Inclui um arquivo HTML dentro de outro (usado no template). */
@@ -15626,7 +15630,8 @@ Pages.cellar = {
       var n = function (s) { return list.filter(function (b) { return b.status === s; }).length; };
       var html = '<div class="page-head"><div><div class="eyebrow">Minha Adega</div><h1>Adega de degustação</h1>' +
         '<p class="sub">' + n('disponivel') + ' disponíveis · ' + n('reservada') + ' reservadas · ' + n('utilizada') + ' utilizadas</p></div>' +
-        '<div class="btn-row"><a class="btn" href="#/adega/fracionar">Fracionar garrafa</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>';
+        '<div class="btn-row"><a class="btn" href="#/adega/fracionar">Fracionar garrafa</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>' +
+        '<p class="callout small" style="margin-bottom:16px">Toque nas garrafinhas para selecionar; com as selecionadas, use <b>Degustar às cegas</b> na barra que aparece embaixo.</p>';
       if (!list.length) return html + Components.empty('Nenhuma garrafinha cadastrada.', 'Fracione uma garrafa ou sincronize a planilha.', '<a class="btn primary" href="#/adega/fracionar">Fracionar garrafa</a>');
       html += '<div class="btn-row" style="justify-content:space-between;margin-bottom:18px">' +
         '<div class="seg" id="cellar-filter">' + [['ativas', 'Ativas'], ['disponivel', 'Disponíveis'], ['reservada', 'Reservadas'], ['utilizada', 'Utilizadas'], ['descartada', 'Descartadas'], ['todas', 'Todas']].map(function (f) {
@@ -15666,7 +15671,8 @@ Pages.cellar = {
     Pages.cellar.data.forEach(function (b) { byId[b.id] = b; });
     var allAvail = ids.every(function (id) { return byId[id] && byId[id].status === 'disponivel'; });
     bar.innerHTML = '<div class="btn-row" style="justify-content:space-between"><span><b>' + ids.length + '</b> selecionada(s)</span><span class="btn-row">' +
-      (allAvail && ids.length <= 12 ? '<button class="btn primary small" data-action="blind">Degustar às cegas</button>' : '') +
+      (allAvail && ids.length <= 12 ? '<button class="btn primary small" data-action="blind">Degustar às cegas</button>'
+        : '<span class="small muted">Para degustar às cegas, escolha só garrafinhas disponíveis (até 12).</span>') +
       (ids.length === 1 ? '<button class="btn small" data-action="details">Ver detalhes</button>' : '') +
       '<button class="btn small" data-action="set-status" data-s="disponivel">Disponível</button>' +
       '<button class="btn small" data-action="set-status" data-s="utilizada">Utilizada</button>' +
@@ -15798,6 +15804,16 @@ Pages.tastingNew = {
       var usedCountries = L.countries.filter(function (c) { return wines.some(function (w) { return w.country_id === c.id; }); });
       var usedRegions = L.regions.filter(function (c) { return wines.some(function (w) { return w.region_id === c.id; }); });
 
+      // Opção 1: escolher as garrafinhas (só os números aparecem, para continuar às cegas).
+      Pages.tastingNew.picked = {};
+      html += '<section class="panel" style="margin-bottom:18px"><h3 style="margin-top:0">Escolher as garrafinhas</h3>' +
+        '<p class="muted small">Toque nos números das garrafinhas que vão para a mesa (até 12). Só aparecem as disponíveis.</p>' +
+        '<div class="pick-grid">' + bottles.slice().sort(function (a, b) { return a.number - b.number; }).map(function (b) {
+          return '<button type="button" class="pick-btl" data-action="pick-bottle" data-id="' + esc(b.id) + '">#' + b.number + '</button>';
+        }).join('') + '</div>' +
+        '<div class="btn-row" style="justify-content:flex-end;margin-top:12px"><span class="small muted" id="pick-count">Nenhuma escolhida</span>' +
+        '<button type="button" class="btn primary" data-action="start-picked" disabled>Começar com as escolhidas</button></div></section>' +
+        '<div class="eyebrow" style="margin:0 0 8px">Ou sorteie</div>';
       html += '<form class="panel" data-action="create">' +
         '<h3 style="margin-top:0">Quantos vinhos?</h3><div class="seg" data-seg="count">' + [1, 2, 3, 4, 5, 6].map(function (n) {
           return '<button type="button" data-action="seg-pick" data-v="' + n + '" class="' + (n === Math.min(3, wines.length) ? 'on' : '') + '">' + n + '</button>';
@@ -15818,6 +15834,23 @@ Pages.tastingNew = {
     });
   },
   actions: {
+    'pick-bottle': function (btn) {
+      var id = btn.getAttribute('data-id'), P = Pages.tastingNew.picked;
+      if (P[id]) delete P[id];
+      else if (Object.keys(P).length >= 12) { UI.toast('No máximo 12 garrafinhas.', true); return; }
+      else P[id] = true;
+      btn.classList.toggle('on', !!P[id]);
+      var n = Object.keys(P).length;
+      document.getElementById('pick-count').textContent = n ? n + ' escolhida(s)' : 'Nenhuma escolhida';
+      document.querySelector('[data-action=start-picked]').disabled = !n;
+    },
+    'start-picked': function (btn) {
+      var ids = Object.keys(Pages.tastingNew.picked);
+      if (!ids.length) return;
+      UI.busy(btn, true);
+      return API.call('tastings.create', { bottle_ids: ids }).then(function (r) { Router.go('/degustacao/' + r.id); })
+        .catch(function (e) { UI.busy(btn, false); throw e; });
+    },
     create: function (form) {
       var d = formData(form);
       var count = Components.readSeg(form, 'count') || '3';

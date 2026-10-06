@@ -20,6 +20,16 @@ Pages.tastingNew = {
       var usedCountries = L.countries.filter(function (c) { return wines.some(function (w) { return w.country_id === c.id; }); });
       var usedRegions = L.regions.filter(function (c) { return wines.some(function (w) { return w.region_id === c.id; }); });
 
+      // Opção 1: escolher as garrafinhas (só os números aparecem, para continuar às cegas).
+      Pages.tastingNew.picked = {};
+      html += '<section class="panel" style="margin-bottom:18px"><h3 style="margin-top:0">Escolher as garrafinhas</h3>' +
+        '<p class="muted small">Toque nos números das garrafinhas que vão para a mesa (até 12). Só aparecem as disponíveis.</p>' +
+        '<div class="pick-grid">' + bottles.slice().sort(function (a, b) { return a.number - b.number; }).map(function (b) {
+          return '<button type="button" class="pick-btl" data-action="pick-bottle" data-id="' + esc(b.id) + '">#' + b.number + '</button>';
+        }).join('') + '</div>' +
+        '<div class="btn-row" style="justify-content:flex-end;margin-top:12px"><span class="small muted" id="pick-count">Nenhuma escolhida</span>' +
+        '<button type="button" class="btn primary" data-action="start-picked" disabled>Começar com as escolhidas</button></div></section>' +
+        '<div class="eyebrow" style="margin:0 0 8px">Ou sorteie</div>';
       html += '<form class="panel" data-action="create">' +
         '<h3 style="margin-top:0">Quantos vinhos?</h3><div class="seg" data-seg="count">' + [1, 2, 3, 4, 5, 6].map(function (n) {
           return '<button type="button" data-action="seg-pick" data-v="' + n + '" class="' + (n === Math.min(3, wines.length) ? 'on' : '') + '">' + n + '</button>';
@@ -40,6 +50,23 @@ Pages.tastingNew = {
     });
   },
   actions: {
+    'pick-bottle': function (btn) {
+      var id = btn.getAttribute('data-id'), P = Pages.tastingNew.picked;
+      if (P[id]) delete P[id];
+      else if (Object.keys(P).length >= 12) { UI.toast('No máximo 12 garrafinhas.', true); return; }
+      else P[id] = true;
+      btn.classList.toggle('on', !!P[id]);
+      var n = Object.keys(P).length;
+      document.getElementById('pick-count').textContent = n ? n + ' escolhida(s)' : 'Nenhuma escolhida';
+      document.querySelector('[data-action=start-picked]').disabled = !n;
+    },
+    'start-picked': function (btn) {
+      var ids = Object.keys(Pages.tastingNew.picked);
+      if (!ids.length) return;
+      UI.busy(btn, true);
+      return API.call('tastings.create', { bottle_ids: ids }).then(function (r) { Router.go('/degustacao/' + r.id); })
+        .catch(function (e) { UI.busy(btn, false); throw e; });
+    },
     create: function (form) {
       var d = formData(form);
       var count = Components.readSeg(form, 'count') || '3';
