@@ -349,6 +349,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .lesson.confusao, .lesson.parentesco { border-left-color: var(--near); }
 .lesson.faz-sentido, .lesson.dica { border-left-color: var(--hit); }
 .lesson.reconhecer, .lesson.clima, .lesson.regiao { border-left-color: var(--info); }
+.ean-box { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 </style>
 
 </head>
@@ -485,7 +486,24 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
   g.Utilities.newBlob = function (bytes, mime, name) { return { bytes: bytes, mime: mime, name: name }; };
   g.Utilities.base64Decode = function (b64) { return b64; };
   g.Drive = { Files: { create: function () { return { id: 'OCR_MOCK' }; } } };
+  // Gatilhos simulados (rotina diária).
+  var triggers = [];
+  g.ScriptApp.getProjectTriggers = function () { return triggers.slice(); };
+  g.ScriptApp.deleteTrigger = function (t) { triggers = triggers.filter(function (x) { return x !== t; }); };
+  g.ScriptApp.newTrigger = function (fn) {
+    var b = { timeBased: function () { return b; }, everyDays: function () { return b; }, atHour: function () { return b; },
+      create: function () { var t = { getHandlerFunction: function () { return fn; } }; triggers.push(t); return t; } };
+    return b;
+  };
+  // Open Food Facts SIMULADO: um único código conhecido.
+  var DEMO_EAN = { product_name: 'Barolo Demo DOCG (simulado)', brands: 'Cantina Demo', countries: 'Italia', origins: 'Piemonte, Barolo',
+    categories: 'Vinhos, Vinhos tintos, Vinhos italianos', labels: 'DOCG', alcohol_value: 14.5 };
   g.UrlFetchApp = { fetch: function (url, opts) {
+    if (/openfoodfacts\.org/.test(url)) {
+      var known = /\/8001234567893\.json/.test(url);
+      return { getResponseCode: function () { return known ? 200 : 404; },
+        getContentText: function () { return JSON.stringify(known ? { status: 1, product: DEMO_EAN } : { status: 0 }); } };
+    }
     if (/oauth2\.googleapis\.com\/tokeninfo/.test(url)) {
       var cred = decodeURIComponent(url.split('id_token=')[1]);
       var p = JSON.parse(atob(cred.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
@@ -718,7 +736,9 @@ var SCHEMA = {
     'serving_temp', 'pairing', 'curiosities', 'technical_notes', 'my_notes',
     // v5: autor da ficha (catálogo comum: só o autor e a administradora editam; vazio = administradora).
     // my_notes ficou só como histórico: as notas pessoais de cada usuário estão em wine_notes.
-    'created_by'] },
+    'created_by',
+    // Código de barras (EAN/UPC) e controle da rotina de fichas técnicas (92_Routine.js).
+    'barcode', 'sheet_checked_at:date', 'sheet_status'] },
 
   // v5: notas pessoais de cada usuário sobre um vinho do catálogo comum.
   wine_notes: { sheet: 'db_wine_notes', prefix: 'WNT', cols: [
@@ -10102,6 +10122,8 @@ var Wines = (function () {
     rec.vintage = Validate.num(input.vintage, 1800, 2100, 'Safra');
     rec.abv = Validate.num(input.abv, 0, 25, 'Teor alcoólico');
     rec.price = Validate.num(input.price, 0, 1000000, 'Preço');
+    rec.barcode = Validate.str(input.barcode, 20, 'Código de barras').replace(/\D/g, '');
+    if (rec.barcode && !/^\d{8,14}$/.test(rec.barcode)) throw new Error('Código de barras deve ter de 8 a 14 números.');
     Object.keys(TEXT_FIELDS).forEach(function (f) { rec[f] = Validate.str(input[f], TEXT_FIELDS[f], f); });
     if (rec.color) Validate.oneOf(rec.color, CONFIG.WINE_COLORS, 'cor');
     if (rec.type) Validate.oneOf(rec.type, CONFIG.WINE_TYPES, 'tipo');
@@ -10954,7 +10976,7 @@ var Label = (function () {
     return r;
   }
 
-  return { read: read, fromText: fromText, validateImage: validateImage };
+  return { read: read, fromText: fromText, validateImage: validateImage, catalog: catalog_ };
 })();
 
 // ---- 36_GameData.js
@@ -11085,6 +11107,68 @@ var GameData = (function () {
   }
 
   return { build: build, json: json, appellationOf: appellationOf };
+})();
+
+// ---- 37_Barcode.js
+/**
+ * Código de barras (EAN/UPC) → ficha do vinho, pela base pública Open Food Facts (grátis, colaborativa).
+ *
+ * O texto do produto (nome, marca, origem, categorias, selos, uvas, teor alcoólico) passa pelo mesmo
+ * cruzamento com a enciclopédia da foto do rótulo (LabelParse). Cada sugestão aponta para a página do
+ * produto como fonte (origem "pesquisado"); a usuária revisa antes de salvar.
+ */
+var Barcode = (function () {
+  var API = 'https://world.openfoodfacts.org/api/v2/product/';
+  var FIELDS = ['product_name', 'product_name_pt', 'generic_name', 'generic_name_pt', 'brands', 'brand_owner', 'countries',
+    'origins', 'manufacturing_places', 'categories', 'labels', 'quantity', 'alcohol_value', 'nutriments', 'ingredients_text',
+    'ingredients_text_pt', 'image_front_small_url'].join(',');
+
+  function clean(code) {
+    code = String(code || '').replace(/\D/g, '');
+    if (!/^\d{8,14}$/.test(code)) throw new Error('Código de barras deve ter de 8 a 14 números.');
+    return code;
+  }
+
+  function text_(v) { return Array.isArray(v) ? v.join(', ') : (v === null || v === undefined ? '' : String(v)); }
+
+  /** Consulta a base. Devolve o produto ou null (não encontrado). Lança erro só em falha de rede. */
+  function fetch_(code) {
+    var res = UrlFetchApp.fetch(API + code + '.json?fields=' + FIELDS, {
+      muteHttpExceptions: true, headers: { 'User-Agent': 'WineStudyLab/1.0 (estudo pessoal de vinhos)' }
+    });
+    var status = res.getResponseCode();
+    if (status === 404) return null;
+    if (status !== 200) throw new Error('A base de códigos de barras não respondeu (' + status + '). Tente mais tarde.');
+    var d = JSON.parse(res.getContentText());
+    return Number(d.status) === 1 && d.product ? d.product : null;
+  }
+
+  /** Sugestões para o formulário de vinho. */
+  function lookup(code) {
+    code = clean(code);
+    var existing = Repo.all('wines').filter(function (w) { return String(w.barcode || '') === code; })[0];
+    var p = fetch_(code);
+    var url = 'https://world.openfoodfacts.org/product/' + code;
+    if (!p) return { found: false, code: code, existing: existing ? { id: existing.id, name: existing.name } : null };
+
+    var name = text_(p.product_name_pt || p.product_name || p.generic_name_pt || p.generic_name).trim();
+    var brand = text_(p.brands || p.brand_owner).split(',')[0].trim();
+    var abv = p.alcohol_value !== undefined && p.alcohol_value !== '' ? p.alcohol_value : (p.nutriments && (p.nutriments.alcohol_value || p.nutriments.alcohol_100g));
+    var lines = [name, brand, text_(p.origins), text_(p.manufacturing_places), text_(p.countries), text_(p.categories), text_(p.labels),
+      text_(p.ingredients_text_pt || p.ingredients_text), abv ? 'alc. ' + abv + '% vol' : ''].filter(Boolean);
+    var r = LabelParse.parse(lines.join('\n'), Label.catalog());
+    var fields = r.fields;
+    Object.keys(fields).forEach(function (k) { fields[k].how = 'enciclopedia'; fields[k].evidence = 'Open Food Facts: ' + String(fields[k].evidence || '').replace('escrito no rótulo', 'informado no produto'); fields[k].ref = url; });
+    if (name) fields.name = { value: Util.clampStr(name, 200), evidence: 'nome no Open Food Facts', how: 'enciclopedia', ref: url, options: [] };
+    if (brand && !fields.producer) fields.producer = { value: Util.clampStr(brand, 120), evidence: 'marca no Open Food Facts', how: 'enciclopedia', ref: url, options: [] };
+    return {
+      found: true, code: code, url: url, image: /^https:\/\//.test(p.image_front_small_url || '') ? p.image_front_small_url : '',
+      fields: fields, grapes: r.grapes, lines: [], text: lines.join('\n'),
+      existing: existing ? { id: existing.id, name: existing.name } : null
+    };
+  }
+
+  return { lookup: lookup, clean: clean };
 })();
 
 // ---- 40_Bottles.js
@@ -12792,6 +12876,162 @@ var Enrichment = (function () {
     status: status, findGrape: findGrape };
 })();
 
+// ---- 92_Routine.js
+/**
+ * Rotina de fichas técnicas (opcional; ligada pela administradora em Configurações).
+ *
+ * Uma vez por dia (gatilho do Apps Script, ~4h da manhã) procura vinhos com ficha incompleta e:
+ *  1. se tiver código de barras, consulta de novo a base pública (grátis) e preenche SÓ os campos vazios,
+ *     com a página do produto como fonte (origem "pesquisado");
+ *  2. se ainda faltar e a IA estiver ativa, pesquisa a ficha com o Claude (Enrichment.wine): as sugestões
+ *     vão para "Revisão da IA" — nada gerado por IA entra direto (docs/ARQUITETURA.md D9).
+ * Limites: N vinhos por execução, teto de gasto de IA no mês e tempo de execução (Apps Script: 6 min).
+ * Cada vinho verificado só volta à fila depois de 30 dias.
+ */
+var Routine = (function () {
+  var HANDLER = 'rotinaFichas';
+  var KEY_FIELDS = ['abv', 'classification', 'production_method', 'aging', 'region_id', 'type', 'color'];
+  var RECHECK_DAYS = 30;
+  var TIME_BUDGET_MS = 4 * 60 * 1000;
+
+  function config() {
+    return {
+      enabled: Settings.get('routine_enabled', '0') === '1',
+      max_per_run: Math.max(1, Math.min(20, Settings.getNumber('routine_max_per_run', 5))),
+      max_cost_month: Math.max(0, Settings.getNumber('routine_max_cost_month', 2)),
+      use_ai: Settings.get('routine_use_ai', '1') === '1'
+    };
+  }
+
+  function missing_(w, grapeCount) {
+    var m = KEY_FIELDS.filter(function (f) { return Util.isBlank(w[f]); });
+    if (!grapeCount) m.push('uvas');
+    return m;
+  }
+
+  function monthCost_() {
+    var ym = Util.nowIso().slice(0, 7);
+    return Repo.all('ai_calls').filter(function (c) { return String(c.run_at).slice(0, 7) === ym; })
+      .reduce(function (a, c) { return a + (Number(c.cost_usd) || 0); }, 0);
+  }
+
+  /** Vinhos que precisam de atenção, os mais incompletos primeiro. */
+  function candidates() {
+    var grapes = Util.groupBy(Repo.all('wine_grapes'), 'wine_id');
+    var pending = {};
+    Repo.where('enrichment_queue', { status: 'pendente' }).forEach(function (q) { pending[q.entity_id] = true; });
+    var limit = Date.now() - RECHECK_DAYS * 864e5;
+    return Repo.all('wines').map(function (w) {
+      return { w: w, missing: missing_(w, (grapes[w.id] || []).length) };
+    }).filter(function (x) {
+      if (x.missing.length < 2 || pending[x.w.id]) return false;
+      return !x.w.sheet_checked_at || new Date(x.w.sheet_checked_at).getTime() < limit;
+    }).sort(function (a, b) { return b.missing.length - a.missing.length; });
+  }
+
+  /** Preenche campos vazios com dados do código de barras (nunca sobrescreve). */
+  function fromBarcode_(w) {
+    var r = Barcode.lookup(w.barcode);
+    if (!r.found) return 0;
+    var input = { id: w.id, name: w.name, barcode: w.barcode, origins: {}, refs: {} };
+    var current = Wines.get(w.id);
+    ['producer', 'country', 'region', 'subregion', 'appellation', 'vintage', 'classification', 'color', 'type', 'abv',
+      'residual_sugar', 'acidity_gl', 'production_method', 'aging', 'oak', 'aging_time', 'serving_temp', 'pairing',
+      'curiosities', 'technical_notes', 'price', 'price_currency'].forEach(function (k) { input[k] = current[k]; });
+    var n = 0;
+    Object.keys(r.fields).forEach(function (k) {
+      if (k === 'name' || !(k in input) || !Util.isBlank(input[k]) || r.fields[k].value === '') return;
+      input[k] = r.fields[k].value; input.origins[k] = 'pesquisado'; input.refs[k] = r.url; n++;
+    });
+    input.grapes = current.grapes.length ? current.grapes.map(function (g) { return { id: g.id, percent: g.percent }; })
+      : r.grapes.map(function (g) { n++; return { name: g.name, percent: g.percent, source: 'pesquisado' }; });
+    input.my_notes = current.my_notes;
+    if (n) Wines.save(input);
+    return n;
+  }
+
+  /** Uma execução. Devolve o resumo (também gravado em import_log). */
+  function run(force) {
+    var cfg = config();
+    if (!cfg.enabled && !force) return { skipped: 'rotina desligada' };
+    var started = Date.now();
+    var summary = { checked: 0, barcode_fields: 0, ai_runs: 0, ai_proposals: 0, cost_usd: 0, stopped: '' , wines: [] };
+    var list = candidates().slice(0, cfg.max_per_run);
+    for (var i = 0; i < list.length; i++) {
+      if (Date.now() - started > TIME_BUDGET_MS) { summary.stopped = 'tempo'; break; }
+      var w = list[i].w, line = { name: w.name, missing: list[i].missing.join(', '), done: [] };
+      try {
+        if (w.barcode) {
+          var n = fromBarcode_(w);
+          summary.barcode_fields += n;
+          if (n) line.done.push(n + ' campo(s) pelo código de barras');
+        }
+        var after = Repo.get('wines', w.id);
+        var stillMissing = missing_(after, Repo.where('wine_grapes', { wine_id: w.id }).length);
+        var status = stillMissing.length < 2 ? 'ok' : 'incompleto';
+        if (stillMissing.length >= 2 && cfg.use_ai && AiProvider.hasKey()) {
+          if (monthCost_() >= cfg.max_cost_month) { summary.stopped = 'teto de gasto do mês'; line.done.push('IA pulada (teto do mês)'); }
+          else {
+            var res = Enrichment.wine(w.id);
+            summary.ai_runs++; summary.ai_proposals += res.proposals; summary.cost_usd += res.cost_usd || 0;
+            line.done.push('IA: ' + res.proposals + ' sugestão(ões) para revisar');
+            status = res.proposals ? 'ia_pendente' : 'incompleto';
+          }
+        }
+        Repo.update('wines', [{ id: w.id, sheet_checked_at: Util.nowIso(), sheet_status: status }]);
+      } catch (e) {
+        line.done.push('erro: ' + e.message);
+      }
+      summary.checked++;
+      summary.wines.push(line);
+      if (summary.stopped === 'teto de gasto do mês') break;
+    }
+    summary.cost_usd = Math.round(summary.cost_usd * 10000) / 10000;
+    Repo.insert('import_log', [{ run_at: Util.nowIso(), level: 'ok', message: 'Rotina de fichas técnicas: ' + summary.checked + ' vinho(s).', details: summary, source: 'sistema' }]);
+    Settings.set('routine_last_run', Util.nowIso());
+    return summary;
+  }
+
+  // ---------- Gatilho diário ----------
+  function triggers_() { return ScriptApp.getProjectTriggers().filter(function (t) { return t.getHandlerFunction() === HANDLER; }); }
+
+  function setEnabled(on) {
+    triggers_().forEach(function (t) { ScriptApp.deleteTrigger(t); });
+    if (on) ScriptApp.newTrigger(HANDLER).timeBased().everyDays(1).atHour(4).create();
+    Settings.set('routine_enabled', on ? '1' : '0');
+  }
+
+  function status() {
+    var cfg = config();
+    var last = Repo.where('import_log', function (l) { return /^Rotina de fichas/.test(l.message); })
+      .sort(function (a, b) { return String(b.run_at).localeCompare(String(a.run_at)); })[0];
+    var c = candidates();
+    return Object.assign(cfg, {
+      scheduled: (function () { try { return triggers_().length > 0; } catch (e) { return false; } })(),
+      month_cost_usd: Math.round(monthCost_() * 100) / 100, ai_key: AiProvider.hasKey(),
+      waiting: c.length, next: c.slice(0, 5).map(function (x) { return { id: x.w.id, name: x.w.name, missing: x.missing.join(', ') }; }),
+      last_run: last ? { at: last.run_at, details: last.details } : null
+    });
+  }
+
+  function configure(a) {
+    Settings.set('routine_max_per_run', Validate.num(a.max_per_run, 1, 20, 'Vinhos por execução') || 5);
+    Settings.set('routine_max_cost_month', Validate.num(a.max_cost_month, 0, 100, 'Teto mensal (US$)') === '' ? 2 : Validate.num(a.max_cost_month, 0, 100, 'Teto mensal (US$)'));
+    Settings.set('routine_use_ai', a.use_ai ? '1' : '0');
+    setEnabled(!!a.enabled);
+    return status();
+  }
+
+  return { run: run, status: status, configure: configure, candidates: candidates };
+})();
+
+/** Gatilho diário (instalado por Routine.configure). Roda como a dona. */
+function rotinaFichas() {
+  Ctx.asSystem(ensureSchema_);
+  Ctx.setUser(Auth.ensureAdmin());
+  try { Routine.run(false); } finally { Ctx.setUser(null); }
+}
+
 // ---- 99_Api.js
 /**
  * Pontos de entrada do Apps Script:
@@ -12852,6 +13092,10 @@ var API_METHODS = {
   'wines.save': function (a) { return Wines.save(a.wine); },
   'label.read': function (a) { return Label.read(a.image, a.mime); },
   'label.ai': function (a) { return Enrichment.label(a.image, a.mime, a.text); },
+  'barcode.lookup': function (a) { return Barcode.lookup(a.code); },
+  'routine.status': function () { return Routine.status(); },
+  'routine.configure': function (a) { return Routine.configure(a); },
+  'routine.run': function () { return Routine.run(true); },
 
   'grapes.list': function () { return Grapes.list(); },
   'grapes.get': function (a) { return Grapes.get(a.id); },
@@ -12936,7 +13180,7 @@ var API_METHODS = {
 // Sem login.
 var PUBLIC_METHODS = { 'auth.config': 1, 'auth.login': 1 };
 // Só a administradora (enciclopédia, sincronização, IA, configurações, usuários).
-var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|label\.ai$|grapes\.(save|verify)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
+var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
 
 /**
  * Executa um método da API. resolveUser() identifica quem chama (sessão ou conta Google).
@@ -13884,11 +14128,33 @@ function memberSettings_() {
     (enc.region_packs || []).length + ' países, com fontes citadas em cada dado. Mantida pela administradora.</p></section>';
 }
 
+/** Rotina de fichas técnicas (92_Routine.js). */
+function routinePanel_(rt) {
+  var last = rt.last_run;
+  return '<section class="panel"><h2 style="margin-top:0">Rotina de fichas técnicas</h2>' +
+    '<p class="muted">Uma vez por dia (~4h) verifica vinhos com ficha incompleta: tenta de novo o código de barras (grátis, só preenche campos vazios, com a fonte) ' +
+    'e, se ainda faltar, pesquisa com IA. As sugestões da IA ficam em <a href="#/revisao">Revisão da IA</a> para você aprovar. Cada vinho volta à fila depois de 30 dias.</p>' +
+    '<form data-action="routine-save"><div class="form-grid">' +
+    '<div><label class="f"><input type="checkbox" name="enabled"' + (rt.enabled ? ' checked' : '') + '> Rotina ligada</label>' +
+      '<div class="small muted">' + (rt.scheduled ? 'Agendada todo dia.' : 'Não agendada.') + '</div></div>' +
+    '<div><label class="f"><input type="checkbox" name="use_ai"' + (rt.use_ai ? ' checked' : '') + '> Usar IA quando faltar dado</label>' +
+      '<div class="small muted">' + (rt.ai_key ? 'Chave da IA configurada.' : 'Sem chave da IA: só o código de barras.') + '</div></div>' +
+    '<div><label class="f">Vinhos por dia</label><input class="in" name="max_per_run" type="number" min="1" max="20" value="' + esc(rt.max_per_run) + '"></div>' +
+    '<div><label class="f">Teto de gasto com IA no mês (US$)</label><input class="in" name="max_cost_month" type="number" min="0" max="100" step="0.5" value="' + esc(rt.max_cost_month) + '">' +
+      '<div class="small muted">Gasto neste mês: US$ ' + fmtNum(rt.month_cost_usd, 2) + '</div></div></div>' +
+    '<div class="btn-row" style="margin-top:14px"><button class="btn primary">Salvar</button><button type="button" class="btn" data-action="routine-run">Rodar agora</button>' +
+    '<span class="small muted">' + plural(rt.waiting, 'vinho aguardando', 'vinhos aguardando') + '</span></div></form>' +
+    (rt.next.length ? '<p class="small muted" style="margin-top:12px">Próximos: ' + rt.next.map(function (x) { return esc(x.name) + ' (faltam: ' + esc(x.missing) + ')'; }).join(' · ') + '</p>' : '') +
+    (last ? '<p class="small muted">Última execução: ' + fmtDate(last.at, true) + ' — ' + (last.details.checked || 0) + ' verificado(s), ' + (last.details.barcode_fields || 0) +
+      ' campo(s) pelo código de barras, ' + (last.details.ai_proposals || 0) + ' sugestão(ões) da IA' + (last.details.stopped ? ' · parou por: ' + esc(last.details.stopped) : '') + '.</p>' : '') +
+    '</section>';
+}
+
 Pages.settings = {
   render: function () {
     if (!Store.lookups.is_admin) return memberSettings_();
-    return Promise.all([API.call('settings.get'), API.call('ai.status')]).then(function (res) {
-      var s = res[0], ai = res[1];
+    return Promise.all([API.call('settings.get'), API.call('ai.status'), API.call('routine.status')]).then(function (res) {
+      var s = res[0], ai = res[1], rt = res[2];
       var st = {};
       s.settings.forEach(function (x) { st[x.key] = x.value; });
       var total = s.rules.filter(function (r) { return r.active; }).reduce(function (a, r) { return a + Number(r.weight || 0); }, 0);
@@ -13907,6 +14173,7 @@ Pages.settings = {
       }
       html += '</section>';
 
+      html += routinePanel_(rt);
       var enc = Store.lookups.encyclopedia || {};
       html += '<section class="panel"><h2 style="margin-top:0">Enciclopédia de uvas</h2>' +
         '<p class="muted">' + (enc.grapes || 0) + ' uvas pesquisadas (versão ' + (enc.version || '—') + '), com genealogia por DNA e pares que costumam ser confundidos. ' +
@@ -13962,6 +14229,22 @@ Pages.settings = {
     }
   },
   actions: {
+    'routine-save': function (form) {
+      var btn = form.querySelector('button.primary');
+      UI.busy(btn, true);
+      return API.call('routine.configure', { enabled: form.enabled.checked, use_ai: form.use_ai.checked,
+        max_per_run: form.max_per_run.value, max_cost_month: form.max_cost_month.value }).then(function (rt) {
+        UI.toast(rt.enabled ? 'Rotina ligada: roda todo dia de madrugada.' : 'Rotina desligada.');
+        Router.render();
+      }).catch(function (e) { UI.busy(btn, false); throw e; });
+    },
+    'routine-run': function (btn) {
+      UI.busy(btn, true);
+      return API.call('routine.run').then(function (r) {
+        UI.toast(r.checked + ' vinho(s) verificado(s): ' + r.barcode_fields + ' campo(s) pelo código, ' + r.ai_proposals + ' sugestão(ões) da IA para revisar.');
+        Router.render();
+      }).catch(function (e) { UI.busy(btn, false); throw e; });
+    },
     'sync': function (btn) {
       UI.busy(btn, true);
       return API.call('sync.run').then(function (r) {
@@ -14098,6 +14381,7 @@ Pages.wine = {
         Components.field('Cor', COLOR_LABELS[w.color] || w.color, { source: fs.color, ref: rf.color }) +
         Components.field('Tipo', TYPE_LABELS[w.type] || w.type, { source: fs.type, ref: rf.type }) +
         Components.field('Classificação', w.classification, { source: fs.classification, ref: rf.classification }) +
+        Components.field('Código de barras', w.barcode) +
         Components.field('Faixa de preço', w.price ? (w.price_currency || '') + ' ' + fmtNum(w.price, 2) : '', { source: fs.price }) +
         '</div></section>';
       html += '<section class="panel"><h3 style="margin-top:0">Produção e técnica</h3><div class="fields">' +
@@ -14261,6 +14545,7 @@ Pages.wineEdit = {
         inp('vintage', 'Safra', w.vintage, '', null, 'number') + inp('classification', 'Classificação', w.classification) +
         sel('color', 'Cor', COLOR_LABELS, w.color) + sel('type', 'Tipo', TYPE_LABELS, w.type) +
         inp('price', 'Preço', w.price, '', null, 'number') + inp('price_currency', 'Moeda (BRL, USD…)', w.price_currency) +
+        inp('barcode', 'Código de barras (EAN)', w.barcode) +
         '</div><h3>Uvas</h3><div id="grape-rows">' + (w.grapes.length ? w.grapes : [{}]).map(grapeRow).join('') + '</div>' +
         '<button type="button" class="btn small" data-action="add-grape">+ uva</button>' +
         '<h3>Produção</h3><div class="form-grid">' +
@@ -14290,12 +14575,19 @@ Pages.wineEdit = {
     var form = root.querySelector('form[data-action=save]');
     // Campo preenchido pela foto e depois editado à mão volta a ser "informado por você".
     if (form) form.addEventListener('input', function (e) { LabelScan.touched(form, e.target); });
+    // Enter no campo do código busca a ficha (em vez de salvar o formulário).
+    if (form) form.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && e.target.id === 'ean-code') { e.preventDefault(); LabelScan.eanSearch().catch(UI.error); }
+    });
   },
   actions: {
     'label-photo': function (input) { return LabelScan.photo(input); },
     'label-apply': function (btn) { LabelScan.apply(btn); },
     'label-ai': function (btn) { return LabelScan.ai(btn); },
     'label-name': function (btn) { LabelScan.setName(btn); },
+    'ean-open': function () { LabelScan.eanOpen(); },
+    'ean-search': function (btn) { return LabelScan.eanSearch(btn); },
+    'ean-photo': function (input) { return LabelScan.eanPhoto(input); },
     'add-grape': function () { document.getElementById('grape-rows').insertAdjacentHTML('beforeend', grapeRow({})); },
     'remove-grape': function (btn) { btn.closest('.grape-row').remove(); },
     'save': function (form) {
@@ -14641,7 +14933,14 @@ var LabelScan = (function () {
       '<div class="btn-row">' +
       '<label class="btn primary">📷&nbsp; Fotografar rótulo<input type="file" accept="image/*" capture="environment" data-change="label-photo" hidden></label>' +
       '<label class="btn">Escolher imagem<input type="file" accept="image/*" data-change="label-photo" hidden></label>' +
-      '<span class="small muted">A leitura é grátis (Google). A foto não fica guardada.</span></div>' +
+      '<button type="button" class="btn" data-action="ean-open">▥&nbsp; Código de barras</button>' +
+      '<span class="small muted">Leituras grátis. A foto não fica guardada.</span></div>' +
+      '<div id="ean-box" class="ean-box" hidden><div class="btn-row">' +
+      '<input class="in" id="ean-code" inputmode="numeric" autocomplete="off" placeholder="EAN / UPC (8 a 14 números)" style="max-width:240px">' +
+      '<button type="button" class="btn small" data-action="ean-search">Buscar ficha</button>' +
+      '<label class="btn small">Ler da foto<input type="file" accept="image/*" capture="environment" data-change="ean-photo" hidden></label></div>' +
+      '<p class="small muted" style="margin:6px 0 0">Consulta a base pública Open Food Facts e cruza com a enciclopédia. ' +
+      'Se não achar, salve mesmo assim: a rotina de fichas técnicas tenta de novo e, se ligada, pesquisa com IA.</p></div>' +
       '<div id="label-out"></div></section>';
   }
 
@@ -14698,7 +14997,11 @@ var LabelScan = (function () {
     var f = form();
     var keys = ORDER.filter(function (k) { return r.fields && r.fields[k]; });
     var h = '';
-    if (kind === 'ocr') {
+    if (kind === 'ean') {
+      h += '<h3 style="margin-top:0">Encontrado pelo código ' + esc(r.code) + ' ' + Components.src('pesquisado') + '</h3>' +
+        (r.image ? '<img class="label-thumb" style="width:90px;float:right;margin:0 0 8px 12px" alt="" src="' + esc(r.image) + '" referrerpolicy="no-referrer">' : '') +
+        '<p class="small muted">Fonte: <a href="' + esc(r.url) + '" target="_blank" rel="noopener">Open Food Facts</a> (base colaborativa: confira com o rótulo).</p>';
+    } else if (kind === 'ocr') {
       if (!r.text) return '<div class="callout warn">Não encontrei texto na foto. Tente outra com o rótulo reto, bem iluminado e sem reflexo.</div>' + aiButton();
       h += '<h3 style="margin-top:0">Lido no rótulo</h3>';
     } else {
@@ -14717,7 +15020,7 @@ var LabelScan = (function () {
         '<span class="small muted label-row-ev">' + esc(s.evidence || '') + (cur ? ' · atual: ' + esc(cur) : '') + '</span></label>';
     });
     (r.grapes || []).forEach(function (g) {
-      h += '<label class="label-row"><input type="checkbox" data-grape="' + esc(g.name) + '" data-pct="' + esc(g.percent || '') + '" data-how="' + (kind === 'ai' ? 'ia_nao_verificada' : 'rotulo') + '" checked>' +
+      h += '<label class="label-row"><input type="checkbox" data-grape="' + esc(g.name) + '" data-pct="' + esc(g.percent || '') + '" data-how="' + (kind === 'ai' ? 'ia_nao_verificada' : kind === 'ean' ? 'pesquisado' : 'rotulo') + '" checked>' +
         '<span class="label-row-name">Uva</span><span>' + esc(g.name) + (g.percent ? ' · ' + g.percent + '%' : '') + '</span></label>';
     });
     h += '</div>';
@@ -14836,7 +15139,65 @@ var LabelScan = (function () {
     }).catch(function (e) { UI.busy(btn, false); out.innerHTML = ''; throw e; });
   }
 
-  return { html: html, photo: photoInput, apply: apply, ai: ai, setName: setName, touched: touched };
+  // ---------- Código de barras ----------
+  function eanOpen() {
+    var box = document.getElementById('ean-box');
+    box.hidden = !box.hidden;
+    if (!box.hidden) document.getElementById('ean-code').focus();
+  }
+
+  /** Lê o código numa foto: BarcodeDetector (Chrome/Android) ou ZXing (Safari/iPhone). */
+  function decode(file) {
+    if ('BarcodeDetector' in window) {
+      return createImageBitmap(file).then(function (img) {
+        return new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] }).detect(img);
+      }).then(function (res) { if (res[0]) return res[0].rawValue; throw new Error('sem código'); });
+    }
+    return loadZxing().then(function () {
+      var url = URL.createObjectURL(file);
+      return new ZXing.BrowserMultiFormatReader().decodeFromImageUrl(url).then(function (r) { URL.revokeObjectURL(url); return r.getText(); });
+    });
+  }
+  function loadZxing() {
+    if (window.ZXing) return Promise.resolve();
+    return new Promise(function (resolve, reject) {
+      var sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+      sc.onload = resolve; sc.onerror = reject;
+      document.head.appendChild(sc);
+    });
+  }
+
+  function eanPhoto(input) {
+    var file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    UI.toast('Lendo o código de barras…');
+    return decode(file).then(function (code) {
+      document.getElementById('ean-code').value = code;
+      return eanSearch();
+    }).catch(function () { UI.toast('Não consegui ler o código na foto. Aproxime a câmera ou digite os números.', true); });
+  }
+
+  function eanSearch(btn) {
+    var code = (document.getElementById('ean-code').value || '').replace(/\D/g, '');
+    if (!/^\d{8,14}$/.test(code)) return Promise.reject(new Error('Digite de 8 a 14 números.'));
+    var f = form();
+    if (f.elements.barcode && !f.elements.barcode.value) { f.elements.barcode.value = code; }
+    var out = document.getElementById('label-out');
+    out.innerHTML = '<div class="label-scan-body"><div class="label-scan-main" id="label-ocr"><p class="muted">Buscando o código ' + esc(code) + '…</p></div></div>';
+    if (btn) UI.busy(btn, true);
+    return API.call('barcode.lookup', { code: code }).then(function (r) {
+      if (btn) UI.busy(btn, false);
+      var curId = f.elements.id && f.elements.id.value;
+      var dup = r.existing && r.existing.id !== curId ? '<div class="callout" style="margin-bottom:12px">Este código já está no catálogo: <a href="#/vinhos/' + esc(r.existing.id) + '">' + esc(r.existing.name) + '</a>. Abra esse vinho em vez de cadastrar de novo.</div>' : '';
+      document.getElementById('label-ocr').innerHTML = dup + (r.found ? block(r, 'ean')
+        : '<div class="callout warn">Não encontrei o código ' + esc(code) + ' na base pública. Preencha o que souber, ou fotografe o rótulo; ao salvar, o código fica guardado e a rotina de fichas técnicas tenta de novo depois.</div>');
+    }).catch(function (e) { if (btn) UI.busy(btn, false); out.innerHTML = ''; throw e; });
+  }
+
+  return { html: html, photo: photoInput, apply: apply, ai: ai, setName: setName, touched: touched,
+    eanOpen: eanOpen, eanSearch: eanSearch, eanPhoto: eanPhoto };
 })();
 </script>
 

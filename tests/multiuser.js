@@ -24,6 +24,7 @@ let passed = 0;
 function test(name, fn) {
   try { fn(); passed++; console.log('  ✓ ' + name); } catch (e) { console.error('  ✗ ' + name + '\n    ' + e.message); process.exitCode = 1; }
 }
+const run_ = (c) => run(c, 'x');
 const post = (method, args, token) => JSON.parse(run(`doPost({ postData: { contents: ${JSON.stringify(JSON.stringify({ method, args, token }))} } }).getContent()`, 'call'));
 const ok = (r) => { if (!r.ok) throw new Error(r.error); return r.data; };
 const login = (email, name) => ok(post('auth.login', { credential: run(`__mockCredential(${JSON.stringify(email)}, ${JSON.stringify(name)})`) }));
@@ -120,6 +121,38 @@ test('degustar garrafinhas escolhidas + "o que aprender"', () => {
   assert.ok(all.length > 0, 'sem lições');
   assert.ok(all.every((l) => l.title && l.text && !/undefined|null/.test(l.text + l.title)), JSON.stringify(all.slice(0, 3)));
   console.log('    ex.: ' + all.slice(0, 4).map((l) => l.title + ' — ' + l.text).join('\n    ex.: '));
+});
+test('código de barras → ficha; rotina de fichas técnicas', () => {
+  const r = ok(post('barcode.lookup', { code: '8001234567893' }, owner.token));
+  assert.strictEqual(r.found, true);
+  assert.strictEqual(r.fields.subregion.value, 'Barolo');
+  assert.strictEqual(r.fields.abv.value, 14.5);
+  assert.strictEqual(r.fields.producer.value, 'Cantina Demo');
+  assert.strictEqual(ok(post('barcode.lookup', { code: '7890000000000' }, owner.token)).found, false);
+  assert.strictEqual(post('barcode.lookup', { code: '12' }, owner.token).ok, false);
+  // vinho incompleto com código → rotina preenche campos vazios com a fonte
+  const w = ok(post('wines.save', { wine: { name: 'Sem ficha', barcode: '8001234567893' } }, owner.token));
+  assert.strictEqual(post('routine.run', {}, ana.token).ok, false);
+  const st = ok(post('routine.configure', { enabled: true, use_ai: false, max_per_run: 20, max_cost_month: 1 }, owner.token));
+  assert.strictEqual(st.scheduled, true);
+  const run = ok(post('routine.run', {}, owner.token));
+  assert.ok(run.barcode_fields > 0, JSON.stringify(run));
+  const after = ok(post('wines.get', { id: w.id }, owner.token));
+  assert.strictEqual(after.abv, 14.5);
+  assert.strictEqual(after.field_sources.abv, 'pesquisado');
+  assert.ok(/openfoodfacts/.test(after.field_refs.abv));
+  assert.strictEqual(after.name, 'Sem ficha');
+  // com IA: sugestões vão para a revisão, nada entra direto
+  run_('__setMockKey()');
+  ok(post('wines.save', { wine: { name: 'Outro sem ficha' } }, owner.token));
+  ok(post('routine.configure', { enabled: true, use_ai: true, max_per_run: 20, max_cost_month: 5 }, owner.token));
+  const run2 = ok(post('routine.run', {}, owner.token));
+  assert.ok(run2.ai_runs > 0 && run2.ai_proposals > 0, JSON.stringify(run2));
+  assert.ok(ok(post('ai.pending', {}, owner.token)).length > 0);
+  // teto de gasto: com teto 0, a IA não roda
+  ok(post('wines.save', { wine: { name: 'Terceiro sem ficha' } }, owner.token));
+  ok(post('routine.configure', { enabled: true, use_ai: true, max_per_run: 20, max_cost_month: 0 }, owner.token));
+  assert.strictEqual(ok(post('routine.run', {}, owner.token)).ai_runs, 0);
 });
 test('IA, sincronização e usuários: só a administradora', () => {
   ['ai.status', 'sync.run', 'users.list', 'seed.grapes'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));

@@ -65,6 +65,7 @@ Pages.wine = {
         Components.field('Cor', COLOR_LABELS[w.color] || w.color, { source: fs.color, ref: rf.color }) +
         Components.field('Tipo', TYPE_LABELS[w.type] || w.type, { source: fs.type, ref: rf.type }) +
         Components.field('Classificação', w.classification, { source: fs.classification, ref: rf.classification }) +
+        Components.field('Código de barras', w.barcode) +
         Components.field('Faixa de preço', w.price ? (w.price_currency || '') + ' ' + fmtNum(w.price, 2) : '', { source: fs.price }) +
         '</div></section>';
       html += '<section class="panel"><h3 style="margin-top:0">Produção e técnica</h3><div class="fields">' +
@@ -228,6 +229,7 @@ Pages.wineEdit = {
         inp('vintage', 'Safra', w.vintage, '', null, 'number') + inp('classification', 'Classificação', w.classification) +
         sel('color', 'Cor', COLOR_LABELS, w.color) + sel('type', 'Tipo', TYPE_LABELS, w.type) +
         inp('price', 'Preço', w.price, '', null, 'number') + inp('price_currency', 'Moeda (BRL, USD…)', w.price_currency) +
+        inp('barcode', 'Código de barras (EAN)', w.barcode) +
         '</div><h3>Uvas</h3><div id="grape-rows">' + (w.grapes.length ? w.grapes : [{}]).map(grapeRow).join('') + '</div>' +
         '<button type="button" class="btn small" data-action="add-grape">+ uva</button>' +
         '<h3>Produção</h3><div class="form-grid">' +
@@ -257,12 +259,19 @@ Pages.wineEdit = {
     var form = root.querySelector('form[data-action=save]');
     // Campo preenchido pela foto e depois editado à mão volta a ser "informado por você".
     if (form) form.addEventListener('input', function (e) { LabelScan.touched(form, e.target); });
+    // Enter no campo do código busca a ficha (em vez de salvar o formulário).
+    if (form) form.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && e.target.id === 'ean-code') { e.preventDefault(); LabelScan.eanSearch().catch(UI.error); }
+    });
   },
   actions: {
     'label-photo': function (input) { return LabelScan.photo(input); },
     'label-apply': function (btn) { LabelScan.apply(btn); },
     'label-ai': function (btn) { return LabelScan.ai(btn); },
     'label-name': function (btn) { LabelScan.setName(btn); },
+    'ean-open': function () { LabelScan.eanOpen(); },
+    'ean-search': function (btn) { return LabelScan.eanSearch(btn); },
+    'ean-photo': function (input) { return LabelScan.eanPhoto(input); },
     'add-grape': function () { document.getElementById('grape-rows').insertAdjacentHTML('beforeend', grapeRow({})); },
     'remove-grape': function (btn) { btn.closest('.grape-row').remove(); },
     'save': function (form) {

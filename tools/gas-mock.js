@@ -130,7 +130,24 @@
   g.Utilities.newBlob = function (bytes, mime, name) { return { bytes: bytes, mime: mime, name: name }; };
   g.Utilities.base64Decode = function (b64) { return b64; };
   g.Drive = { Files: { create: function () { return { id: 'OCR_MOCK' }; } } };
+  // Gatilhos simulados (rotina diária).
+  var triggers = [];
+  g.ScriptApp.getProjectTriggers = function () { return triggers.slice(); };
+  g.ScriptApp.deleteTrigger = function (t) { triggers = triggers.filter(function (x) { return x !== t; }); };
+  g.ScriptApp.newTrigger = function (fn) {
+    var b = { timeBased: function () { return b; }, everyDays: function () { return b; }, atHour: function () { return b; },
+      create: function () { var t = { getHandlerFunction: function () { return fn; } }; triggers.push(t); return t; } };
+    return b;
+  };
+  // Open Food Facts SIMULADO: um único código conhecido.
+  var DEMO_EAN = { product_name: 'Barolo Demo DOCG (simulado)', brands: 'Cantina Demo', countries: 'Italia', origins: 'Piemonte, Barolo',
+    categories: 'Vinhos, Vinhos tintos, Vinhos italianos', labels: 'DOCG', alcohol_value: 14.5 };
   g.UrlFetchApp = { fetch: function (url, opts) {
+    if (/openfoodfacts\.org/.test(url)) {
+      var known = /\/8001234567893\.json/.test(url);
+      return { getResponseCode: function () { return known ? 200 : 404; },
+        getContentText: function () { return JSON.stringify(known ? { status: 1, product: DEMO_EAN } : { status: 0 }); } };
+    }
     if (/oauth2\.googleapis\.com\/tokeninfo/.test(url)) {
       var cred = decodeURIComponent(url.split('id_token=')[1]);
       var p = JSON.parse(atob(cred.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));

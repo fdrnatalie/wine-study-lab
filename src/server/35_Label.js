@@ -76,5 +76,5 @@ var Label = (function () {
     return r;
   }
 
-  return { read: read, fromText: fromText, validateImage: validateImage };
+  return { read: read, fromText: fromText, validateImage: validateImage, catalog: catalog_ };
 })();

@@ -84,7 +84,9 @@ var SCHEMA = {
     'serving_temp', 'pairing', 'curiosities', 'technical_notes', 'my_notes',
     // v5: autor da ficha (catálogo comum: só o autor e a administradora editam; vazio = administradora).
     // my_notes ficou só como histórico: as notas pessoais de cada usuário estão em wine_notes.
-    'created_by'] },
+    'created_by',
+    // Código de barras (EAN/UPC) e controle da rotina de fichas técnicas (92_Routine.js).
+    'barcode', 'sheet_checked_at:date', 'sheet_status'] },
 
   // v5: notas pessoais de cada usuário sobre um vinho do catálogo comum.
   wine_notes: { sheet: 'db_wine_notes', prefix: 'WNT', cols: [

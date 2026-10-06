@@ -98,6 +98,8 @@ var Wines = (function () {
     rec.vintage = Validate.num(input.vintage, 1800, 2100, 'Safra');
     rec.abv = Validate.num(input.abv, 0, 25, 'Teor alcoólico');
     rec.price = Validate.num(input.price, 0, 1000000, 'Preço');
+    rec.barcode = Validate.str(input.barcode, 20, 'Código de barras').replace(/\D/g, '');
+    if (rec.barcode && !/^\d{8,14}$/.test(rec.barcode)) throw new Error('Código de barras deve ter de 8 a 14 números.');
     Object.keys(TEXT_FIELDS).forEach(function (f) { rec[f] = Validate.str(input[f], TEXT_FIELDS[f], f); });
     if (rec.color) Validate.oneOf(rec.color, CONFIG.WINE_COLORS, 'cor');
     if (rec.type) Validate.oneOf(rec.type, CONFIG.WINE_TYPES, 'tipo');

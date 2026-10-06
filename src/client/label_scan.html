@@ -26,7 +26,14 @@ var LabelScan = (function () {
       '<div class="btn-row">' +
       '<label class="btn primary">📷&nbsp; Fotografar rótulo<input type="file" accept="image/*" capture="environment" data-change="label-photo" hidden></label>' +
       '<label class="btn">Escolher imagem<input type="file" accept="image/*" data-change="label-photo" hidden></label>' +
-      '<span class="small muted">A leitura é grátis (Google). A foto não fica guardada.</span></div>' +
+      '<button type="button" class="btn" data-action="ean-open">▥&nbsp; Código de barras</button>' +
+      '<span class="small muted">Leituras grátis. A foto não fica guardada.</span></div>' +
+      '<div id="ean-box" class="ean-box" hidden><div class="btn-row">' +
+      '<input class="in" id="ean-code" inputmode="numeric" autocomplete="off" placeholder="EAN / UPC (8 a 14 números)" style="max-width:240px">' +
+      '<button type="button" class="btn small" data-action="ean-search">Buscar ficha</button>' +
+      '<label class="btn small">Ler da foto<input type="file" accept="image/*" capture="environment" data-change="ean-photo" hidden></label></div>' +
+      '<p class="small muted" style="margin:6px 0 0">Consulta a base pública Open Food Facts e cruza com a enciclopédia. ' +
+      'Se não achar, salve mesmo assim: a rotina de fichas técnicas tenta de novo e, se ligada, pesquisa com IA.</p></div>' +
       '<div id="label-out"></div></section>';
   }
 
@@ -83,7 +90,11 @@ var LabelScan = (function () {
     var f = form();
     var keys = ORDER.filter(function (k) { return r.fields && r.fields[k]; });
     var h = '';
-    if (kind === 'ocr') {
+    if (kind === 'ean') {
+      h += '<h3 style="margin-top:0">Encontrado pelo código ' + esc(r.code) + ' ' + Components.src('pesquisado') + '</h3>' +
+        (r.image ? '<img class="label-thumb" style="width:90px;float:right;margin:0 0 8px 12px" alt="" src="' + esc(r.image) + '" referrerpolicy="no-referrer">' : '') +
+        '<p class="small muted">Fonte: <a href="' + esc(r.url) + '" target="_blank" rel="noopener">Open Food Facts</a> (base colaborativa: confira com o rótulo).</p>';
+    } else if (kind === 'ocr') {
       if (!r.text) return '<div class="callout warn">Não encontrei texto na foto. Tente outra com o rótulo reto, bem iluminado e sem reflexo.</div>' + aiButton();
       h += '<h3 style="margin-top:0">Lido no rótulo</h3>';
     } else {
@@ -102,7 +113,7 @@ var LabelScan = (function () {
         '<span class="small muted label-row-ev">' + esc(s.evidence || '') + (cur ? ' · atual: ' + esc(cur) : '') + '</span></label>';
     });
     (r.grapes || []).forEach(function (g) {
-      h += '<label class="label-row"><input type="checkbox" data-grape="' + esc(g.name) + '" data-pct="' + esc(g.percent || '') + '" data-how="' + (kind === 'ai' ? 'ia_nao_verificada' : 'rotulo') + '" checked>' +
+      h += '<label class="label-row"><input type="checkbox" data-grape="' + esc(g.name) + '" data-pct="' + esc(g.percent || '') + '" data-how="' + (kind === 'ai' ? 'ia_nao_verificada' : kind === 'ean' ? 'pesquisado' : 'rotulo') + '" checked>' +
         '<span class="label-row-name">Uva</span><span>' + esc(g.name) + (g.percent ? ' · ' + g.percent + '%' : '') + '</span></label>';
     });
     h += '</div>';
@@ -221,6 +232,64 @@ var LabelScan = (function () {
     }).catch(function (e) { UI.busy(btn, false); out.innerHTML = ''; throw e; });
   }
 
-  return { html: html, photo: photoInput, apply: apply, ai: ai, setName: setName, touched: touched };
+  // ---------- Código de barras ----------
+  function eanOpen() {
+    var box = document.getElementById('ean-box');
+    box.hidden = !box.hidden;
+    if (!box.hidden) document.getElementById('ean-code').focus();
+  }
+
+  /** Lê o código numa foto: BarcodeDetector (Chrome/Android) ou ZXing (Safari/iPhone). */
+  function decode(file) {
+    if ('BarcodeDetector' in window) {
+      return createImageBitmap(file).then(function (img) {
+        return new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] }).detect(img);
+      }).then(function (res) { if (res[0]) return res[0].rawValue; throw new Error('sem código'); });
+    }
+    return loadZxing().then(function () {
+      var url = URL.createObjectURL(file);
+      return new ZXing.BrowserMultiFormatReader().decodeFromImageUrl(url).then(function (r) { URL.revokeObjectURL(url); return r.getText(); });
+    });
+  }
+  function loadZxing() {
+    if (window.ZXing) return Promise.resolve();
+    return new Promise(function (resolve, reject) {
+      var sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+      sc.onload = resolve; sc.onerror = reject;
+      document.head.appendChild(sc);
+    });
+  }
+
+  function eanPhoto(input) {
+    var file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    UI.toast('Lendo o código de barras…');
+    return decode(file).then(function (code) {
+      document.getElementById('ean-code').value = code;
+      return eanSearch();
+    }).catch(function () { UI.toast('Não consegui ler o código na foto. Aproxime a câmera ou digite os números.', true); });
+  }
+
+  function eanSearch(btn) {
+    var code = (document.getElementById('ean-code').value || '').replace(/\D/g, '');
+    if (!/^\d{8,14}$/.test(code)) return Promise.reject(new Error('Digite de 8 a 14 números.'));
+    var f = form();
+    if (f.elements.barcode && !f.elements.barcode.value) { f.elements.barcode.value = code; }
+    var out = document.getElementById('label-out');
+    out.innerHTML = '<div class="label-scan-body"><div class="label-scan-main" id="label-ocr"><p class="muted">Buscando o código ' + esc(code) + '…</p></div></div>';
+    if (btn) UI.busy(btn, true);
+    return API.call('barcode.lookup', { code: code }).then(function (r) {
+      if (btn) UI.busy(btn, false);
+      var curId = f.elements.id && f.elements.id.value;
+      var dup = r.existing && r.existing.id !== curId ? '<div class="callout" style="margin-bottom:12px">Este código já está no catálogo: <a href="#/vinhos/' + esc(r.existing.id) + '">' + esc(r.existing.name) + '</a>. Abra esse vinho em vez de cadastrar de novo.</div>' : '';
+      document.getElementById('label-ocr').innerHTML = dup + (r.found ? block(r, 'ean')
+        : '<div class="callout warn">Não encontrei o código ' + esc(code) + ' na base pública. Preencha o que souber, ou fotografe o rótulo; ao salvar, o código fica guardado e a rotina de fichas técnicas tenta de novo depois.</div>');
+    }).catch(function (e) { if (btn) UI.busy(btn, false); out.innerHTML = ''; throw e; });
+  }
+
+  return { html: html, photo: photoInput, apply: apply, ai: ai, setName: setName, touched: touched,
+    eanOpen: eanOpen, eanSearch: eanSearch, eanPhoto: eanPhoto };
 })();
 </script>

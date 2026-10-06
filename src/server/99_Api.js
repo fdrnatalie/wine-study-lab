@@ -57,6 +57,10 @@ var API_METHODS = {
   'wines.save': function (a) { return Wines.save(a.wine); },
   'label.read': function (a) { return Label.read(a.image, a.mime); },
   'label.ai': function (a) { return Enrichment.label(a.image, a.mime, a.text); },
+  'barcode.lookup': function (a) { return Barcode.lookup(a.code); },
+  'routine.status': function () { return Routine.status(); },
+  'routine.configure': function (a) { return Routine.configure(a); },
+  'routine.run': function () { return Routine.run(true); },
 
   'grapes.list': function () { return Grapes.list(); },
   'grapes.get': function (a) { return Grapes.get(a.id); },
@@ -141,7 +145,7 @@ var API_METHODS = {
 // Sem login.
 var PUBLIC_METHODS = { 'auth.config': 1, 'auth.login': 1 };
 // Só a administradora (enciclopédia, sincronização, IA, configurações, usuários).
-var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|label\.ai$|grapes\.(save|verify)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
+var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
 
 /**
  * Executa um método da API. resolveUser() identifica quem chama (sessão ou conta Google).
