@@ -431,7 +431,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
     put: function (k, v) { cache[k] = String(v); },
     remove: function (k) { delete cache[k]; }
   }; } };
-  g.LockService = { getScriptLock: function () { return { waitLock: function () {}, releaseLock: function () {} }; } };
+  g.LockService = { getScriptLock: function () { return { waitLock: function () {}, tryLock: function () { return true; }, releaseLock: function () {} }; } };
   var props = {};
   var scriptProps = props;
   g.PropertiesService = { getScriptProperties: function () { return {
@@ -1985,6 +1985,7 @@ var ScaleUtil = (function () {
  * v3 (06/10/2026): fichas completas das uvas que só tinham o nome (vindas dos packs de regiões), começando pelas
  *   mais citadas: origem, história, onde se planta, viticultura, aromas e perfil (Wikipedia + Wine Folly; quando
  *   não há artigo próprio, a Wikipedia em outra língua ou o artigo do vinho do país, com o link em `wiki`).
+ * v5 (06/10/2026): lote 3, mais 40 uvas (Grécia, Geórgia, Itália, Baleares, Portugal, Japão…).
  * v4 (06/10/2026): lote 2, mais 38 uvas (Cercial e Kraljevina seguem só com o nome: sem fonte encontrada).
  *
  * Para atualizar: edite este arquivo, aumente `version` e envie (clasp push). A importação roda
@@ -3689,14 +3690,337 @@ var GRAPE_ENCYCLOPEDIA = (function () {
   ];
 
 
+  var GRAPES_V5 = [
+    // ---------- v5 · lote 3 ----------
+    { name: 'Manto Negro', color: 'tinta', wiki: 'Manto_negro', wf: '',
+      origin: 'Espanha (Maiorca), provavelmente nativa. DNA: cruzamento natural de duas uvas baleares quase extintas, Sabaté e Callet Cas Concos — meia-irmã da Callet.',
+      synonyms: [],
+      main_countries: 'Espanha', main_regions: 'Maiorca: Binissalem-Mallorca (mínimo de 30% nos cortes), Plà i Llevant; a uva mais plantada da ilha (320 ha)',
+      ripening: 'Brota cedo e amadurece tarde; parte das bagas não completa o pintor e fica rosa-pálida.', berry_size: 'Grande', skin_thickness: 'Grossa',
+      soils: 'Vai melhor nos solos pedregosos de Binissalem.',
+      description: 'Para Jancis Robinson, tintos de cor clara, macios, leves e muitas vezes de álcool alto; por isso costuma ir em corte com a Callet, mais estruturada e menos alcoólica.',
+      profile: P('', 'leve', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Altesse', color: 'branca', wiki: 'Altesse', wf: '',
+      origin: 'Provavelmente francesa (há quem diga Chipre).',
+      synonyms: ['Roussette'],
+      main_countries: 'França', main_regions: 'Savoie (Roussette de Savoie), Bugey (Roussette du Bugey)',
+      ripening: 'Tardia; pouca produção.', disease_sensitivity: 'Resistente à podridão cinzenta.',
+      description: 'Brancos de aromas exóticos, com cítricos e ervas, boa acidez e bom envelhecimento; com ou sem carvalho. Na vinha lembra a Furmint húngara.',
+      profile: P('', '', '', 'media+', ''), aromas_wf: [], aromas_wiki: ['Limão'] },
+
+    { name: 'Sciaccarello', color: 'tinta', wiki: 'Sciacarello', wf: '',
+      origin: 'Córsega; tida como mãe/pai da Pollera Nera (Ligúria/Toscana).',
+      synonyms: ['Sciacarello', 'Sciaccarellu'],
+      main_countries: 'França (Córsega)', main_regions: 'Ajaccio, Calvi, Sartène (Propriano)',
+      description: 'Famosa pelos tintos muito perfumados de Ajaccio; quase sempre em corte, raramente varietal.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Mtsvane', color: 'branca', wiki: 'Mtsvane', wf: '',
+      origin: 'Geórgia; "mtsvane" quer dizer verde, novo, jovem — pela cor amarelo-esverdeada das bagas maduras.',
+      synonyms: ['Mtsvane Kakhuri'],
+      main_countries: 'Geórgia', main_regions: 'Kakheti',
+      description: 'Muitas vezes em corte com a Rkatsiteli, dando um branco frutado e aromático.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Alexandrouli', color: 'tinta', wiki: 'Aleksandrouli', wf: '',
+      origin: 'Geórgia; tida como uma das mais antigas e nobres do país (há registro de uma uva de mesa homônima, ligada à Muscat of Alexandria).',
+      synonyms: ['Aleksandrouli'],
+      main_countries: 'Geórgia', main_regions: 'Racha-Lechkhumi (Khvanchkara), oeste úmido da Geórgia',
+      description: 'Faz o famoso tinto meio-doce Khvanchkara e cortes meio-secos de corpo médio com a Mujuretuli, de boa acidez e aroma que lembra romã.',
+      profile: P('', 'medio', '', '', ''), aromas_wf: [], aromas_wiki: ['Romã'] },
+
+    { name: 'Mujuretuli', color: 'tinta', wiki: 'Mujuretuli', wf: '',
+      origin: 'Geórgia (exclusiva do país).',
+      synonyms: ['Mudzhuretuli', 'Keduretuli'],
+      main_countries: 'Geórgia', main_regions: 'Racha-Lechkhumi (Khvanchkara)',
+      bunch_size: 'Longos, de bagas roxo-escuras',
+      description: 'Desde 1907 em corte com a Alexandrouli no Khvanchkara; também rosés varietais e cortes meio-secos com aroma de romã.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: ['Romã'] },
+
+    { name: 'Agiorgitiko', color: 'tinta', wiki: 'Agiorgitiko', wf: 'agiorgitiko',
+      origin: 'Grécia, provavelmente Argólida e Coríntia (Peloponeso); as histórias de cultivo na Grécia antiga não têm comprovação.',
+      synonyms: ['Aghiorghitiko', 'Mavro Nemeas'],
+      main_countries: 'Grécia', main_regions: 'Nemea (única uva permitida na DOP), Ática (5.202 ha), Peloponeso (3.204 ha), Macedônia, Épiro',
+      berry_size: 'Pequena', skin_thickness: 'Grossa', bunch_size: 'Pequenos',
+      disease_sensitivity: 'Muito propensa a doenças; segundo Jancis Robinson, quase todas as vinhas gregas têm vírus.',
+      description: 'A tinta mais plantada da Grécia (2012). Muito versátil: de rosés e tintos macios por maceração carbônica a tintos muito tânicos, de fruta vermelha e especiarias, que envelhecem. Em Nemea é o "Sangue de Hércules". Serviço 15–20 °C; decantar 1 hora; guarda 10+ anos (Wine Folly).',
+      profile: P('seco', 'medio+', 'medio+', 'media', 'medio'),
+      flavors: 'framboesa, amora, calda de ameixa, pimenta-do-reino, noz-moscada',
+      aromas_wf: ['Framboesa', 'Amora', 'Ameixa', 'Pimenta-do-reino', 'Noz-moscada'], aromas_wiki: [] },
+
+    { name: 'Moschofilero', color: 'branca', wiki: 'Moschofilero', wf: 'moschofilero',
+      origin: 'Grécia.',
+      synonyms: [],
+      main_countries: 'Grécia', main_regions: 'Mantineia (PDO, perto de Trípoli, Peloponeso)',
+      ripening: 'Tardia; sofre com calor.', skin_thickness: 'Casca rosa-arroxeada',
+      description: 'Branca aromática e especiada, de boa acidez e buquê de "jardim de rosas", parecida com uma moscatel. Faz tranquilos, espumantes e doces; obrigatória no Mantineia (blanc de gris). Serviço 7–12 °C; guarda 1–3 anos (Wine Folly).',
+      profile: P('meio_seco', 'medio-', 'baixo', 'media+', 'medio'),
+      flavors: 'pot-pourri, melão, grapefruit rosa, limão, amêndoa',
+      aromas_wf: ['Melão', 'Grapefruit', 'Limão', 'Amêndoa'], aromas_wiki: ['Rosa'] },
+
+    { name: 'Assyrtiko', color: 'branca', wiki: 'Assyrtiko', wf: 'assyrtiko',
+      origin: 'Grécia (Santorini).',
+      synonyms: ['Asyrtiko'],
+      main_countries: 'Grécia, Austrália, EUA', main_regions: 'Santorini, Paros e outras ilhas do Egeu, Calcídica; Clare Valley (Austrália), Califórnia',
+      soils: 'Em Santorini, cinza vulcânica árida; vinhas conduzidas rente ao chão em "kouloura" (cesto).', bunch_size: 'Grandes, de bagas amarelo-douradas e suculentas',
+      description: 'Notável pela textura, acidez alta e mineralidade; em corte com Sauvignon Blanc, Sémillon e Malagousia. Serviço 3–7 °C; guarda 5–10 anos (Wine Folly).',
+      profile: P('seco', 'leve', 'baixo', 'alta', 'medio..alto'),
+      flavors: 'lima, maracujá, cera de abelha, sílex, salinidade',
+      aromas_wf: ['Lima', 'Maracujá', 'Cera', 'Sílex', 'Salino'], aromas_wiki: [] },
+
+    { name: 'Aidani', color: 'branca', wiki: 'Aidini', wf: '',
+      origin: 'Grécia (Santorini e ilhas do Egeu).',
+      synonyms: ['Aidini', 'Aedani'],
+      main_countries: 'Grécia', main_regions: 'Santorini e outras ilhas do Egeu',
+      description: 'Branca de aroma floral, usada sobretudo em corte com Athiri e Assyrtiko em vinhos secos.',
+      profile: P('seco', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Limnio', color: 'tinta', wiki: 'Limnio', wf: '',
+      origin: 'Grécia (ilha de Lemnos); quase certamente a uva "Lemnia" citada por Aristóteles.',
+      synonyms: ['Lemnia', 'Kalambaki'],
+      main_countries: 'Grécia', main_regions: 'Lemnos, Calcídica, Trácia',
+      ripening: 'Tardia.', disease_sensitivity: 'Muito resistente; aguenta secas fortes.',
+      description: 'Para Oz Clarke, "uma das tintas mais importantes da Grécia". Varietal encorpado, de taninos e acidez moderados e aroma mineral; em corte dá cor, peso, acidez e um aroma herbáceo que lembra folha de louro. Mosto rico em açúcar, álcool marcante; colhida tarde fica mais herbácea.',
+      profile: P('', 'encorpado', 'medio', 'media', ''), aromas_wf: [], aromas_wiki: ['Louro'] },
+
+    { name: 'Debina', color: 'branca', wiki: 'Debina_(grape)', wf: '',
+      origin: 'Épiro (Grécia) e sul da Albânia.',
+      synonyms: [],
+      main_countries: 'Grécia, Albânia', main_regions: 'Zitsa (Épiro); Përmet (Albânia)',
+      description: 'Branca de acidez alta, muito usada para espumantes.',
+      profile: P('', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Robola', color: 'branca', wiki: 'Robola', wf: '',
+      origin: 'Grécia (Cefalônia). Já se pensou que fosse a Ribolla friulana, levada por mercadores venezianos no século XIII, mas o DNA a separa (VIVC).',
+      synonyms: [],
+      main_countries: 'Grécia', main_regions: 'Cefalônia (Ilhas Jônicas)',
+      ripening: 'Precoce.', soils: 'Calcário; muitas vinhas em pé franco.',
+      description: 'Brancos secos de corpo médio, acidez alta e nota de limão marcante; Oz Clarke cita sílex.',
+      profile: P('seco', 'medio', '', 'alta', ''), aromas_wf: [], aromas_wiki: ['Limão', 'Sílex'] },
+
+    { name: 'Savatiano', color: 'branca', wiki: 'Savatiano', wf: 'savatiano',
+      origin: 'Grécia.',
+      synonyms: ['Savvatiano'],
+      main_countries: 'Grécia, Bulgária', main_regions: 'Ática (perto de Atenas), Eubeia; Pomorie (Bulgária)',
+      disease_sensitivity: 'Resistente à seca.',
+      description: 'Uma das uvas mais plantadas da Grécia e base do Retsina; a acidez baixa é compensada com Assyrtiko (Ática) ou Roditis (Eubeia). Hoje há brancos mais ricos e encorpados que lembram Chardonnay (Wine Folly). Serviço 7–12 °C; guarda 3–5 anos.',
+      profile: P('seco', 'medio', 'baixo', 'media-', 'medio'),
+      flavors: 'maçã verde, melão, raspa de lima, creme de limão, resina',
+      aromas_wf: ['Maçã verde', 'Melão', 'Lima', 'Limão', 'Resina'], aromas_wiki: [] },
+
+    { name: 'Teran', color: 'tinta', wiki: 'Terrano_(grape)', wf: '',
+      origin: 'Carso/Karst (Eslovênia e Itália), da família Refosco. Atenção: na Ístria croata há outra uva também chamada Teran.',
+      synonyms: ['Terrano', 'Kraški Teran', 'Terrano del Carso'],
+      main_countries: 'Eslovênia, Itália, Croácia', main_regions: 'Planalto do Karst (Kraški teran, Eslovênia, DOP "Teran" desde 2006), Carso DOC (Itália); Ístria (Croácia)',
+      description: 'A principal tinta do Karst; o Kraški teran tradicional não envelhece muito e é clássico com presunto cru (pršut). Plínio, o Velho, contava que o "puccinum" era o vinho preferido de Lívia, esposa de Augusto.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Ezerjó', color: 'branca', wiki: 'Ezerjó', wf: '',
+      origin: 'Hungria.',
+      synonyms: [],
+      main_countries: 'Hungria', main_regions: 'Mór',
+      description: 'Apreciada pelo nariz muito frutado e pelo frescor vivo e encorpado; também faz vinhos doces. Era uma das preferidas da corte dos Habsburgo; quase todo consumido na própria Hungria.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Prié Blanc', color: 'branca', wiki: 'Prié_blanc', wf: '',
+      origin: 'Itália (Valle d\'Aosta), documentada desde 1691 em Saint-Pierre; o DNA sugere ligação com as espanholas Lairén e Albillo. Mãe/pai da Mayolet e da Primetta.',
+      synonyms: ['Prié', 'Blanc de Morgex'],
+      main_countries: 'Itália', main_regions: 'Morgex e La Salle (Blanc de Morgex et de La Salle DOC), 39 ha em 2000',
+      description: 'Uma das uvas mais antigas do Valle d\'Aosta. Para Jancis Robinson, brancos secos de acidez fresca, com flores brancas e feno; também doces e espumantes de método tradicional.',
+      profile: P('seco', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: ['Feno'] },
+
+    { name: 'Picolit', color: 'branca', wiki: 'Picolit', wf: '',
+      origin: 'Itália (Friuli); o nome vem do pedúnculo muito pequeno ("pecolèt" em friulano).',
+      synonyms: ['Piccolit', 'Piccolito'],
+      main_countries: 'Itália', main_regions: 'Colli Orientali del Friuli (DOCG)',
+      description: 'Uva de vinhos doces, em colheita tardia ou passito (uvas secas em esteiras de palha). Fama internacional no século XVIII, quando o conde Fabio Asquini exportava mais de 100 mil garrafas para as cortes europeias. Equilíbrio de acidez e açúcar.',
+      profile: P('doce', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Verduzzo', color: 'branca', wiki: 'Verduzzo', wf: '',
+      origin: 'Itália (Friuli); primeiro registro em 6/6/1409, num banquete em Cividale del Friuli para o papa Gregório XII.',
+      synonyms: ['Verduzzo Friulano'],
+      main_countries: 'Itália', main_regions: 'Friuli (Udine: Nimis, Ramandolo DOCG), Piave (Vêneto); 1.658 ha em 2000',
+      ripening: 'Média a tardia; prefere encostas ensolaradas.', disease_sensitivity: 'Muito resistente à botrytis e à podridão — ótima para colheita tardia.',
+      description: 'De secos a doces de colheita tardia e passito (estes, os de mais sucesso). Os doces vão com queijos azuis, nozes e frutas; os secos, com frutos do mar.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Bosco', color: 'branca', wiki: 'Bosco_(grape)', wf: '',
+      origin: 'Itália (Ligúria).',
+      synonyms: [],
+      main_countries: 'Itália', main_regions: 'Cinque Terre DOC (muitas vezes a uva principal, com Albarola e Vermentino)',
+      description: 'Oxida com facilidade: exige cuidado na vinificação para evitar defeitos. Base do Cinque Terre e do doce Sciacchetrà.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Albarola', color: 'branca', wiki: 'Albarola', wf: '',
+      origin: 'Itália (Ligúria); antes também na Sicília.',
+      synonyms: ['Bianchetta Genovese', 'Trebbiano di Sarzana', 'Calcatella'],
+      main_countries: 'Itália', main_regions: 'Cinque Terre e La Spezia (com Bosco e Vermentino)',
+      description: 'Para Jancis Robinson, um branco bem "neutro"; sobretudo componente de corte no Cinque Terre.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Bianchetta Genovese', color: 'branca', wiki: 'Albarola', wf: '',
+      origin: 'Ligúria (Itália); sinônimo de Albarola.',
+      synonyms: ['Albarola'],
+      main_countries: 'Itália', main_regions: 'Ligúria (Golfo del Tigullio, Val Polcevera)',
+      description: 'Nome ligure da Albarola: veja a ficha da Albarola.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Albana', color: 'branca', wiki: 'Albana_(grape)', wf: '',
+      origin: 'Itália (Emília-Romanha); talvez trazida pelos romanos; o nome vem de "albus" (branco). Descrita no século XIII por Pier de\' Crescenzi.',
+      synonyms: [],
+      main_countries: 'Itália', main_regions: 'Romagna (Albana di Romagna, primeiro branco italiano DOCG, em 1987)',
+      description: 'Vinhos de cor profunda; possível parentesco com a Greco di Tufo. Faz secos, amabile e passito.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Pignoletto', color: 'branca', wiki: 'Grechetto', wf: '',
+      origin: 'Itália (Emília-Romanha); listada como sinônimo de Grechetto.',
+      synonyms: ['Grechetto'],
+      main_countries: 'Itália', main_regions: 'Colli Bolognesi (Pignoletto DOC/DOCG)',
+      description: 'Na Emília é a uva do Pignoletto, muitas vezes frisante ou espumante. A Wikipedia a lista entre os sinônimos da Grechetto: veja também essa ficha.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Vernaccia', color: 'branca', wiki: 'Vernaccia', wf: '',
+      origin: 'Itália (Toscana), antiga; origem discutida (Europa Oriental, Grécia ou Roma). Na Idade Média, o "Vernage" era popular em Londres.',
+      synonyms: ['Vernaccia di San Gimignano'],
+      main_countries: 'Itália', main_regions: 'San Gimignano (Vernaccia di San Gimignano DOCG)',
+      description: 'Branco vivo, de boa acidez e frutas cítricas; varietal ou com Trebbiano. Não tem parentesco com outras "Vernaccia" (a da Sardenha, a Vernatsch do Alto Ádige, a tinta de Serrapetrona).',
+      profile: P('', '', '', 'media+', ''), aromas_wf: [], aromas_wiki: ['Limão'] },
+
+    { name: 'Cesanese', color: 'tinta', wiki: 'Cesanese_Comune', wf: '',
+      origin: 'Itália (Lácio), provavelmente nativa; talvez usada já pelos romanos.',
+      synonyms: ['Cesanese Comune', 'Cesanese di Affile'],
+      main_countries: 'Itália', main_regions: 'Frosinone: Cesanese del Piglio, di Affile e di Olevano Romano; menos de 1.000 ha em 2000',
+      description: 'Tradicionalmente tintos doces, de frisantes a espumantes; desde o fim do século XX, sobretudo tintos secos tranquilos (mínimo de 90% da uva). A Cesanese di Affile é uma subvariedade própria da comuna.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Tintilia', color: 'tinta', wiki: 'Tintilia', wf: '',
+      origin: 'Itália (Molise); o nome deve vir de "tinta".',
+      synonyms: [],
+      main_countries: 'Itália', main_regions: 'Campobasso e Isernia (Tintilia del Molise DOC, 2011)',
+      description: 'A tinta-símbolo do Molise. Não confundir com a Tintilla de Rota, espanhola.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Piedirosso', color: 'tinta', wiki: 'Piedirosso', wf: '',
+      origin: 'Itália (Campânia); "pés vermelhos", como os pés de pombo. Tida como mãe/pai da Abbuoto.',
+      synonyms: ['Per\'e Palummo'],
+      main_countries: 'Itália', main_regions: 'Campânia (Campi Flegrei, Vesúvio, Ischia)',
+      description: 'Especialidade da Campânia, para consumo local e turístico; muitas vezes em corte com Aglianico.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Vernaccia di Oristano', color: 'branca', wiki: 'Vernaccia_di_Oristano', wf: '',
+      origin: 'Sardenha; uma das videiras mais antigas do Mediterrâneo ocidental — sementes de ~3 mil anos foram achadas num nuraghe perto de Cabras. Não é parente das outras "Vernaccia".',
+      synonyms: [],
+      main_countries: 'Itália', main_regions: 'Vale do baixo Tirso, Oristano (582 ha em 2000)',
+      ripening: 'Média a tardia.', disease_sensitivity: 'Geada tardia, míldio e oídio.',
+      description: 'Base exclusiva do DOC Vernaccia di Oristano: secos, doces e fortificados "tipo Xerez" envelhecidos em solera. Os sardos diziam que bebê-la protegia da malária.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Koshu', color: 'branca', wiki: 'Koshu_(grape)', wf: '',
+      origin: 'Japão (Vale de Koshu, Yamanashi). Antes tida como europeia, é um híbrido (provavelmente natural) de Vitis vinifera com espécies do Leste Asiático.',
+      synonyms: [],
+      main_countries: 'Japão', main_regions: 'Yamanashi (mais de 80 vinícolas, ~40% do vinho nacional)',
+      skin_thickness: 'Casca rosada',
+      description: 'Branco palha-claro, macio, frutado e aromático, com cítricos, pêssego e jasmim; sabor limpo, delicado e fresco — ótimo com culinária japonesa.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: ['Limão', 'Pêssego', 'Jasmim'] },
+
+    { name: 'Rară Neagră', color: 'tinta', wiki: 'Băbească_neagră', wf: '',
+      origin: 'Romênia/Moldávia, muito antiga (citada no início do século XIV). Mesmo que Băbească Neagră ("a preta da vovó").',
+      synonyms: ['Băbească Neagră', 'Sereksiya Charni'],
+      main_countries: 'Romênia, Moldávia, Ucrânia, EUA', main_regions: 'Galați (Nicorești), Vrancea (Odobești) na Romênia (4.516 ha em 2008); Orhei, Anenii Noi, Strășeni, Ialoveni na Moldávia',
+      ripening: 'Tardia; brota de média a tardiamente.', disease_sensitivity: 'Resiste a geadas (até −18 °C).',
+      description: 'Para Jancis Robinson, tintos claros, leves e frutados, de acidez notável, com nota característica de cereja ácida. A mutação rosada Băbească Gri dá brancos minerais com lima.',
+      profile: P('', 'leve', '', 'alta', ''), aromas_wf: [], aromas_wiki: ['Cereja vermelha'] },
+
+    { name: 'Alfrocheiro', color: 'tinta', wiki: 'Alfrocheiro_Preto', wf: '',
+      origin: 'Portugal.',
+      synonyms: ['Alfrocheiro Preto', 'Baboso Negro'],
+      main_countries: 'Portugal, Espanha', main_regions: 'Dão, Alentejo; Zamora e Salamanca (Baboso Negro); La Gomera e El Hierro (Canárias)',
+      description: 'Conhecida pela cor profunda que dá aos cortes.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Baga', color: 'tinta', wiki: 'Baga_(grape)', wf: 'baga',
+      origin: 'Portugal.',
+      synonyms: [],
+      main_countries: 'Portugal', main_regions: 'Bairrada (DOC), também no Dão',
+      description: 'Varietal tânico e de acidez alta. Muito usada no Mateus Rosé, mas também faz tintos de guarda e espumantes rosados complexos. Serviço 12–15 °C; decantar 1 hora; guarda 10+ anos (Wine Folly).',
+      profile: P('seco', 'medio+', 'alto', 'alta', 'medio'),
+      flavors: 'amora, cassis, cereja seca, cacau, alcatrão',
+      aromas_wf: ['Amora', 'Cassis', 'Cacau', 'Alcatrão'], aromas_wiki: [] },
+
+    { name: 'Moscatel Roxo', color: 'branca', wiki: 'Muscat_Rose_à_Petits_Grains', wf: '',
+      origin: 'Grécia; variação rosada da Muscat Blanc à Petits Grains.',
+      synonyms: ['Muscat Rose à Petits Grains', 'Moscato Rosa', 'Red Frontignac'],
+      main_countries: 'Portugal, França, Itália', main_regions: 'Setúbal (Moscatel Roxo), Alsácia (Muscat d\'Alsace), Alto Ádige (Moscato Rosa)',
+      berry_size: 'Pequena, em cachos apertados; casca rosada',
+      description: 'Da família das moscatéis; em Setúbal faz o raro Moscatel Roxo fortificado. Na Alsácia, uma das três moscatéis permitidas no Muscat d\'Alsace.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Callet', color: 'tinta', wiki: 'https://es.wikipedia.org/wiki/Callet', wf: '',
+      origin: 'Espanha (Maiorca, Felanitx).',
+      synonyms: ['Calleu'],
+      main_countries: 'Espanha', main_regions: 'Pla i Llevant e Binissalem (Maiorca)',
+      vigor: 'Pouco vigorosa, mas muito produtiva.', bunch_size: 'Médios e compactos; bagas grandes e redondas',
+      description: 'Vinhos de pouco álcool (difícil passar de 12,5%) e pouca cor, salvo em vinhas velhas e bons terroirs; aroma peculiar. Em corte (por exemplo com a Manto Negro) aceita bem madeira e envelhecimento.',
+      profile: P('', 'leve', '', '', 'baixo..medio'), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Prensal Blanc', color: 'branca', wiki: 'https://es.wikipedia.org/wiki/Moll_(uva)', wf: '',
+      origin: 'Espanha (Maiorca).',
+      synonyms: ['Moll', 'Premsal', 'Prensal'],
+      main_countries: 'Espanha', main_regions: 'Binissalem (Maiorca)',
+      description: 'Branca maiorquina recomendada nas Baleares; faz brancos tranquilos e espumantes.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Krakhuna', color: 'branca', wiki: 'Georgian_wine', wf: '',
+      origin: 'Geórgia ocidental (Imereti).',
+      synonyms: [],
+      main_countries: 'Geórgia', main_regions: 'Imereti',
+      description: 'Com a Tsolikauri (e a Tsitska) faz brancos secos do oeste da Geórgia, como o Gelati, inclusive pelo método tradicional de Imereti, com parte das cascas.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Ojaleshi', color: 'tinta', wiki: 'Georgian_wine', wf: '',
+      origin: 'Geórgia ocidental.',
+      synonyms: [],
+      main_countries: 'Geórgia', main_regions: 'Samegrelo; encostas do rio Tskhenis-Tskali (aldeia de Orbeli)',
+      description: 'Dá nome a um tinto meio-doce feito só com ela.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Vertzami', color: 'tinta', wiki: 'Greek_wine', wf: '',
+      origin: 'Grécia (Ilhas Jônicas).',
+      synonyms: [],
+      main_countries: 'Grécia', main_regions: 'Lêucade (Lefkada)',
+      skin_thickness: 'Grossa e escura',
+      description: 'Mais conhecida pelos varietais da ilha de Lêucade.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Leányka', color: 'branca', wiki: 'Hungarian_wine', wf: '',
+      origin: 'Hungria.',
+      synonyms: [],
+      main_countries: 'Hungria', main_regions: 'Eger',
+      description: 'Em Eger, faz brancos frescos (com a Királyleányka).',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] }
+  ];
+
+  var RELATIONS_V5 = [
+    ['parent_of', 'Prié Blanc', 'Mayolet', 'Prié_blanc'],
+    ['parent_of', 'Prié Blanc', 'Primetta', 'Prié_blanc'],
+    ['confused_with', 'Robola', 'Ribolla Gialla', 'Robola',
+      'Por séculos se achou que a Robola de Cefalônia fosse a Ribolla friulana (levada pelos venezianos); o DNA mostrou que são variedades diferentes. A Robola dá brancos secos de corpo médio, acidez alta e nota de limão marcante.'],
+    ['confused_with', 'Grechetto', 'Greco', 'Grechetto',
+      'Apesar de um sinônimo parecido ("Greco"), a Grechetto da Úmbria (Orvieto; pêssego branco, melão, flores) é outra uva que não a Greco da Campânia (Greco di Tufo; pêssego e notas de folhagem).']
+  ];
+
+
   grapes = grapes.concat(GRAPES_V2);
   relations = relations.concat(RELATIONS_V2);
   grapes = grapes.concat(GRAPES_V3);
   relations = relations.concat(RELATIONS_V3);
   grapes = grapes.concat(GRAPES_V4);
   relations = relations.concat(RELATIONS_V3B);
+  grapes = grapes.concat(GRAPES_V5);
+  relations = relations.concat(RELATIONS_V5);
 
-  return { version: 4, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
+  return { version: 5, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
 })();
 
 // ---- 16_SeedImport.js
@@ -3715,10 +4039,23 @@ var SeedEncyclopedia = (function () {
   var FIELDS = ['color', 'origin', 'main_countries', 'main_regions', 'ripening', 'vigor', 'skin_thickness',
     'berry_size', 'bunch_size', 'disease_sensitivity', 'climate', 'soils', 'description'];
 
-  function run() {
-    return Repo.withLock(function () {
+  var PROGRESS = 'GRAPE_ENC_PROGRESS';
+
+  /**
+   * Importa em etapas: cada chamada trabalha no máximo budgetMs e guarda onde parou
+   * (a planilha não fica travada por minutos na primeira abertura depois de uma versão nova).
+   * Devolve { done: bool, remaining, report } ou null se outra execução já está importando.
+   */
+  function run(budgetMs) {
+    var budget = budgetMs || 8000, t0 = Date.now();
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(1000)) return null;
+    try {
+      var props = PropertiesService.getScriptProperties();
       var E = GRAPE_ENCYCLOPEDIA;
-      var report = { grapes_new: 0, grapes_updated: 0, profiles: 0, aromas: 0, relations: 0, aromas_vocab: 0, skipped_fields: 0 };
+      var prog = JSON.parse(props.getProperty(PROGRESS) || 'null');
+      if (!prog || prog.version !== E.version) prog = { version: E.version, index: 0, report: null };
+      var report = prog.report || { grapes_new: 0, grapes_updated: 0, profiles: 0, aromas: 0, relations: 0, aromas_vocab: 0, skipped_fields: 0 };
 
       // 1. Vocabulário extra de aromas.
       var vocab = Util.indexBy(Repo.all('aromas'), 'name_key');
@@ -3730,8 +4067,10 @@ var SeedEncyclopedia = (function () {
       report.aromas_vocab = newVocab.length;
       var aromaByName = Util.indexBy(Repo.all('aromas'), 'name');
 
-      // 2. Uvas.
-      E.grapes.forEach(function (s) {
+      // 2. Uvas (a partir de onde parou).
+      for (; prog.index < E.grapes.length; prog.index++) {
+        if (Date.now() - t0 > budget) break;
+        (function (s) {
         var wikiUrl = /^https?:\/\//.test(s.wiki) ? s.wiki : E.WIKI + s.wiki, wfUrl = s.wf ? E.WF + s.wf + '/' : '';
         var rec = exactByName_(s.name) || Enrichment.findGrape(s.name) || s.synonyms.map(function (x) { return exactByName_(x); }).filter(Boolean)[0] || null;
         var values = {};
@@ -3795,7 +4134,13 @@ var SeedEncyclopedia = (function () {
         });
         Repo.insert('entity_aromas', add);
         report.aromas += add.length;
-      });
+        })(E.grapes[prog.index]);
+      }
+      if (prog.index < E.grapes.length) {
+        prog.report = report;
+        props.setProperty(PROGRESS, JSON.stringify(prog));
+        return { done: false, remaining: E.grapes.length - prog.index, report: report };
+      }
 
       // 3. Relações.
       var rels = Repo.all('grape_relationships');
@@ -3832,8 +4177,12 @@ var SeedEncyclopedia = (function () {
 
       Settings.set('grape_encyclopedia_version', E.version);
       Repo.insert('import_log', [{ run_at: Util.nowIso(), level: 'ok', message: 'Enciclopédia de uvas v' + E.version + ' importada.', details: report, source: 'sistema' }]);
-      return report;
-    });
+      props.deleteProperty(PROGRESS);
+      props.setProperty('GRAPE_ENCYCLOPEDIA_VERSION', String(E.version));
+      return { done: true, remaining: 0, report: report };
+    } finally {
+      lock.releaseLock();
+    }
   }
 
   function exactByName_(name) {
@@ -3850,15 +4199,26 @@ var SeedEncyclopedia = (function () {
   }
 
   /** Roda a importação uma vez por versão da enciclopédia (chamado automaticamente pela API). */
-  function ensure() {
+  function ensure(budgetMs) {
     var props = PropertiesService.getScriptProperties();
     if (props.getProperty('GRAPE_ENCYCLOPEDIA_VERSION') === String(GRAPE_ENCYCLOPEDIA.version)) return null;
-    var r = run();
-    props.setProperty('GRAPE_ENCYCLOPEDIA_VERSION', String(GRAPE_ENCYCLOPEDIA.version));
-    return r;
+    return run(budgetMs || 8000);
   }
 
-  return { run: run, ensure: ensure };
+  /** Importação completa (setup e botão "Reimportar"): chama run em etapas até acabar ou ~4 min. */
+  function runAll(restart) {
+    var props = PropertiesService.getScriptProperties();
+    if (restart) { props.deleteProperty(PROGRESS); props.deleteProperty('GRAPE_ENCYCLOPEDIA_VERSION'); }
+    var t0 = Date.now(), r = null;
+    while (Date.now() - t0 < 240000) {
+      r = run(30000);
+      if (!r) Utilities.sleep(2000);
+      else if (r.done) break;
+    }
+    return r || { done: false, remaining: -1 };
+  }
+
+  return { run: run, ensure: ensure, runAll: runAll };
 })();
 
 // ---- 17_SeedRegionsAM.js
@@ -13880,7 +14240,7 @@ var API_METHODS = {
   'regions.country': function (a) { return Regions.country(a.id); },
   'regions.get': function (a) { return Regions.get(a.id); },
   'seed.regions': function (p) { var r = SeedRegions.run(!(p && p.resume)); r.lookups = Catalog.lookups(); return r; },
-  'seed.grapes': function () { var r = SeedEncyclopedia.run(); r.lookups = Catalog.lookups(); return r; },
+  'seed.grapes': function () { var x = SeedEncyclopedia.runAll(true); var r = Object.assign({}, x.report || {}, { remaining: x.remaining }); r.lookups = Catalog.lookups(); return r; },
 
   'ai.status': function () { return Enrichment.status(); },
   'ai.setKey': function (a) { AiProvider.setKey(a.key); return Enrichment.status(); },
@@ -13940,7 +14300,7 @@ function dispatch_(method, args, resolveUser) {
     console.error(method, e && e.stack || e);
     try {   // diagnóstico temporário: só método e linhas do código (sem dados)
       var frames = String(e && e.stack || '').split('\n').filter(function (l) { return /\.gs|\.js|at /.test(l); }).slice(0, 8).join(' | ');
-      PropertiesService.getScriptProperties().setProperty('DEBUG_LAST', JSON.stringify({ at: Util.nowIso(), method: method, frames: frames, msg: Util.clampStr(msg, 80) }));
+      PropertiesService.getScriptProperties().setProperty('DEBUG_LAST', JSON.stringify({ at: Util.nowIso(), method: method, frames: frames }));
     } catch (x) { /* ignora */ }
     var auth = /^SESSAO: /.test(msg);
     return { ok: false, error: msg.replace(/^SESSAO: /, ''), auth: auth };
@@ -13983,8 +14343,9 @@ function ensureSchema_() {
     props.setProperty('SCHEMA_VERSION', String(CONFIG.SCHEMA_VERSION));
   }
   try {
-    SeedEncyclopedia.ensure();
-    SeedRegions.ensure();
+    // Em etapas curtas: a primeira abertura depois de uma versão nova não trava o app.
+    SeedEncyclopedia.ensure(8000);
+    SeedRegions.ensure(8000);
   } catch (e) {
     // Não bloqueia o app: registra e tenta de novo na próxima chamada.
     console.error('Enciclopédia de uvas', e && e.stack || e);
@@ -14005,7 +14366,7 @@ function setup() {
   Migrations.run();
   Ctx.setUser(Auth.ensureAdmin());   // o que a sincronização importar pertence à dona
   var sync = Import.run();
-  SeedEncyclopedia.ensure();
+  SeedEncyclopedia.runAll();
   SeedRegions.ensure(240000);
   var msg = ['Dono: ' + owner, 'Abas: ' + (schema.join('; ') || 'nenhuma alteração'),
     'Sementes: ' + (seeds.join('; ') || 'nenhuma'), 'Sincronização: ' + JSON.stringify(sync.stats)].join('\n');
