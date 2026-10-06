@@ -27,7 +27,9 @@ var Auth = (function () {
     return me;
   }
 
-  function clientId() { return props_().getProperty(CLIENT_PROP) || ''; }
+  function clientId() {
+    return props_().getProperty(CLIENT_PROP) || (typeof LOCAL_GOOGLE_CLIENT_ID !== 'undefined' ? LOCAL_GOOGLE_CLIENT_ID : '');
+  }
 
   function setClientId(id) {
     id = String(id || '').trim();

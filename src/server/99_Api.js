@@ -11,7 +11,7 @@
 
 function doGet(e) {
   // Depois que o site com login entra no ar, este endereço só aponta para ele.
-  var site = PropertiesService.getScriptProperties().getProperty('SITE_URL');
+  var site = PropertiesService.getScriptProperties().getProperty('SITE_URL') || (typeof LOCAL_SITE_URL !== 'undefined' ? LOCAL_SITE_URL : '');
   if (site) {
     return HtmlService.createHtmlOutput('<p style="font:16px system-ui;margin:40px">O Wine Study Lab agora fica em ' +
       '<a target="_top" href="' + site.replace(/"/g, '') + '">' + site.replace(/</g, '') + '</a>.</p>').setTitle(CONFIG.APP_NAME);
