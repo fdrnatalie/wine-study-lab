@@ -1001,9 +1001,31 @@ function renderLabelKeySection(round) {
   return `<section class="label-key-section">${renderWslWinePicker(round)}${renderLabelLookup(round)}${renderLookupDetails(round.labelInfo?.lookupData)}<div class="key-group-title"><div><h3>Ficha do rótulo · gabarito</h3><p>O dono preenche agora. Os participantes respondem depois que a garrafa for revelada.</p></div><span>7 critérios</span></div><div class="label-form-grid key-label-grid">${LABEL_FIELDS.map(field => `<label class="label-field ${['producer', 'wineName', 'grapes', 'barcode'].includes(field.key) ? 'wide' : ''}"><span>${esc(field.label)}${field.scored ? '' : ' · referência'}</span>${renderLabelKeyControl(field, round.labelInfo[field.key])}</label>`).join('')}</div></section>`;
 }
 
+// Wine Study Lab: país → só as regiões dele; região → só as sub-regiões dela.
+function scopedOptions(field, ctx = {}) {
+  const prefixOf = country => country ? country + ' · ' : '';
+  if (field.key === 'region' && ctx.country) {
+    const list = field.options.filter(option => option.startsWith(prefixOf(ctx.country)));
+    if (list.length) return list;
+  }
+  if (field.key === 'subregion') {
+    const parents = (WSL && WSL.subParent) || {};
+    if (ctx.region && WSL) {
+      const list = field.options.filter(option => parents[option] === ctx.region);
+      if (list.length) return list;
+    }
+    const country = ctx.country || (ctx.region ? String(ctx.region).split(' · ')[0] : '');
+    if (country) {
+      const list = field.options.filter(option => option.startsWith(prefixOf(country)));
+      if (list.length) return list;
+    }
+  }
+  return field.options;
+}
+
 function renderLabelKeyControl(field, value) {
   if (field.type === 'multi') return renderMultiPicker(field, value, 'label-key');
-  if (field.type === 'select') return field.catalog ? renderCatalogSelect(field, value, 'label-key') : `<select class="answer-select label-input" data-label-key data-field="${field.key}"><option value="">Escolher…</option>${field.options.map(option => `<option value="${esc(option)}" ${option === value ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select>`;
+  if (field.type === 'select') return field.catalog ? renderCatalogSelect(field, value, 'label-key', '', state.currentRound?.labelInfo || {}) : `<select class="answer-select label-input" data-label-key data-field="${field.key}"><option value="">Escolher…</option>${field.options.map(option => `<option value="${esc(option)}" ${option === value ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select>`;
   return `<input class="input label-input" data-label-key data-field="${field.key}" type="${field.type}" ${field.step ? `step="${field.step}"` : ''} ${field.min ? `min="${field.min}"` : ''} ${field.max ? `max="${field.max}"` : ''} value="${esc(value || '')}" placeholder="${esc(field.placeholder || '')}" />`;
 }
 
@@ -1014,13 +1036,16 @@ function selectFor(field, value, meta = {}) {
 }
 
 function labelSelectFor(field, value, participantId) {
-  if (field.catalog) return renderCatalogSelect(field, value, 'label-answer', participantId);
+  if (field.catalog) return renderCatalogSelect(field, value, 'label-answer', participantId, state.currentRound?.labelAnswers?.[participantId] || {});
   return `<select class="answer-select" data-label-answer data-field="${field.key}" data-participant="${participantId}"><option value="">Escolher…</option>${field.options.map(option => `<option value="${esc(option)}" ${option === value ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select>`;
 }
 
-function renderCatalogSelect(field, value, scope, participantId = '') {
+function renderCatalogSelect(field, value, scope, participantId = '', ctx = {}) {
   const customValue = value && !field.options.includes(value) ? value : '';
   const selectedValue = customValue ? CUSTOM_OPTION : value;
+  let options = scopedOptions(field, ctx);
+  if (value && !customValue && !options.includes(value)) options = [value, ...options];
+  field = { ...field, options };
   const baseAttrs = scope === 'label-key' ? `data-label-key data-field="${field.key}"` : `data-label-answer data-field="${field.key}" data-participant="${participantId}"`;
   return `<div class="catalog-control"><select class="answer-select" ${baseAttrs} data-catalog-select><option value="">Escolher…</option>${field.options.map(option => `<option value="${esc(option)}" ${option === selectedValue ? 'selected' : ''}>${esc(option)}</option>`).join('')}<option value="${CUSTOM_OPTION}" ${selectedValue === CUSTOM_OPTION ? 'selected' : ''}>Não encontrei — inserir</option></select><input class="input catalog-custom-input" data-catalog-custom data-scope="${scope}" data-field="${field.key}"${participantId ? ` data-participant="${participantId}"` : ''} value="${esc(customValue)}" placeholder="Não encontrou? digite aqui" autocomplete="off" /></div>`;
 }
@@ -1413,6 +1438,7 @@ function handleChange(event) {
       state.currentRound.labelInfo[field] = target.value;
     }
     saveState();
+    if (['country', 'region'].includes(field)) render();
     return;
   }
   if (target.matches('[data-label-answer]') && state.currentRound) {
@@ -1429,6 +1455,7 @@ function handleChange(event) {
       state.currentRound.labelAnswers[participantId][field] = target.value;
     }
     saveState();
+    if (['country', 'region'].includes(field)) { render(); return; }
     refreshRoundStatus();
     return;
   }
