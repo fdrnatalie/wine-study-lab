@@ -22,7 +22,7 @@ console.log(setup());
 </script>`;
 // Faixa fixa: deixa claro que o site público é uma demonstração (o app real é privado e lê a sua planilha).
 const demoBar = '<div style="position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#2A1724;color:#f7efe6;font:500 12px/1.4 system-ui,sans-serif;text-align:center;padding:6px 12px">' +
-  'Demonstração com dados fictícios — nada é salvo. O app de verdade é privado e usa a planilha da dona.</div>';
+  'Demonstração com dados fictícios — nada é salvo. O app de verdade é privado e usa a planilha da dona.</div><style>body{padding-bottom:34px}</style>';
 html = html.replace('<body>', '<body>' + boot + demoBar).replace('<head>', '<head><meta name="viewport" content="width=device-width, initial-scale=1">');
 fs.mkdirSync(path.join(root, 'build'), { recursive: true });
 fs.writeFileSync(path.join(root, 'build', 'preview.html'), html);

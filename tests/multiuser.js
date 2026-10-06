@@ -100,6 +100,27 @@ test('degustação completa de um membro, invisível para os outros', () => {
   assert.ok(!ok(post('tastings.list', {}, owner.token)).some((x) => x.id === t.id));
   assert.ok(ok(post('dashboard', {}, ana2.token)));
 });
+test('degustar garrafinhas escolhidas + "o que aprender"', () => {
+  const bottles = ok(post('bottles.list', {}, owner.token)).filter((b) => b.status === 'disponivel');
+  const wines = ok(post('wines.list', {}, owner.token));
+  const pick = bottles.filter((b) => (wines.find((w) => w.id === b.wine_id) || { grapes: [] }).grapes.length).slice(0, 3);
+  assert.ok(pick.length >= 2, 'precisa de garrafinhas com uva');
+  const t = ok(post('tastings.create', { bottle_ids: pick.map((b) => b.id) }, owner.token));
+  // outra pessoa não consegue usar garrafinhas da dona
+  assert.strictEqual(post('tastings.create', { bottle_ids: [pick[0].id] }, login('zed@example.com').token).ok, false);
+  const play = ok(post('tastings.play', { id: t.id }, owner.token));
+  assert.strictEqual(play.samples.length, pick.length);
+  const lk = ok(post('lookups', {}, owner.token));
+  const nebbiolo = lk.grapes.find((g) => g.name === 'Pinot Noir') || lk.grapes[0];
+  const someRegion = lk.regions.find((r) => !r.parent_id);
+  play.samples.forEach((sm) => ok(post('tastings.saveAnswers', { sample_id: sm.id, completed: true,
+    answers: { grape: { value_json: [nebbiolo.id] }, region: { value: someRegion.id }, acidity: { value: 'baixa' } } }, owner.token)));
+  const rep = ok(post('tastings.reveal', { id: t.id }, owner.token));
+  const all = rep.samples.flatMap((s) => s.lessons);
+  assert.ok(all.length > 0, 'sem lições');
+  assert.ok(all.every((l) => l.title && l.text && !/undefined|null/.test(l.text + l.title)), JSON.stringify(all.slice(0, 3)));
+  console.log('    ex.: ' + all.slice(0, 4).map((l) => l.title + ' — ' + l.text).join('\n    ex.: '));
+});
 test('IA, sincronização e usuários: só a administradora', () => {
   ['ai.status', 'sync.run', 'users.list', 'seed.grapes'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));
   assert.ok(ok(post('users.list', {}, owner.token)).length >= 3);

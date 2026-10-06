@@ -323,7 +323,11 @@ Pages.tastingReport = {
               '<td>' + (x.state === 'no_ref' ? '<span class="missing">sem gabarito</span>' : esc(x.expected)) + '</td><td>' + Components.state(x.state) + '</td>' +
               '<td style="text-align:right" class="nowrap">' + (x.max_points ? fmtNum(x.points) + ' / ' + x.max_points : '—') + '</td></tr>';
           }).join('') + '</tbody></table></div>' +
-          (s.free.conclusion ? '<p class="small"><b>Sua conclusão:</b> ' + esc(s.free.conclusion) + '</p>' : '') + '</div></article>';
+          (s.free.conclusion ? '<p class="small"><b>Sua conclusão:</b> ' + esc(s.free.conclusion) + '</p>' : '') +
+          (s.lessons && s.lessons.length ? '<div class="lessons"><div class="eyebrow">O que aprender com esta garrafa</div>' + s.lessons.map(function (l) {
+            return '<div class="lesson ' + esc(l.kind) + '"><b>' + esc(l.title) + '</b><p>' + esc(l.text) + '</p></div>';
+          }).join('') + '<p class="small muted">Com base na enciclopédia (uvas, regiões e seus perfis, com fontes nas páginas de cada uma).</p></div>' : '') +
+          '</div></article>';
       });
 
       if (r.samples.length > 1) {

@@ -52,7 +52,11 @@ Pages.cellar = {
     var bar = document.getElementById('cellar-bar');
     if (!ids.length) { bar.style.display = 'none'; return; }
     bar.style.display = '';
+    var byId = {};
+    Pages.cellar.data.forEach(function (b) { byId[b.id] = b; });
+    var allAvail = ids.every(function (id) { return byId[id] && byId[id].status === 'disponivel'; });
     bar.innerHTML = '<div class="btn-row" style="justify-content:space-between"><span><b>' + ids.length + '</b> selecionada(s)</span><span class="btn-row">' +
+      (allAvail && ids.length <= 12 ? '<button class="btn primary small" data-action="blind">Degustar às cegas</button>' : '') +
       (ids.length === 1 ? '<button class="btn small" data-action="details">Ver detalhes</button>' : '') +
       '<button class="btn small" data-action="set-status" data-s="disponivel">Disponível</button>' +
       '<button class="btn small" data-action="set-status" data-s="utilizada">Utilizada</button>' +
@@ -60,6 +64,14 @@ Pages.cellar = {
       '<button class="btn small ghost" data-action="clear">Limpar</button></span></div>';
   },
   actions: {
+    blind: function (btn) {
+      var ids = Object.keys(Pages.cellar.selected);
+      UI.busy(btn, true);
+      return API.call('tastings.create', { bottle_ids: ids }).then(function (r) {
+        UI.toast('Degustação criada com ' + ids.length + ' garrafinha(s). Bom trabalho às cegas!');
+        Router.go('/degustacao/' + r.id);
+      }).catch(function (e) { UI.busy(btn, false); throw e; });
+    },
     filter: function (btn) {
       Pages.cellar.filter = btn.getAttribute('data-f');
       btn.parentNode.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });

@@ -28,6 +28,21 @@ var Tastings = (function () {
       };
       var allowRepeat = !!input.allow_repeat;
 
+      // Garrafinhas escolhidas na adega: usa exatamente essas, na ordem dos números.
+      if (Array.isArray(input.bottle_ids) && input.bottle_ids.length) {
+        var picked = Validate.ids(input.bottle_ids).filter(function (id, i, a) { return a.indexOf(id) === i; })
+          .map(function (id) { return Repo.get('bottles', id); });
+        if (picked.length > 12) throw new Error('Escolha no máximo 12 garrafinhas.');
+        picked.forEach(function (b) {
+          if (!b) throw new Error('Garrafinha não encontrada.');
+          if (b.status !== 'disponivel') throw new Error('A garrafinha #' + b.number + ' não está disponível.');
+        });
+        picked.sort(function (a, b) { return a.number - b.number; });
+        return start_(picked, Validate.str(input.title, 200, 'título') ||
+          ('Às cegas — garrafinhas ' + picked.map(function (b) { return '#' + b.number; }).join(', ')),
+          difficulty, Validate.str(input.theme, 200, 'tema'), { bottle_ids: picked.map(function (b) { return b.id; }) });
+      }
+
       var wines = Util.indexBy(Repo.all('wines'), 'id');
       var wg = Util.groupBy(Repo.all('wine_grapes'), 'wine_id');
       var pool = Repo.all('bottles').filter(function (b) {
@@ -64,16 +79,20 @@ var Tastings = (function () {
       var title = Validate.str(input.title, 200, 'título') ||
         ('Degustação às cegas — ' + count + ' vinho' + (count > 1 ? 's' : '') +
           (filters.color ? ' ' + ({ tinto: 'tintos', branco: 'brancos', rose: 'rosés', laranja: 'laranja' }[filters.color] || '') : ''));
-      var tasting = Repo.insert('tastings', [{
-        title: title, date: Util.nowIso(), status: 'em_andamento', difficulty: difficulty, theme: theme,
-        filters: filters, source: 'usuario'
-      }])[0];
-      Repo.insert('tasting_samples', chosen.map(function (b, i) {
-        return { tasting_id: tasting.id, bottle_id: b.id, position: i + 1, completed: false, source: 'usuario' };
-      }));
-      Repo.update('bottles', chosen.map(function (b) { return { id: b.id, status: 'reservada', status_changed_at: Util.nowIso() }; }));
-      return { id: tasting.id };
+      return start_(chosen, title, difficulty, theme, filters);
     });
+  }
+
+  function start_(chosen, title, difficulty, theme, filters) {
+    var tasting = Repo.insert('tastings', [{
+      title: title, date: Util.nowIso(), status: 'em_andamento', difficulty: difficulty, theme: theme,
+      filters: filters, source: 'usuario'
+    }])[0];
+    Repo.insert('tasting_samples', chosen.map(function (b, i) {
+      return { tasting_id: tasting.id, bottle_id: b.id, position: i + 1, completed: false, source: 'usuario' };
+    }));
+    Repo.update('bottles', chosen.map(function (b) { return { id: b.id, status: 'reservada', status_changed_at: Util.nowIso() }; }));
+    return { id: tasting.id };
   }
 
   // ---------- Jogo ----------
@@ -295,6 +314,7 @@ var Tastings = (function () {
     var answers = Util.groupBy(Repo.where('tasting_answers', { tasting_id: t.id }), 'sample_id');
     var rules = Util.indexBy(Settings.rules(), 'criterion');
     var allResults = [];
+    var lessonCtx = Lessons.context();
 
     var samples = samples_(t.id).map(function (s) {
       var b = bottles[s.bottle_id] || {};
@@ -318,7 +338,8 @@ var Tastings = (function () {
             given: L.display(r.criterion, r.given), expected: L.display(r.criterion, r.expected)
           };
         }),
-        free: free
+        free: free,
+        lessons: Lessons.forSample(lessonCtx, rs)
       };
     });
 

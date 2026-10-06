@@ -332,4 +332,12 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .nav-user { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--ink-2); font-size: .85rem; }
 .nav-user img { width: 26px; height: 26px; border-radius: 50%; }
 .nav-user span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* O que aprender (resultado da degustação) */
+.lessons { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
+.lesson { border-left: 3px solid var(--line-2); padding: 6px 12px; margin: 10px 0; background: var(--paper-2); border-radius: 0 8px 8px 0; }
+.lesson p { margin: 4px 0 0; }
+.lesson.confusao, .lesson.parentesco { border-left-color: var(--near); }
+.lesson.faz-sentido, .lesson.dica { border-left-color: var(--hit); }
+.lesson.reconhecer, .lesson.clima, .lesson.regiao { border-left-color: var(--info); }
 </style>
