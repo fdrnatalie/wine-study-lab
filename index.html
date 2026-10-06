@@ -3292,6 +3292,22 @@ Pages.genealogy = {
 </script>
 
   <script>
+/** Contornos dos mapas: arquivo estático (geo.js) baixado uma vez pelo navegador; na prévia já vem na página. */
+var GeoData = {
+  promise: null,
+  load: function () {
+    if (window.GEO_REGIONS) return Promise.resolve();
+    if (!GeoData.promise) GeoData.promise = new Promise(function (resolve) {
+      var sc = document.createElement('script');
+      sc.src = (window.WSL_CONFIG && window.WSL_CONFIG.geoUrl) || 'geo.js';
+      sc.onload = resolve; sc.onerror = function () { GeoData.promise = null; resolve(); };   // sem mapa, o resto da página funciona
+      document.head.appendChild(sc);
+    });
+    return GeoData.promise;
+  },
+  get: function (key) { return key && window.GEO_REGIONS ? window.GEO_REGIONS[key] || null : null; }
+};
+
 /* ============================================================
    Regiões: países → região → sub-regiões, com mapa (Leaflet + OpenStreetMap).
    Contornos: ISTAT via openpolis (CC BY 4.0). Pontos: OpenStreetMap Nominatim (ODbL).
@@ -3362,7 +3378,9 @@ Pages.regions = {
 /* ---------------- País ---------------- */
 Pages.country = {
   render: function (p) {
-    return API.call('regions.country', { id: p.id }).then(function (c) {
+    return Promise.all([API.call('regions.country', { id: p.id }), GeoData.load()]).then(function (res) {
+      var c = res[0];
+      Object.keys(c.geo).forEach(function (id) { var g = GeoData.get(c.geo[id]); if (g) c.geo[id] = g; else delete c.geo[id]; });
       Pages.country.data = c;
       var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/regioes">Regiões</a></div><h1>' + esc(c.name) + '</h1>' +
         '<p class="sub">' + plural(c.regions.length, 'região', 'regiões') + '</p></div></div>';
@@ -3424,7 +3442,9 @@ Pages.country = {
 /* ---------------- Região ---------------- */
 Pages.region = {
   render: function (p) {
-    return API.call('regions.get', { id: p.id }).then(function (r) {
+    return Promise.all([API.call('regions.get', { id: p.id }), GeoData.load()]).then(function (res) {
+      var r = res[0];
+      r.geo = GeoData.get(r.geo_key);
       Pages.region.data = r;
       Pages.region.focus = p.id !== r.id ? p.id : null;          // link direto para uma sub-região
       var refs = r.field_refs || {}, fs = r.field_sources || {};
