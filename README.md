@@ -12,6 +12,11 @@ sobre uma planilha simulada (dados fictícios; nada é salvo). O app de verdade 
 planilha da dona. Para instalar o seu, copie `src/server/00_Local.example.js` para `00_Local.js` e
 `.clasp.example.json` para `.clasp.json` (veja docs/INSTALACAO.md).
 
+**Jogo "Degustação às Cegas" (FDR Wine Lab):** integrado em `src/game/` (origem: github.com/fdrnatalie/fdr-wine-lab).
+Abre em outra aba pelo menu (`?page=jogo`), com o visual próprio, mas usando países, regiões, sub-regiões, uvas e
+perfis da planilha; o gabarito pode ser preenchido com um vinho do cadastro. Dados da planilha servidos por
+`src/server/36_GameData.js` (campos "IA · não verificado" ficam de fora). Demo: https://fdrnatalie.github.io/wine-study-lab/jogo.html
+
 Regra de ouro do projeto: **nenhum dado é inventado.** Todo valor tem origem registrada
 (você, rótulo, pesquisa com fonte, planilha, IA revisada ou não verificada), e só fontes
 confiáveis viram gabarito de degustação.

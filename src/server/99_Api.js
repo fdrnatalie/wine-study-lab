@@ -7,11 +7,31 @@
  *  - onOpen() : menu "Wine Study Lab" na planilha.
  */
 
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.page === 'jogo') return gamePage_();
   var t = HtmlService.createTemplateFromFile('client/index');
   return t.evaluate()
     .setTitle(CONFIG.APP_NAME)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/** Jogo "Degustação às Cegas" (FDR Wine Lab), aberto em outra aba, com os catálogos da planilha. */
+function gamePage_() {
+  Auth.assertOwner();
+  ensureSchema_();
+  var t = HtmlService.createTemplateFromFile('game/index');
+  t.gameData = GameData.json();
+  return t.evaluate()
+    .setTitle('Degustação às Cegas · FDR Wine Lab')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/** Endereço do jogo (mesmo app, ?page=jogo). */
+function gameUrl_() {
+  try {
+    var url = ScriptApp.getService().getUrl();
+    return url ? url + '?page=jogo' : '';
+  } catch (e) { return ''; }
 }
 
 /** Inclui um arquivo HTML dentro de outro (usado no template). */
@@ -20,7 +40,7 @@ function include(name) {
 }
 
 var API_METHODS = {
-  'bootstrap': function () { return { lookups: Catalog.lookups(), dashboard: Stats.dashboard(), app: { name: CONFIG.APP_NAME, version: CONFIG.SCHEMA_VERSION } }; },
+  'bootstrap': function () { return { lookups: Catalog.lookups(), dashboard: Stats.dashboard(), app: { name: CONFIG.APP_NAME, version: CONFIG.SCHEMA_VERSION, game_url: gameUrl_() } }; },
   'dashboard': function () { return Stats.dashboard(); },
   'lookups': function () { return Catalog.lookups(); },
 

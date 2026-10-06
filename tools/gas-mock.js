@@ -87,7 +87,7 @@
   var DEMO_LABEL = 'Rótulo de demonstração (OCR simulado)\nCANTINA DEMO\nBAROLO\nDenominazione di Origine Controllata e Garantita\n' +
     'NEBBIOLO\nVendemmia 2019\n14,5% vol\n750 ml\nVino rosso\nPRODOTTO IN ITALIA';
   g.MimeType = { GOOGLE_DOCS: 'application/vnd.google-apps.document' };
-  g.ScriptApp = { getOAuthToken: function () { return 'mock-token'; } };
+  g.ScriptApp = { getOAuthToken: function () { return 'mock-token'; }, getService: function () { return { getUrl: function () { return 'jogo.html#'; } }; } };
   g.Utilities.newBlob = function (bytes, mime, name) { return { bytes: bytes, mime: mime, name: name }; };
   g.Utilities.base64Decode = function (b64) { return b64; };
   g.Drive = { Files: { create: function () { return { id: 'OCR_MOCK' }; } } };
