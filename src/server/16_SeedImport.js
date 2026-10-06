@@ -30,7 +30,7 @@ var SeedEncyclopedia = (function () {
 
       // 2. Uvas.
       E.grapes.forEach(function (s) {
-        var wikiUrl = E.WIKI + s.wiki, wfUrl = s.wf ? E.WF + s.wf + '/' : '';
+        var wikiUrl = /^https?:\/\//.test(s.wiki) ? s.wiki : E.WIKI + s.wiki, wfUrl = s.wf ? E.WF + s.wf + '/' : '';
         var rec = exactByName_(s.name) || Enrichment.findGrape(s.name) || s.synonyms.map(function (x) { return exactByName_(x); }).filter(Boolean)[0] || null;
         var values = {};
         FIELDS.forEach(function (f) { if (!Util.isBlank(s[f])) values[f] = s[f]; });
