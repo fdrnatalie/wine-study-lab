@@ -136,7 +136,7 @@
   g.ScriptApp.getProjectTriggers = function () { return triggers.slice(); };
   g.ScriptApp.deleteTrigger = function (t) { triggers = triggers.filter(function (x) { return x !== t; }); };
   g.ScriptApp.newTrigger = function (fn) {
-    var b = { timeBased: function () { return b; }, everyDays: function () { return b; }, atHour: function () { return b; },
+    var b = { timeBased: function () { return b; }, everyDays: function () { return b; }, everyHours: function () { return b; }, atHour: function () { return b; },
       create: function () { var t = { getHandlerFunction: function () { return fn; } }; triggers.push(t); return t; } };
     return b;
   };

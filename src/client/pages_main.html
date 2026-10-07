@@ -149,14 +149,16 @@ function memberSettings_() {
 function routinePanel_(rt) {
   var last = rt.last_run;
   return '<section class="panel"><h2 style="margin-top:0">Rotina de fichas técnicas</h2>' +
-    '<p class="muted">Uma vez por dia (~4h) verifica vinhos com ficha incompleta: tenta de novo o código de barras (grátis, só preenche campos vazios, com a fonte) ' +
-    'e, se ainda faltar, pesquisa com IA. As sugestões da IA ficam em <a href="#/revisao">Revisão da IA</a> para você aprovar. Cada vinho volta à fila depois de 30 dias.</p>' +
+    '<p class="muted">Uma vez por dia (~4h) ou de hora em hora, verifica vinhos com ficha incompleta — campos técnicos, uvas, perfil (acidez, corpo, nariz, boca) e aromas: tenta de novo o código de barras (grátis, só preenche campos vazios, com a fonte) ' +
+    'e, se ainda faltar, pesquisa com IA a ficha técnica do produtor. As sugestões da IA ficam em <a href="#/revisao">Revisão da IA</a> para você aprovar. Cada vinho volta à fila depois de 30 dias.</p>' +
     '<form data-action="routine-save"><div class="form-grid">' +
     '<div><label class="f"><input type="checkbox" name="enabled"' + (rt.enabled ? ' checked' : '') + '> Rotina ligada</label>' +
       '<div class="small muted">' + (rt.scheduled ? 'Agendada todo dia.' : 'Não agendada.') + '</div></div>' +
     '<div><label class="f"><input type="checkbox" name="use_ai"' + (rt.use_ai ? ' checked' : '') + '> Usar IA quando faltar dado</label>' +
       '<div class="small muted">' + (rt.ai_key ? 'Chave da IA configurada.' : 'Sem chave da IA: só o código de barras.') + '</div></div>' +
-    '<div><label class="f">Vinhos por dia</label><input class="in" name="max_per_run" type="number" min="1" max="20" value="' + esc(rt.max_per_run) + '"></div>' +
+    '<div><label class="f"><input type="checkbox" name="hourly"' + (rt.hourly ? ' checked' : '') + '> Rodar de hora em hora</label>' +
+      '<div class="small muted">Para dar conta de muitos vinhos; o teto de gasto continua valendo.</div></div>' +
+    '<div><label class="f">Vinhos por execução</label><input class="in" name="max_per_run" type="number" min="1" max="20" value="' + esc(rt.max_per_run) + '"></div>' +
     '<div><label class="f">Teto de gasto com IA no mês (US$)</label><input class="in" name="max_cost_month" type="number" min="0" max="100" step="0.5" value="' + esc(rt.max_cost_month) + '">' +
       '<div class="small muted">Gasto neste mês: US$ ' + fmtNum(rt.month_cost_usd, 2) + '</div></div></div>' +
     '<div class="btn-row" style="margin-top:14px"><button class="btn primary">Salvar</button><button type="button" class="btn" data-action="routine-run">Rodar agora</button>' +
@@ -249,9 +251,9 @@ Pages.settings = {
     'routine-save': function (form) {
       var btn = form.querySelector('button.primary');
       UI.busy(btn, true);
-      return API.call('routine.configure', { enabled: form.enabled.checked, use_ai: form.use_ai.checked,
+      return API.call('routine.configure', { enabled: form.enabled.checked, use_ai: form.use_ai.checked, hourly: form.hourly.checked,
         max_per_run: form.max_per_run.value, max_cost_month: form.max_cost_month.value }).then(function (rt) {
-        UI.toast(rt.enabled ? 'Rotina ligada: roda todo dia de madrugada.' : 'Rotina desligada.');
+        UI.toast(rt.enabled ? (rt.hourly ? 'Rotina ligada: roda de hora em hora.' : 'Rotina ligada: roda todo dia de madrugada.') : 'Rotina desligada.');
         Router.render();
       }).catch(function (e) { UI.busy(btn, false); throw e; });
     },

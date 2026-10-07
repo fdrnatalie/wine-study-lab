@@ -71,9 +71,12 @@ var Enrichment = (function () {
     return { type: 'string', enum: out };
   }
 
+  var PROFILE_TEXTS = ['visual_text', 'nose_text', 'palate_text'];
+
   function profileSchema(allowRange) {
     var p = {};
     PROFILE_SCALES.forEach(function (s) { p[s] = scaleEnum(s, allowRange); });
+    if (!allowRange) PROFILE_TEXTS.forEach(function (t) { p[t] = STR; });   // vinho: notas de visual, nariz e boca
     p.source_url = STR;
     p.source_title = STR;
     return obj(p);
@@ -157,7 +160,8 @@ var Enrichment = (function () {
       'Procure primeiro a ficha técnica do produtor para esta safra (ou a mais próxima, dizendo qual em source_title). Use dados sobre ESTE vinho; não use dados genéricos da uva ou da denominação.',
       Object.keys(known).length ? 'Já cadastrado:\n' + JSON.stringify(known, null, 1) : '',
       'Campos possíveis (em fields):\n' + fieldDoc(WINE_FIELDS),
-      'Perfil sensorial deste vinho (em profile), um nível por característica, somente se a ficha técnica ou uma avaliação profissional descrever:\n' + scaleDoc(),
+      'Perfil sensorial deste vinho (em profile), um nível por característica, somente se a ficha técnica ou uma avaliação profissional descrever:\n' + scaleDoc() +
+        '\nEm profile.visual_text, profile.nose_text e profile.palate_text, resuma em português o que a ficha técnica (ou avaliação profissional) diz sobre a aparência, o nariz e a boca deste vinho; deixe vazio o que a fonte não disser.',
       'Aromas descritos para este vinho (em aromas): use somente nomes do vocabulário permitido.'
     ].filter(Boolean).join('\n\n');
     var schema = obj({ fields: fieldsSchema(WINE_FIELDS), profile: profileSchema(false), aromas: aromaSchema(), not_found: STR });
@@ -258,11 +262,13 @@ var Enrichment = (function () {
   function addProfile_(add, entityType, entityId, p) {
     if (!p) return;
     var vals = {}, any = false;
-    PROFILE_SCALES.forEach(function (s) { if (p[s]) { vals[s] = p[s]; any = true; } });
+    PROFILE_SCALES.concat(PROFILE_TEXTS).forEach(function (s) {
+      if (p[s] && !Util.isAiErrorText(p[s])) { vals[s] = PROFILE_TEXTS.indexOf(s) >= 0 ? Util.clampStr(String(p[s]), 2000) : p[s]; any = true; }
+    });
     if (!any) return;
     var cur = Catalog.profileOf(entityType, entityId);
     var curVals = {};
-    if (cur) PROFILE_SCALES.forEach(function (s) { if (cur[s]) curVals[s] = cur[s]; });
+    if (cur) PROFILE_SCALES.concat(PROFILE_TEXTS).forEach(function (s) { if (cur[s]) curVals[s] = cur[s]; });
     add('profile', 'perfil sensorial', Object.keys(curVals).length ? JSON.stringify(curVals) : '', JSON.stringify(vals), p);
   }
 

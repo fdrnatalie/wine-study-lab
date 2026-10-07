@@ -20,17 +20,28 @@ var Routine = (function () {
       enabled: Settings.get('routine_enabled', '0') === '1',
       max_per_run: Math.max(1, Math.min(20, Settings.getNumber('routine_max_per_run', 5))),
       max_cost_month: Math.max(0, Settings.getNumber('routine_max_cost_month', 2)),
-      use_ai: Settings.get('routine_use_ai', '1') === '1'
+      use_ai: Settings.get('routine_use_ai', '1') === '1',
+      hourly: Settings.get('routine_hourly', '0') === '1'
     };
   }
 
   var LABELS = { abv: 'teor alcoólico', classification: 'classificação', production_method: 'método de produção', aging: 'estágio',
     region_id: 'região', type: 'tipo', color: 'cor' };
 
-  function missing_(w, grapeCount) {
+  function missing_(w, grapeCount, hasProfile, hasAromas) {
     var m = KEY_FIELDS.filter(function (f) { return Util.isBlank(w[f]); }).map(function (f) { return LABELS[f]; });
     if (!grapeCount) m.push('uvas');
+    if (!hasProfile) m.push('perfil (acidez, corpo, nariz, boca)');
+    if (!hasAromas) m.push('aromas');
     return m;
+  }
+
+  /** Perfil confiável e aromas já cadastrados, por vinho. */
+  function sensory_() {
+    var prof = {}, aro = {};
+    Repo.where('profiles', { entity_type: 'wine' }).forEach(function (p) { if (Catalog.isTrusted(p.source)) prof[p.entity_id] = true; });
+    Repo.where('entity_aromas', { entity_type: 'wine' }).forEach(function (a) { aro[a.entity_id] = true; });
+    return { prof: prof, aro: aro };
   }
 
   function monthCost_() {
@@ -45,8 +56,9 @@ var Routine = (function () {
     var pending = {};
     Repo.where('enrichment_queue', { status: 'pendente' }).forEach(function (q) { pending[q.entity_id] = true; });
     var limit = Date.now() - RECHECK_DAYS * 864e5;
+    var sens = sensory_();
     return Repo.all('wines').map(function (w) {
-      return { w: w, missing: missing_(w, (grapes[w.id] || []).length) };
+      return { w: w, missing: missing_(w, (grapes[w.id] || []).length, sens.prof[w.id], sens.aro[w.id]) };
     }).filter(function (x) {
       if (x.missing.length < 2 || pending[x.w.id]) return false;
       return !x.w.sheet_checked_at || new Date(x.w.sheet_checked_at).getTime() < limit;
@@ -91,7 +103,8 @@ var Routine = (function () {
           if (n) line.done.push(n + ' campo(s) pelo código de barras');
         }
         var after = Repo.get('wines', w.id);
-        var stillMissing = missing_(after, Repo.where('wine_grapes', { wine_id: w.id }).length);
+        var sens2 = sensory_();
+        var stillMissing = missing_(after, Repo.where('wine_grapes', { wine_id: w.id }).length, sens2.prof[w.id], sens2.aro[w.id]);
         var status = stillMissing.length < 2 ? 'ok' : 'incompleto';
         if (stillMissing.length >= 2 && cfg.use_ai && AiProvider.hasKey()) {
           if (monthCost_() >= cfg.max_cost_month) { summary.stopped = 'teto de gasto do mês'; line.done.push('IA pulada (teto do mês)'); }
@@ -121,7 +134,9 @@ var Routine = (function () {
 
   function setEnabled(on) {
     triggers_().forEach(function (t) { ScriptApp.deleteTrigger(t); });
-    if (on) ScriptApp.newTrigger(HANDLER).timeBased().everyDays(1).atHour(4).create();
+    // De hora em hora (para dar conta de muitos vinhos) ou uma vez por dia (~4h).
+    if (on && Settings.get('routine_hourly', '0') === '1') ScriptApp.newTrigger(HANDLER).timeBased().everyHours(1).create();
+    else if (on) ScriptApp.newTrigger(HANDLER).timeBased().everyDays(1).atHour(4).create();
     Settings.set('routine_enabled', on ? '1' : '0');
   }
 
@@ -142,6 +157,7 @@ var Routine = (function () {
     Settings.set('routine_max_per_run', Validate.num(a.max_per_run, 1, 20, 'Vinhos por execução') || 5);
     Settings.set('routine_max_cost_month', Validate.num(a.max_cost_month, 0, 100, 'Teto mensal (US$)') === '' ? 2 : Validate.num(a.max_cost_month, 0, 100, 'Teto mensal (US$)'));
     Settings.set('routine_use_ai', a.use_ai ? '1' : '0');
+    Settings.set('routine_hourly', a.hourly ? '1' : '0');
     setEnabled(!!a.enabled);
     return status();
   }
