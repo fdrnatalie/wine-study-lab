@@ -71,7 +71,7 @@ var Quiz = (function () {
     c.rg.forEach(function (x) { if (x.region_id === region.id) linked[x.grape_id] = true; });
     var wrong = pickN(c.known.filter(function (g) { return !linked[g.id] && (!right.color || g.color === right.color); }).map(function (g) { return g.name; }), 3);
     return q('regiao-uva', 'Qual destas uvas é uma das principais em ' + region.name + ' (' + countryName(c, region) + ')?', right.name, wrong,
-      trim(region.description || region.climate || '', 260), refOf(region, 'description'));
+      'Uvas principais de ' + region.name + ': ' + main.map(function (g) { return g.name; }).join(', ') + '. ' + trim(region.description || region.climate || '', 220), refOf(region, 'description'));
   }
 
   function qRegionOfGrape(c, g) {
@@ -83,7 +83,7 @@ var Quiz = (function () {
     var label = function (r) { return r.name + ' (' + countryName(c, r) + ')'; };
     var wrong = pickN(c.regions.filter(function (r) { return !mine[r.id] && !r.parent_id; }).map(label), 3);
     return q('uva-regiao', 'Em qual destas regiões a ' + g.name + ' é uma uva principal?', label(right), wrong,
-      trim(right.description || '', 220), refOf(right, 'description'));
+      'A ' + g.name + ' é uva principal em: ' + regs.slice(0, 6).map(label).join('; ') + '. ' + trim(right.description || '', 180), refOf(right, 'description'));
   }
 
   function qAroma(c, g) {
