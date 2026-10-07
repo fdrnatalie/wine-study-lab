@@ -323,7 +323,8 @@ Pages.tastingReport = {
         return '<div>' + icon + ' ' + esc(label) + ': <b>' + a.hit + '/' + a.total + '</b>' + (a.near ? ' <span class="muted small">(+' + a.near + ' próx.)</span>' : '') + '</div>';
       }
       var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/degustacao/historico">Histórico</a> · ' + fmtDate(r.date) + ' · ' + esc(DIFFICULTY[r.difficulty] ? DIFFICULTY[r.difficulty][0] : '') + '</div>' +
-        '<h1>Resultado da degustação</h1><p class="sub">' + esc(r.title) + '</p></div><div class="btn-row"><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>';
+        '<h1>Resultado da degustação</h1><p class="sub">' + esc(r.title) + '</p></div><div class="btn-row"><a class="btn" href="#/quiz?degustacao=' + esc(r.id) + '">Fazer o quiz destes vinhos</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>' +
+        '<div class="callout" style="margin-bottom:16px">Para fixar o que você provou: <a href="#/quiz?degustacao=' + esc(r.id) + '"><b>faça o quiz</b></a> com perguntas sobre estas uvas, regiões e as diferenças entre elas.</div>';
 
       html += '<section class="panel score-hero"><div class="eyebrow">' + plural(r.samples.length, 'vinho analisado', 'vinhos analisados') + '</div>' +
         '<div class="big">' + (r.score === '' || r.score === null ? '—' : fmtNum(r.score, 0)) + '<small>/100</small></div>' +

@@ -90,6 +90,7 @@ var API_METHODS = {
   'notes.remove': function (a) { return Notes.remove(a.id); },
 
   'search': function (a) { return Search.run(a.q); },
+  'quiz.generate': function (a) { return Quiz.generate({ tasting_id: a.tasting_id, n: a.n }); },
 
   'settings.get': function () {
     return { settings: Repo.all('settings'), rules: Settings.rules(), scales: Settings.scales(), last_log: Ctx.isAdmin() ? Import.lastLog(60) : [] };

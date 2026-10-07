@@ -344,4 +344,10 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .pick-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .pick-btl { min-width: 54px; padding: 8px 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--paper); color: var(--ink); font-weight: 600; cursor: pointer; }
 .pick-btl.on { background: var(--wine); border-color: var(--wine); color: #fff; }
+.quiz-options { display: grid; gap: 10px; }
+.quiz-opt { text-align: left; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--paper); color: var(--ink); font: inherit; cursor: pointer; }
+.quiz-opt:hover:not(:disabled) { border-color: var(--wine); }
+.quiz-opt.right { border-color: var(--hit); background: var(--hit-soft); }
+.quiz-opt.wrong { border-color: var(--miss, #b4232c); background: var(--miss-soft, #f6dede); }
+.quiz-opt:disabled { cursor: default; }
 </style>

@@ -1,0 +1,58 @@
+<script>
+/* ============================== QUIZ ==============================
+ * #/quiz → aleatório; #/quiz?degustacao=ID → sobre as uvas, regiões e vinhos da degustação.
+ * Uma pergunta por vez; ao responder, mostra se acertou, a explicação e a fonte. */
+Pages.quiz = {
+  render: function (p) {
+    var tid = p.query && p.query.degustacao;
+    return API.raw_('quiz.generate', { tasting_id: tid || '', n: 10 }).then(function (r) {
+      Pages.quiz.state = { data: r, i: 0, score: 0, answered: false, tid: tid || '' };
+      return '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>' + esc(r.title) + '</h1>' +
+        '<p class="sub">' + (tid ? 'Perguntas sobre as uvas, regiões e vinhos desta degustação.' : 'Perguntas sorteadas da enciclopédia: uvas, regiões, aromas, estrutura e confusões clássicas.') + '</p></div>' +
+        '<div class="btn-row">' + (tid ? '<a class="btn" href="#/degustacao/' + esc(tid) + '/resultado">Voltar ao resultado</a>' : '') +
+        '<button class="btn" data-action="restart">Novo quiz</button></div></div><div id="quiz-box"></div>';
+    });
+  },
+  mount: function () { Pages.quiz.draw(); },
+  draw: function () {
+    var S = Pages.quiz.state, box = document.getElementById('quiz-box');
+    if (!box) return;
+    var qs = S.data.questions;
+    if (!qs.length) { box.innerHTML = Components.empty('Ainda não há dados suficientes para montar perguntas.', 'Preencha fichas de uvas e regiões.'); return; }
+    if (S.i >= qs.length) {
+      var pct = Math.round(S.score / qs.length * 100);
+      box.innerHTML = '<section class="panel score-hero"><div class="eyebrow">Resultado</div><div class="big">' + S.score + '<small>/' + qs.length + '</small></div>' +
+        '<p class="muted">' + (pct >= 80 ? 'Excelente! Você domina estes vinhos.' : pct >= 50 ? 'Bom caminho — revise as explicações das que errou.' : 'Vale estudar as fichas destas uvas e regiões e tentar de novo.') + '</p>' +
+        '<div class="btn-row" style="justify-content:center"><button class="btn primary" data-action="restart">Fazer outro quiz</button>' +
+        '<a class="btn" href="#/uvas">Ver fichas das uvas</a></div></section>';
+      return;
+    }
+    var q = qs[S.i];
+    box.innerHTML = '<section class="panel quiz-card"><div class="eyebrow">Pergunta ' + (S.i + 1) + ' de ' + qs.length + ' · ' + S.score + ' acerto(s)</div>' +
+      Components.meter(Math.round(S.i / qs.length * 100)) +
+      '<h2 class="serif" style="margin:16px 0">' + esc(q.question) + '</h2><div class="quiz-options">' +
+      q.options.map(function (o, k) { return '<button class="quiz-opt" data-action="answer" data-k="' + k + '">' + esc(o) + '</button>'; }).join('') +
+      '</div><div id="quiz-feedback"></div></section>';
+  },
+  actions: {
+    answer: function (btn) {
+      var S = Pages.quiz.state;
+      if (S.answered) return;
+      S.answered = true;
+      var q = S.data.questions[S.i], k = Number(btn.getAttribute('data-k')), ok = k === q.answer;
+      if (ok) S.score++;
+      document.querySelectorAll('.quiz-opt').forEach(function (b, idx) {
+        b.disabled = true;
+        if (idx === q.answer) b.classList.add('right');
+        else if (idx === k) b.classList.add('wrong');
+      });
+      var src = q.source && /^https?:/.test(q.source) ? ' <a href="' + esc(q.source) + '" target="_blank" rel="noopener">fonte ↗</a>' : '';
+      document.getElementById('quiz-feedback').innerHTML = '<div class="lesson ' + (ok ? 'faz-sentido' : 'confusao') + '" style="margin-top:16px"><b>' + (ok ? 'Acertou!' : 'Resposta: ' + esc(q.options[q.answer])) + '</b>' +
+        (q.explanation ? '<p>' + esc(q.explanation) + src + '</p>' : '') + '</div>' +
+        '<div class="btn-row" style="justify-content:flex-end;margin-top:12px"><button class="btn primary" data-action="next">' + (S.i + 1 < S.data.questions.length ? 'Próxima →' : 'Ver resultado') + '</button></div>';
+    },
+    next: function () { var S = Pages.quiz.state; S.i++; S.answered = false; Pages.quiz.draw(); window.scrollTo(0, 0); },
+    restart: function () { Router.render(); }
+  }
+};
+</script>
