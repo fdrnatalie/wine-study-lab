@@ -359,6 +359,11 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .quiz-opt.right { border-color: var(--hit); background: var(--hit-soft); }
 .quiz-opt.wrong { border-color: var(--miss, #b4232c); background: var(--miss-soft, #f6dede); }
 .quiz-opt:disabled { cursor: default; }
+.frac-opt { display: block; margin: 6px 0; }
+.prof-step { display: flex; align-items: center; gap: 8px; margin: 22px 0 6px; }
+.prof-step span { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--wine); color: #fff; font-size: .75rem; font-weight: 700; }
+.prof-grid { display: grid; gap: 4px 28px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.prof-sec h4.prof-step { margin-top: 6px; }
 </style>
 
 </head>
@@ -950,6 +955,24 @@ var Components = {
     return '<div class="scales">' + Components.PALATE.map(function (p) { return Components.scaleRow(p[1], p[0], profile[p[0]]); }).join('') + '</div>';
   },
 
+  /** Perfil de um vinho na ordem da degustação: visual → nariz → boca → conclusão. */
+  profileSections: function (pr, aromas) {
+    var BAL = { desequilibrado: 'Desequilibrado', pouco_equilibrado: 'Pouco equilibrado', equilibrado: 'Equilibrado', harmonico: 'Harmônico' };
+    var CPX = { simples: 'Simples', media: 'Complexidade média', complexa: 'Complexo' };
+    function sec(n, title, body) { return '<div class="prof-sec"><h4 class="prof-step"><span>' + n + '</span> ' + title + '</h4>' + body + '</div>'; }
+    if (!pr) return '<p>' + Components.missing('Perfil sensorial não cadastrado') + '</p>' + sec(2, 'Nariz', Components.aromaGroups(aromas));
+    var scaleRow = function (k, label) { return Components.scaleRow(label, k, pr[k]); };
+    var visual = '<div class="scales">' + scaleRow('color_intensity', 'Intensidade da cor') + scaleRow('color_hue', 'Tonalidade') + '</div>' +
+      (pr.visual_text ? '<p>' + esc(pr.visual_text) + '</p>' : '');
+    var nose = Components.aromaGroups(aromas) + (pr.nose_text ? '<p>' + esc(pr.nose_text) + '</p>' : '');
+    var order = [['sweetness', 'Dulçor'], ['acidity', 'Acidez'], ['tannin', 'Tanino'], ['alcohol', 'Álcool'], ['body', 'Corpo'], ['intensity', 'Intensidade de sabor'], ['finish', 'Persistência']];
+    var mouth = '<div class="scales">' + order.map(function (o) { return scaleRow(o[0], o[1]); }).join('') + '</div>' + (pr.palate_text ? '<p>' + esc(pr.palate_text) + '</p>' : '');
+    var chips = [BAL[pr.balance], CPX[pr.complexity]].filter(Boolean).map(function (t) { return '<span class="chip">' + esc(t) + '</span>'; }).join('');
+    var concl = (chips ? '<div class="chips" style="margin-bottom:8px">' + chips + '</div>' : '') + (pr.conclusion_text ? '<p>' + esc(pr.conclusion_text) + '</p>' : '');
+    return '<div class="prof-grid">' + sec(1, 'Visual', visual) + sec(2, 'Nariz', nose) + sec(3, 'Boca', mouth) +
+      sec(4, 'Conclusão', concl || '<p>' + Components.missing('Conclusão não cadastrada') + '</p>') + '</div>';
+  },
+
   /** Aromas agrupados por categoria (somente leitura). */
   aromaGroups: function (aromas) {
     if (!aromas || !aromas.length) return '<p>' + Components.missing('Aromas não cadastrados') + '</p>';
@@ -1495,11 +1518,7 @@ Pages.wine = {
         html += '<div class="callout warn" style="margin-bottom:16px">Este perfil veio de uma fonte <b>não verificada</b> (' + esc(Components.SOURCE_LABELS[pr.source] || pr.source) + '). ' +
           'Ele não é usado como gabarito. Revise os valores e salve com a origem correta (ficha técnica, pesquisa ou sua avaliação) para ativá-lo.</div>';
       }
-      html += '<div class="grid two"><div>' + Components.palate(pr) + '</div><div>' +
-        (pr ? '<div class="fields">' +
-          Components.field('Visual', pr.visual_text, { wide: true }) + Components.field('Nariz', pr.nose_text, { wide: true }) + Components.field('Boca', pr.palate_text, { wide: true }) +
-          '</div>' : '') +
-        '<h3>Aromas</h3>' + Components.aromaGroups(w.aromas) + '</div></div>' +
+      html += Components.profileSections(pr, w.aromas) +
         (pr ? '<div class="small muted" style="margin-top:12px">Origem: ' + Components.src(pr.source) + (pr.source_ref ? ' · ' + esc(pr.source_ref) : '') + '</div>' : '') +
         '</section>';
 
@@ -1510,14 +1529,15 @@ Pages.wine = {
         Components.field('Minhas notas', w.my_notes, { wide: true }) +
         '</div></section>';
 
-      html += '<section class="panel"><h3 style="margin-top:0">Garrafinhas</h3>';
+      html += '<section class="panel"><div class="page-head" style="margin-bottom:8px"><h3 style="margin:0">Garrafinhas</h3>' +
+        '<button class="btn small" data-action="add-bottles">+ Adicionar garrafinhas</button></div>';
       if (w.bottles.length) {
         var avail = w.bottles.filter(function (b) { return b.status === 'disponivel'; }).length;
         html += '<p class="muted small">' + avail + ' disponível(is) de ' + w.bottles.length + '.</p><div class="cellar">' + w.bottles.map(function (b) {
           return '<div class="btl' + (b.status === 'disponivel' ? '' : ' dim') + '" title="' + esc(b.status) + '">' + Components.bottle(b.number, { status: b.status }) + '<span class="n">#' + b.number + '</span></div>';
         }).join('') + '</div>';
       } else {
-        html += '<p class="muted">Nenhuma garrafinha. <a href="#/adega/fracionar?wine=' + w.id + '">Fracionar uma garrafa</a>.</p>';
+        html += '<p class="muted">Nenhuma garrafinha ainda. Use <b>Adicionar garrafinhas</b> para fracionar uma garrafa e escolher os números.</p>';
       }
       html += '<h3>Meu desempenho com este vinho</h3>';
       if (w.my_results.length) {
@@ -1537,6 +1557,10 @@ Pages.wine = {
     'edit-profile': function () {
       var w = Pages.wine.data;
       ProfileEditor.open('wine', w.id, w.profile, w.aromas, function () { Router.render(); });
+    },
+    'add-bottles': function () {
+      var w = Pages.wine.data;
+      Fractionate.openModal(w, function () { Router.render(); });
     },
     'my-notes': function () {
       var w = Pages.wine.data;
@@ -1561,23 +1585,38 @@ function ruleLabel(criterion) {
 
 /** Editor de perfil sensorial (vinho = gabarito; uva = perfil típico, aceita faixas). */
 var ProfileEditor = {
+  BALANCE: [{ v: 'desequilibrado', t: 'Desequilibrado' }, { v: 'pouco_equilibrado', t: 'Pouco equilibrado' }, { v: 'equilibrado', t: 'Equilibrado' }, { v: 'harmonico', t: 'Harmônico' }],
+  COMPLEXITY: [{ v: 'simples', t: 'Simples' }, { v: 'media', t: 'Média' }, { v: 'complexa', t: 'Complexa' }],
   open: function (entityType, entityId, profile, aromas, done) {
     profile = profile || {};
     var isGrape = entityType === 'grape';
-    var fields = Components.PALATE.concat([['color_intensity', 'Intensidade da cor'], ['color_hue', 'Tonalidade']]);
-    var html = '<h2>' + (isGrape ? 'Perfil típico da uva' : 'Perfil de referência (gabarito)') + '</h2>' +
-      '<p class="muted small">' + (isGrape ? 'Selecione um nível, ou dois para indicar uma faixa (ex.: média a alta).' : 'Selecione um nível por característica. Deixe em branco o que você não souber.') + '</p>' +
-      '<form data-profile>' + fields.map(function (f) {
+    var visual = [['color_intensity', 'Intensidade da cor'], ['color_hue', 'Tonalidade']];
+    // Boca na ordem de degustação: dulçor, acidez, tanino, álcool, corpo, intensidade, persistência.
+    var palate = [['sweetness', 'Dulçor'], ['acidity', 'Acidez'], ['tannin', 'Tanino'], ['alcohol', 'Álcool'], ['body', 'Corpo'], ['intensity', 'Intensidade de sabor'], ['finish', 'Persistência']];
+    var fields = visual.concat(palate);
+    function segs(list) {
+      return list.map(function (f) {
         var v = profile[f[0]] || '';
         var sel = String(v).split('..').filter(Boolean);
         return '<div style="margin:12px 0"><label class="f">' + esc(f[1]) + '</label>' +
           Components.seg(f[0], f[0], isGrape ? sel : sel[0], { multi: isGrape }) + '</div>';
-      }).join('') +
-      '<div class="form-grid" style="margin-top:16px">' +
-      '<div class="wide"><label class="f">Visual</label><textarea class="in" name="visual_text">' + esc(profile.visual_text || '') + '</textarea></div>' +
-      '<div class="wide"><label class="f">Nariz</label><textarea class="in" name="nose_text">' + esc(profile.nose_text || '') + '</textarea></div>' +
-      '<div class="wide"><label class="f">Boca</label><textarea class="in" name="palate_text">' + esc(profile.palate_text || '') + '</textarea></div>' +
-      '</div><h3>Aromas</h3>' + Components.aromaPicker('aromas', (aromas || []).map(function (a) { return a.id; })) +
+      }).join('');
+    }
+    function step(n, title, hint) { return '<h3 class="prof-step"><span>' + n + '</span> ' + title + '</h3>' + (hint ? '<p class="muted small" style="margin:-4px 0 6px">' + hint + '</p>' : ''); }
+    var html = '<h2>' + (isGrape ? 'Perfil típico da uva' : 'Perfil de referência (gabarito)') + '</h2>' +
+      '<p class="muted small">' + (isGrape ? 'Selecione um nível, ou dois para indicar uma faixa (ex.: média a alta).' : 'Siga a ordem da degustação: visual, nariz, boca e conclusão. Deixe em branco o que você não souber.') + '</p>' +
+      '<form data-profile>' +
+      step(1, 'Visual') + segs(visual) +
+      '<div class="form-grid"><div class="wide"><label class="f">Visual — observações</label><textarea class="in" name="visual_text" rows="2">' + esc(profile.visual_text || '') + '</textarea></div></div>' +
+      step(2, 'Nariz') + Components.aromaPicker('aromas', (aromas || []).map(function (a) { return a.id; })) +
+      '<div class="form-grid" style="margin-top:12px"><div class="wide"><label class="f">Nariz — observações</label><textarea class="in" name="nose_text" rows="2">' + esc(profile.nose_text || '') + '</textarea></div></div>' +
+      step(3, 'Boca') + segs(palate) +
+      '<div class="form-grid"><div class="wide"><label class="f">Boca — observações</label><textarea class="in" name="palate_text" rows="2">' + esc(profile.palate_text || '') + '</textarea></div></div>' +
+      (isGrape ? '' :
+        step(4, 'Conclusão', 'O conjunto: é harmônico, equilibrado, complexo? Pede guarda? Evolui no copo?') +
+        '<div style="margin:12px 0"><label class="f">Equilíbrio</label>' + Components.seg('balance', '', profile.balance || '', { options: ProfileEditor.BALANCE }) + '</div>' +
+        '<div style="margin:12px 0"><label class="f">Complexidade</label>' + Components.seg('complexity', '', profile.complexity || '', { options: ProfileEditor.COMPLEXITY }) + '</div>' +
+        '<div class="form-grid"><div class="wide"><label class="f">Conclusão — detalhes sobre o vinho</label><textarea class="in" name="conclusion_text" rows="3" placeholder="ex.: harmônico, madeira bem integrada, final longo; bom para guardar mais 3–5 anos">' + esc(profile.conclusion_text || '') + '</textarea></div></div>') +
       '<div class="form-grid" style="margin-top:18px">' +
       '<div><label class="f">Origem destes dados</label><select class="in" name="source">' +
       Components.options([{ v: 'usuario', t: 'Minha avaliação' }, { v: 'rotulo', t: 'Rótulo / ficha técnica do produtor' }, { v: 'pesquisado', t: 'Pesquisado (fonte citada)' }, { v: 'ia_revisada', t: 'IA, revisado por mim' }, { v: 'ia_nao_verificada', t: 'Não verificado' }],
@@ -1605,6 +1644,7 @@ var ProfileEditor = {
         } else data[f[0]] = v;
       });
       data.aroma_ids = Components.readAromas(form);
+      if (!isGrape) { data.balance = Components.readSeg(form, 'balance') || ''; data.complexity = Components.readSeg(form, 'complexity') || ''; }
       var btn = form.querySelector('button.primary');
       UI.busy(btn, true);
       API.call('profiles.save', { entity_type: entityType, entity_id: entityId, profile: data }).then(function () {
@@ -2437,48 +2477,171 @@ Pages.cellar = {
 };
 
 /* ============================== FRACIONAR ============================== */
+/**
+ * Fracionamento (usado na página "Fracionar garrafa" e na janela aberta dentro do detalhe do vinho).
+ * Numeração: aleatória, sequencial, "preencher lacunas" (menores números livres — repõe os que acabaram)
+ * ou escolher os números à mão (ex.: 5, 9, 12-15), com conferência na hora dos que já estão em uso.
+ */
+var Fractionate = {
+  /** Números ocupados (garrafinhas disponíveis ou reservadas), em um objeto {n: true}. */
+  usedFrom: function (bottles) {
+    var used = {};
+    (bottles || []).forEach(function (b) { if (b.status === 'disponivel' || b.status === 'reservada') used[b.number] = true; });
+    return used;
+  },
+  freeLow: function (used, n) {
+    var out = [];
+    for (var i = 1; out.length < n && i <= 9999; i++) if (!used[i]) out.push(i);
+    return out;
+  },
+  /** "5, 9, 12-15" → { nums: [..], error: '' } */
+  parse: function (text) {
+    var nums = [], seen = {};
+    var parts = String(text || '').split(/[\s,;]+/).filter(Boolean);
+    for (var i = 0; i < parts.length; i++) {
+      var m = parts[i].match(/^(\d{1,4})\s*[-–]\s*(\d{1,4})$/), list = [];
+      if (m) {
+        var a = +m[1], b = +m[2];
+        if (b < a || b - a > 200) return { nums: [], error: 'Intervalo inválido: ' + parts[i] };
+        for (var k = a; k <= b; k++) list.push(k);
+      } else if (/^\d{1,4}$/.test(parts[i])) list.push(+parts[i]);
+      else return { nums: [], error: 'Use números como 5, 9, 12-15 (separados por vírgula).' };
+      for (var j = 0; j < list.length; j++) { if (list[j] < 1) return { nums: [], error: 'Os números começam em 1.' }; if (!seen[list[j]]) { seen[list[j]] = true; nums.push(list[j]); } }
+    }
+    return { nums: nums, error: '' };
+  },
+
+  /** Campos do formulário. wineHtml = seletor do vinho ou campo oculto. */
+  fieldsHtml: function (wineHtml) {
+    return '<div class="form-grid">' + wineHtml +
+      '<div><label class="f">Data do fracionamento</label><input class="in" type="date" name="date" value="' + new Date().toISOString().slice(0, 10) + '"></div>' +
+      '<div><label class="f">Volume original (ml)</label><input class="in" type="number" name="original_volume_ml" value="750" data-input="calc"></div>' +
+      '<div><label class="f">Quantidade de garrafinhas *</label><input class="in" type="number" name="count" value="22" min="1" max="100" data-input="calc"></div>' +
+      '<div><label class="f">Volume por garrafinha (ml)</label><input class="in" type="number" name="bottle_volume_ml" value="30" data-input="calc"></div>' +
+      '<div class="wide"><label class="f">Numeração</label>' +
+      '<label class="frac-opt"><input type="radio" name="numbering" value="aleatoria" checked data-change="frac-mode"> <b>Aleatória</b> — o sistema sorteia números livres (recomendado: o número não revela o vinho).</label>' +
+      '<label class="frac-opt"><input type="radio" name="numbering" value="lacunas" data-change="frac-mode"> <b>Preencher os números livres</b> — usa os menores números disponíveis (repõe os que foram acabando).</label>' +
+      '<label class="frac-opt"><input type="radio" name="numbering" value="manual" data-change="frac-mode"> <b>Escolher os números</b> — você digita quais.</label>' +
+      '<label class="frac-opt"><input type="radio" name="numbering" value="sequencial" data-change="frac-mode"> Sequencial — em sequência, depois do maior número em uso.</label></div>' +
+      '<div class="wide" id="frac-manual" hidden><label class="f">Números das garrafinhas</label>' +
+      '<input class="in" name="numbers" placeholder="ex.: 5, 9, 12-15" autocomplete="off" data-input="calc">' +
+      '<div class="small muted" id="frac-free" style="margin-top:6px"></div>' +
+      '<div class="btn-row" style="margin-top:6px"><button type="button" class="btn small" data-action="frac-fill">Usar os livres mais baixos</button></div></div>' +
+      '<div class="wide"><label class="f">Observações</label><textarea class="in" name="notes"></textarea></div>' +
+      '</div><p class="muted small" id="calc-hint"></p>';
+  },
+
+  /** Liga a conferência ao vivo (chame depois de inserir o formulário). */
+  wire: function (form) {
+    var self = this;
+    form._used = {};
+    API.call('bottles.list').then(function (list) { form._used = self.usedFrom(list); self.refresh(form); }).catch(function () {});
+    self.refresh(form);
+  },
+
+  refresh: function (form) {
+    var d = formData(form), manual = d.numbering === 'manual', used = form._used || {};
+    document.getElementById('frac-manual').hidden = !manual;
+    var countEl = form.count;
+    countEl.disabled = manual;
+    var hint = '';
+    var free = this.freeLow(used, 12);
+    var freeEl = document.getElementById('frac-free');
+    if (freeEl) freeEl.textContent = 'Livres mais baixos agora: ' + (free.join(', ') || '—') + (Object.keys(used).length ? ' · em uso: ' + Object.keys(used).length + ' garrafinha(s)' : '');
+    if (manual) {
+      var r = this.parse(d.numbers);
+      if (r.error) hint = r.error;
+      else if (!r.nums.length) hint = 'Digite os números das garrafinhas.';
+      else {
+        countEl.value = r.nums.length;
+        var taken = r.nums.filter(function (n) { return used[n]; });
+        hint = taken.length ? '⚠ Já em uso: ' + taken.join(', ') + '.' : r.nums.length + ' garrafinha(s): ' + r.nums.slice().sort(function (a, b) { return a - b; }).join(', ') + '.';
+      }
+    }
+    var total = (+countEl.value || 0) * (+form.bottle_volume_ml.value || 0), orig = +form.original_volume_ml.value || 0;
+    var vol = total ? 'Total: ' + total + ' ml de ' + orig + ' ml' + (total > orig ? ' — mais do que a garrafa!' : ' (sobram ~' + (orig - total) + ' ml)') : '';
+    document.getElementById('calc-hint').textContent = [hint, vol].filter(Boolean).join(' · ');
+  },
+
+  fill: function (form) {
+    var n = Math.max(1, Math.min(100, +form.count.value || 1));
+    var d = formData(form), r = this.parse(d.numbers);
+    n = r.nums.length || n;
+    form.numbers.value = this.freeLow(form._used || {}, n).join(', ');
+    this.refresh(form);
+  },
+
+  /** Envia; devolve o resultado ({numbers, wine_name}). */
+  submit: function (form) {
+    var d = formData(form);
+    if (d.numbering !== 'manual') delete d.numbers;
+    return API.call('bottles.fractionate', d);
+  },
+
+  resultHtml: function (r) {
+    return '<p class="sub">Etiquete as garrafinhas com estes números. Guarde esta lista longe de quem vai degustar — inclusive de você.</p>' +
+      '<div class="cellar">' + r.numbers.map(function (n) {
+        return '<div class="btl">' + Components.bottle(n, { status: 'disponivel' }) + '<span class="n">#' + n + '</span></div>';
+      }).join('') + '</div><p class="serif" style="font-size:1.3rem;margin-top:14px">' + r.numbers.join(' · ') + '</p>';
+  },
+
+  /** Janela dentro do detalhe do vinho: sem trocar de página. */
+  openModal: function (wine, done) {
+    var html = '<h2>Adicionar garrafinhas</h2><p class="muted small">' + esc(wine.name + (wine.vintage ? ' ' + wine.vintage : '')) + '</p>' +
+      '<form data-frac-modal><input type="hidden" name="wine_id" value="' + esc(wine.id) + '">' + Fractionate.fieldsHtml('') +
+      '<div class="btn-row" style="justify-content:flex-end;margin-top:14px"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn primary">Registrar e numerar</button></div></form>' +
+      '<div id="frac-result" hidden></div>';
+    var m = UI.modal(html, { sticky: true });
+    var form = m.querySelector('form');
+    form.addEventListener('input', function () { Fractionate.refresh(form); });
+    form.addEventListener('change', function () { Fractionate.refresh(form); });
+    form.addEventListener('click', function (e) { if (e.target.closest('[data-action=frac-fill]')) { e.stopPropagation(); Fractionate.fill(form); } });
+    Fractionate.wire(form);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = form.querySelector('button.primary');
+      UI.busy(btn, true);
+      Fractionate.submit(form).then(function (r) {
+        form.hidden = true;
+        var box = document.getElementById('frac-result');
+        box.hidden = false;
+        box.innerHTML = '<h3 style="margin-top:0">Garrafinhas registradas</h3>' + Fractionate.resultHtml(r) +
+          '<div class="btn-row" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="window.print()">Imprimir</button><button class="btn primary" data-action="frac-done">Concluir</button></div>';
+        box.querySelector('[data-action=frac-done]').addEventListener('click', function () { UI.closeModal(); done && done(); });
+      }).catch(function (err) { UI.busy(btn, false); UI.error(err); });
+    });
+  }
+};
+
 Pages.fractionate = {
   render: function (p) {
     return API.call('wines.list').then(function (wines) {
       var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/adega">Minha Adega</a></div><h1>Fracionar uma garrafa</h1>' +
         '<p class="sub">Registre a divisão da garrafa em garrafinhas numeradas.</p></div></div>';
       if (!wines.length) return html + Components.empty('Cadastre o vinho primeiro.', '', '<a class="btn primary" href="#/vinhos/novo">Cadastrar vinho</a>');
-      html += '<form class="panel" data-action="save"><div class="form-grid">' +
-        '<div class="wide"><label class="f">Vinho *</label><select class="in" name="wine_id" required>' +
-        Components.options(wines.map(function (w) { return { v: w.id, t: w.name + (w.vintage ? ' ' + w.vintage : '') + (w.producer ? ' — ' + w.producer : '') }; }), p.query.wine || '', 'Selecione…') + '</select></div>' +
-        '<div><label class="f">Data do fracionamento</label><input class="in" type="date" name="date" value="' + new Date().toISOString().slice(0, 10) + '"></div>' +
-        '<div><label class="f">Volume original (ml)</label><input class="in" type="number" name="original_volume_ml" value="750" data-input="calc"></div>' +
-        '<div><label class="f">Quantidade de garrafinhas *</label><input class="in" type="number" name="count" value="22" min="1" max="100" required data-input="calc"></div>' +
-        '<div><label class="f">Volume por garrafinha (ml)</label><input class="in" type="number" name="bottle_volume_ml" value="30" data-input="calc"></div>' +
-        '<div class="wide"><label class="f">Numeração</label>' +
-        '<label style="display:block;margin:6px 0"><input type="radio" name="numbering" value="aleatoria" checked> <b>Aleatória</b> — o sistema sorteia números livres. Recomendado: você não consegue deduzir o vinho pelo número.</label>' +
-        '<label style="display:block;margin:6px 0"><input type="radio" name="numbering" value="sequencial"> Sequencial — números em sequência depois do maior número ativo.</label></div>' +
-        '<div class="wide"><label class="f">Observações</label><textarea class="in" name="notes"></textarea></div>' +
-        '</div><p class="muted small" id="calc-hint"></p><div class="btn-row" style="justify-content:flex-end"><a class="btn" href="#/adega">Cancelar</a><button class="btn primary">Registrar e numerar</button></div></form>';
+      var sel = '<div class="wide"><label class="f">Vinho *</label><select class="in" name="wine_id" required>' +
+        Components.options(wines.map(function (w) { return { v: w.id, t: w.name + (w.vintage ? ' ' + w.vintage : '') + (w.producer ? ' — ' + w.producer : '') }; }), p.query.wine || '', 'Selecione…') + '</select></div>';
+      html += '<form class="panel" data-action="save">' + Fractionate.fieldsHtml(sel) +
+        '<div class="btn-row" style="justify-content:flex-end"><a class="btn" href="#/adega">Cancelar</a><button class="btn primary">Registrar e numerar</button></div></form>';
       return html;
     });
   },
-  mount: function () { Pages.fractionate.actions.calc(); },
+  mount: function () {
+    var f = document.querySelector('form[data-action="save"]');
+    if (f) Fractionate.wire(f);
+  },
   actions: {
-    calc: function () {
-      var f = document.querySelector('form[data-action="save"]');
-      if (!f) return;
-      var total = (+f.count.value || 0) * (+f.bottle_volume_ml.value || 0);
-      var orig = +f.original_volume_ml.value || 0;
-      document.getElementById('calc-hint').textContent = total ? 'Total: ' + total + ' ml de ' + orig + ' ml' + (total > orig ? ' — mais do que a garrafa!' : ' (sobram ~' + (orig - total) + ' ml)') : '';
-    },
+    calc: function () { var f = document.querySelector('form[data-action="save"]'); if (f) Fractionate.refresh(f); },
+    'frac-mode': function () { var f = document.querySelector('form[data-action="save"]'); if (f) Fractionate.refresh(f); },
+    'frac-fill': function () { var f = document.querySelector('form[data-action="save"]'); if (f) Fractionate.fill(f); },
     save: function (form) {
-      var d = formData(form);
       var btn = form.querySelector('button.primary');
       UI.busy(btn, true);
-      return API.call('bottles.fractionate', d).then(function (r) {
+      return Fractionate.submit(form).then(function (r) {
         document.getElementById('view').innerHTML =
-          '<div class="page-head"><div><div class="eyebrow">Fracionamento registrado</div><h1>' + esc(r.wine_name) + '</h1>' +
-          '<p class="sub">Etiquete as garrafinhas com estes números. Guarde esta lista longe de quem vai degustar — inclusive de você.</p></div>' +
+          '<div class="page-head"><div><div class="eyebrow">Fracionamento registrado</div><h1>' + esc(r.wine_name) + '</h1></div>' +
           '<div class="btn-row"><button class="btn" onclick="window.print()">Imprimir</button><a class="btn primary" href="#/adega">Ir para a adega</a></div></div>' +
-          '<div class="panel"><div class="cellar">' + r.numbers.map(function (n) {
-            return '<div class="btl">' + Components.bottle(n, { status: 'disponivel' }) + '<span class="n">#' + n + '</span></div>';
-          }).join('') + '</div><p class="serif" style="font-size:1.3rem;margin-top:18px">' + r.numbers.join(' · ') + '</p></div>';
+          '<div class="panel">' + Fractionate.resultHtml(r) + '</div>';
       }).catch(function (e) { UI.busy(btn, false); throw e; });
     }
   }
