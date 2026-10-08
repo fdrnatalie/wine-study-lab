@@ -364,6 +364,35 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .prof-step span { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--wine); color: #fff; font-size: .75rem; font-weight: 700; }
 .prof-grid { display: grid; gap: 4px 28px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .prof-sec h4.prof-step { margin-top: 6px; }
+
+/* Cartões de estudo */
+.sc-sec { margin: 26px 0 10px; font-family: var(--serif); font-size: 1.35rem; font-weight: 600; }
+.sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; margin: 8px 0 4px; }
+.sc { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.sc-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
+.sc-title { font-family: var(--serif); font-size: 1.25rem; font-weight: 600; line-height: 1.15; }
+.sc-tag { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; font-size: .68rem; font-weight: 600; letter-spacing: .04em; background: var(--paper-2); color: var(--muted); vertical-align: middle; }
+.sc-tag.wine { background: var(--wine-soft); color: var(--wine); }
+.sc-tag.warn { background: var(--near-soft); color: var(--near); }
+.sc-tag.fix { background: var(--info-soft); color: var(--info); }
+.sc-flag { border-color: var(--near); color: var(--near); }
+.sc-facts { margin: 0; display: grid; gap: 7px; }
+.sc-facts div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; font-size: .92rem; line-height: 1.35; }
+.sc-facts dt { color: var(--muted); font-size: .76rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; padding-top: 2px; }
+.sc-facts dd { margin: 0; }
+.sc-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sc-num { background: var(--paper-2); border-radius: 8px; padding: 10px 12px; }
+.sc-num .n { font-family: var(--serif); font-size: 1.5rem; font-weight: 600; color: var(--wine); line-height: 1.1; }
+.sc-num .d { font-size: .8rem; color: var(--ink-2); margin-top: 2px; line-height: 1.3; }
+.sc-line { list-style: none; margin: 0; padding: 0 0 0 4px; border-left: 2px solid var(--line-2); }
+.sc-line li { position: relative; padding: 0 0 10px 14px; font-size: .92rem; line-height: 1.35; }
+.sc-line li::before { content: ''; position: absolute; left: -7px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--wine); }
+.sc-line .y { display: block; font-weight: 700; font-size: .8rem; color: var(--wine); letter-spacing: .04em; }
+.sc-den { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.sc-den .top { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.sc-den .d { font-size: .85rem; color: var(--ink-2); line-height: 1.35; }
+.sc-list { margin: 0; padding-left: 18px; font-size: .92rem; line-height: 1.5; }
+.src.aula { color: var(--info); background: var(--info-soft); }
 </style>
 
 </head>
@@ -582,6 +611,7 @@ var Router = {
     [/^\/caderno$/, 'notes'],
     [/^\/usuarios$/, 'users'],
     [/^\/quiz$/, 'quiz'],
+    [/^\/estudar\/(historia|producao|harmonizacao)$/, 'estudo', ['tema']],
     [/^\/config$/, 'settings'],
     [/^\/revisao$/, 'review']
   ],
@@ -761,7 +791,7 @@ var Nav = {
   },
   groups: [
     [null, [['#/', 'home', 'Dashboard', /^\/?$|^\/dashboard/]]],
-    ['Estudar', [['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/quiz', 'quiz', 'Quiz', /^\/quiz/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
+    ['Estudar', [['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/estudar/historia', 'history', 'História do vinho', /^\/estudar\/historia/], ['#/estudar/producao', 'grape', 'Produção de vinho', /^\/estudar\/producao/], ['#/estudar/harmonizacao', 'note', 'Harmonizações', /^\/estudar\/harmonizacao/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/quiz', 'quiz', 'Quiz', /^\/quiz/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
     ['Minha Adega', [['#/adega', 'bottle', 'Garrafinhas', /^\/adega$/], ['#/adega/fracionar', 'split', 'Fracionar garrafa', /^\/adega\/fracionar/]]],
     ['Degustação', [['#/degustacao/nova', 'target', 'Nova degustação', /^\/degustacao\/nova/], ['#/degustacao/historico', 'history', 'Histórico', /^\/degustacao\/(historico|[A-Z])/],
       // Jogo em outra aba (mantém o formato próprio dele); o endereço vem do servidor.
@@ -886,7 +916,7 @@ var Components = {
 
   SOURCE_LABELS: {
     usuario: 'informado por você', rotulo: 'rótulo', pesquisado: 'pesquisado', planilha: 'planilha',
-    ia: 'IA · aguardando revisão', ia_revisada: 'IA · revisado', ia_nao_verificada: 'IA · não verificado', sistema: 'sistema'
+    ia: 'IA · aguardando revisão', ia_revisada: 'IA · revisado', ia_nao_verificada: 'IA · não verificado', sistema: 'sistema', aula: 'material de aula'
   },
   STATE_LABELS: { hit: 'Acerto', near: 'Próximo', miss: 'Erro', no_ref: 'Sem gabarito' },
 
@@ -3643,6 +3673,8 @@ Pages.country = {
           return '<a class="row" href="#/regioes/' + r.id + '" data-region="' + r.id + '"><div><div class="t">' + esc(r.name) + '</div>' +
             '<div class="m">' + plural(r.subregions, 'sub-região', 'sub-regiões') + (r.wines ? ' · ' + plural(r.wines, 'vinho seu', 'vinhos seus') : '') + '</div></div><div></div></a>';
         }).join('') + '</div></section></div>';
+      html += Components.studyCards(c.cards, 'Para estudar: ' + c.name);
+      if (c.cards.length) html += '<p><a class="btn" href="#/quiz?cartoes=todos&pais=' + c.id + '">Quiz sobre ' + esc(c.name) + '</a></p>';
       return html;
     });
   },
@@ -3721,6 +3753,7 @@ Pages.region = {
         }).join('') + '</ul>' : '') +
         '<p class="small muted" style="margin-top:14px">Fonte: ' + Components.src(r.source) + ' ' + sourceLink(r.source_ref) + '</p></section>';
 
+      html += Components.studyCards(r.cards, 'Para estudar');
       html += '<h2>Sub-regiões e denominações</h2>';
       html += r.subregions.length ? r.subregions.map(function (s) {
         var mine = r.wines.filter(function (w) { return s.wines.indexOf(w.id) >= 0; });
@@ -3734,7 +3767,7 @@ Pages.region = {
             return '<li style="margin:3px 0"><b>' + esc(p.name) + '</b>' + (p.notable_labels ? ' <span class="muted small">— ' + esc(p.notable_labels) + '</span>' : '') + '</li>';
           }).join('') + '</ul>' : '<span class="missing">Nenhum produtor citado nas fontes pesquisadas</span>') +
           (mine.length ? '<div class="eyebrow" style="margin:12px 0 4px">No seu estudo</div>' + mine.map(function (w) { return '<a href="#/vinhos/' + w.id + '">' + esc(w.name) + (w.vintage ? ' ' + w.vintage : '') + '</a>'; }).join(', ') : '') +
-          '</div></div><p class="small muted" style="margin:10px 0 0">Fonte: ' + sourceLink(s.source_ref) + '</p></article>';
+          '</div></div>' + Components.studyCards(s.cards) + '<p class="small muted" style="margin:10px 0 0">Fonte: ' + sourceLink(s.source_ref) + '</p></article>';
       }).join('') : Components.empty('Nenhuma sub-região cadastrada.');
 
       if (r.wines.length) {
@@ -3788,10 +3821,11 @@ Pages.region = {
 Pages.quiz = {
   render: function (p) {
     var tid = p.query && p.query.degustacao;
-    return API.raw_('quiz.generate', { tasting_id: tid || '', n: 10 }).then(function (r) {
+    var cards = (p.query && p.query.cartoes) || '', cty = (p.query && p.query.pais) || '';
+    return API.raw_('quiz.generate', { tasting_id: tid || '', n: 10, cards: cards, country_id: cty }).then(function (r) {
       Pages.quiz.state = { data: r, i: 0, score: 0, answered: false, tid: tid || '' };
       return '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>' + esc(r.title) + '</h1>' +
-        '<p class="sub">' + (tid ? 'Perguntas sobre as uvas, regiões e vinhos desta degustação.' : 'Perguntas sorteadas da enciclopédia: uvas, regiões, aromas, estrutura e confusões clássicas.') + '</p></div>' +
+        '<p class="sub">' + (tid ? 'Perguntas sobre as uvas, regiões e vinhos desta degustação.' : cards ? 'Perguntas dos cartões de estudo: história, regiões, denominações e produção.' : 'Perguntas sorteadas da enciclopédia: uvas, regiões, aromas, estrutura e confusões clássicas.') + '</p></div>' +
         '<div class="btn-row">' + (tid ? '<a class="btn" href="#/degustacao/' + esc(tid) + '/resultado">Voltar ao resultado</a>' : '') +
         '<button class="btn" data-action="restart">Novo quiz</button></div></div><div id="quiz-box"></div>';
     });
@@ -3838,6 +3872,92 @@ Pages.quiz = {
     restart: function () { Router.render(); }
   }
 };
+</script>
+
+  <script>
+/* ============================================================
+   Cartões de estudo (material de aula): tópicos curtos, feitos para bater o olho (e para gravar vídeos).
+   Aparecem nas páginas de país e região e nas seções História, Produção e Harmonizações.
+   ============================================================ */
+Components.studyCard = function (c) {
+  var head = '<div class="sc-head"><div class="sc-title">' + esc(c.title) + '</div>' +
+    (c.status === 'revisar' ? '<span class="chip sc-flag" title="O material de aula pode ter erro aqui">conferir</span>' : '') + '</div>';
+  function tag(t) {
+    if (!t) return '';
+    var cls = t === 'conferir' ? 'warn' : t === 'corrigido' ? 'fix' : /DOCG|AOC|DOP/.test(t) ? 'wine' : '';
+    return '<span class="sc-tag ' + cls + '">' + esc(t) + '</span>';
+  }
+  var body = '';
+  switch (c.kind) {
+    case 'numeros':
+      body = '<div class="sc-nums">' + c.items.map(function (i) {
+        return '<div class="sc-num"><div class="n">' + esc(i.k) + '</div><div class="d">' + esc(i.v) + '</div></div>';
+      }).join('') + '</div>';
+      break;
+    case 'linha':
+      body = '<ol class="sc-line">' + c.items.map(function (i) {
+        return '<li>' + (i.k ? '<span class="y">' + esc(i.k) + '</span>' : '') + '<span class="t">' + esc(i.v) + '</span>' + tag(i.tag) + '</li>';
+      }).join('') + '</ol>';
+      break;
+    case 'denominacoes':
+      body = '<ul class="sc-den">' + c.items.map(function (i) {
+        return '<li><div class="top"><b>' + esc(i.k) + '</b>' + tag(i.tag) + '</div><div class="d">' + esc(i.v) + '</div></li>';
+      }).join('') + '</ul>';
+      break;
+    case 'produtores':
+      body = '<div class="chips">' + c.items.map(function (i) { return '<span class="chip">' + esc(i.k) + '</span>'; }).join('') + '</div>';
+      break;
+    case 'lista':
+      body = '<ul class="sc-list">' + c.items.map(function (i) { return '<li>' + esc(i.v || i.k) + tag(i.tag) + '</li>'; }).join('') + '</ul>';
+      break;
+    default:   // fatos
+      body = '<dl class="sc-facts">' + c.items.map(function (i) {
+        return '<div><dt>' + esc(i.k) + '</dt><dd>' + esc(i.v) + tag(i.tag) + '</dd></div>';
+      }).join('') + '</dl>';
+  }
+  return '<article class="sc sc-' + esc(c.kind) + '">' + head + body + '</article>';
+};
+
+/** Cartões em grade; devolve '' quando não há nenhum. */
+Components.studyCards = function (cards, title) {
+  if (!cards || !cards.length) return '';
+  return (title ? '<h3 class="sc-sec">' + esc(title) + '</h3>' : '') +
+    '<div class="sc-grid">' + cards.map(Components.studyCard).join('') + '</div>';
+};
+
+/* ---------------- Seções: História, Produção, Harmonizações ---------------- */
+Pages.estudo = {
+  render: function (p) {
+    return API.call('study.topic', { topic: p.tema }).then(function (d) {
+      Pages.estudo.data = d;
+      var sub = { historia: 'Linhas do tempo curtas: do primeiro vinho ao vinho no Brasil.',
+        producao: 'Do plantio à garrafa: viticultura, vinificação, amadurecimento e tipos de vinho.',
+        harmonizacao: 'Princípios e pratos clássicos, região por região.' }[d.topic];
+      var html = '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>' + esc(d.title) + '</h1><p class="sub">' + esc(sub) + '</p></div>' +
+        (d.count ? '<div class="btn-row"><a class="btn" href="#/quiz?cartoes=' + esc(d.topic) + '">Quiz desta seção</a></div>' : '') + '</div>';
+      if (!d.count) {
+        return html + Components.empty('Em preparação', 'Esta seção entra nos próximos lotes. Quando você enviar a apostila, ela ajuda a completar.');
+      }
+      html += '<div class="toolbar"><input type="search" id="sc-q" placeholder="Buscar nesta seção…" style="max-width:340px"></div><div id="sc-body">' + Pages.estudo.body(d, '') + '</div>';
+      return html;
+    });
+  },
+  body: function (d, q) {
+    q = Util2.norm(q);
+    var out = '';
+    d.groups.forEach(function (g) {
+      var cards = q ? g.cards.filter(function (c) { return Util2.norm(JSON.stringify([c.title, c.items])).indexOf(q) >= 0 || Util2.norm(g.name).indexOf(q) >= 0; }) : g.cards;
+      out += Components.studyCards(cards, g.name);
+    });
+    return out || Components.empty('Nada encontrado', 'Tente outra palavra.');
+  },
+  mount: function () {
+    var el = document.getElementById('sc-q');
+    if (!el) return;
+    el.addEventListener('input', function () { document.getElementById('sc-body').innerHTML = Pages.estudo.body(Pages.estudo.data, el.value); });
+  }
+};
+var Util2 = { norm: function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); } };
 </script>
 
   <script>App.start();</script>
