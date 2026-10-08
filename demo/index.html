@@ -694,7 +694,9 @@ var CONFIG = {
   // Fontes que podem servir de gabarito numa degustação.
   TRUSTED_SOURCES: ['usuario', 'rotulo', 'pesquisado', 'planilha', 'ia_revisada'],
 
-  BOTTLE_STATUSES: ['disponivel', 'reservada', 'utilizada', 'descartada'],
+  // disponivel = com vinho, livre · em_uso = aberta, ainda tem vinho (também serve para novas degustações) ·
+  // reservada = separada para uma degustação (ou aguardando você decidir depois dela) · utilizada = finalizada · descartada.
+  BOTTLE_STATUSES: ['disponivel', 'em_uso', 'reservada', 'utilizada', 'descartada'],
   TASTING_STATUSES: ['em_andamento', 'aguardando_revelacao', 'revelada', 'cancelada'],
   NOTE_KINDS: ['impressao', 'comparacao', 'frase', 'associacao', 'descoberta', 'duvida', 'aula', 'degustacao'],
   AROMA_CATEGORIES: ['Frutas', 'Flores', 'Vegetais', 'Herbáceos', 'Especiarias', 'Terrosos', 'Minerais', 'Animais', 'Madeira', 'Evolução', 'Outros'],
@@ -11563,7 +11565,7 @@ var Import = (function () {
     var profileByWine = Util.indexBy(profiles, 'entity_id');
     var bottles = Repo.all('bottles');
     var activeByNumber = {};
-    bottles.forEach(function (b) { if (b.status === 'disponivel' || b.status === 'reservada') activeByNumber[b.number] = b; });
+    bottles.forEach(function (b) { if (b.status === 'disponivel' || b.status === 'em_uso' || b.status === 'reservada') activeByNumber[b.number] = b; });
     var batches = Repo.all('bottling_batches');
 
     var newWines = [], winePatches = [], newWG = [], newProfiles = [], profilePatches = [], newBottles = [], newBatches = [];
@@ -11878,7 +11880,7 @@ var Wines = (function () {
       grapes: (c.wineGrapes[w.id] || []).map(function (x) {
         return { id: x.grape_id, name: nameOf_(c.grapes, x.grape_id), percent: x.percent };
       }),
-      bottles_available: bottles.filter(function (b) { return b.status === 'disponivel'; }).length,
+      bottles_available: bottles.filter(function (b) { return b.status === 'disponivel' || b.status === 'em_uso'; }).length,
       bottles_total: bottles.length,
       source: w.source
     };
@@ -13010,18 +13012,24 @@ var Barcode = (function () {
  * Minha Adega de Degustação: fracionamentos e garrafinhas.
  *
  * Um número de garrafinha fica "ocupado" enquanto a garrafinha estiver disponível ou
- * reservada; depois de utilizada/descartada, o número pode ser reaproveitado.
+ * em uso ou reservada; depois de finalizada (utilizada) ou descartada, o número pode ser reaproveitado.
  */
 var Bottles = (function () {
-  var ACTIVE = { disponivel: 1, reservada: 1 };
+  var ACTIVE = { disponivel: 1, em_uso: 1, reservada: 1 };
 
   function list() {
     var wines = Util.indexBy(Repo.all('wines'), 'id');
     var grapes = Util.indexBy(Repo.all('grapes'), 'id');
     var wg = Util.groupBy(Repo.all('wine_grapes'), 'wine_id');
+    // Reservada numa degustação já revelada = aguardando você decidir (acabou? ainda tem vinho?).
+    var sampleOf = {};
+    Repo.all('tasting_samples').forEach(function (s) { sampleOf[s.bottle_id] = s.tasting_id; });
+    var tastings = Util.indexBy(Repo.all('tastings'), 'id');
     return Repo.all('bottles').map(function (b) {
       var w = wines[b.wine_id] || {};
+      var t = tastings[sampleOf[b.id]];
       return {
+        awaiting: b.status === 'reservada' && !!t && t.status === 'revelada', tasting_id: sampleOf[b.id] || '',
         id: b.id, number: b.number, status: b.status, volume_ml: b.volume_ml, batch_id: b.batch_id, notes: b.notes,
         wine_id: b.wine_id, wine_name: w.name || '?', vintage: w.vintage, color: w.color,
         grapes: (wg[b.wine_id] || []).map(function (x) { return grapes[x.grape_id] ? grapes[x.grape_id].name : ''; }).filter(Boolean)
@@ -13129,7 +13137,7 @@ var Bottles = (function () {
       var bs = bottles[b.id] || [];
       return Object.assign({}, b, {
         wine_name: wines[b.wine_id] ? wines[b.wine_id].name : '?',
-        available: bs.filter(function (x) { return x.status === 'disponivel'; }).length,
+        available: bs.filter(function (x) { return x.status === 'disponivel' || x.status === 'em_uso'; }).length,
         total: bs.length
       });
     }).sort(function (a, b) { return String(b.date || b.created_at).localeCompare(String(a.date || a.created_at)); });
@@ -13176,7 +13184,7 @@ var Tastings = (function () {
         if (picked.length > 12) throw new Error('Escolha no máximo 12 garrafinhas.');
         picked.forEach(function (b) {
           if (!b) throw new Error('Garrafinha não encontrada.');
-          if (b.status !== 'disponivel') throw new Error('A garrafinha #' + b.number + ' não está disponível.');
+          if (b.status !== 'disponivel' && b.status !== 'em_uso') throw new Error('A garrafinha #' + b.number + ' não está disponível.');
         });
         picked.sort(function (a, b) { return a.number - b.number; });
         return start_(picked, Validate.str(input.title, 200, 'título') ||
@@ -13187,7 +13195,7 @@ var Tastings = (function () {
       var wines = Util.indexBy(Repo.all('wines'), 'id');
       var wg = Util.groupBy(Repo.all('wine_grapes'), 'wine_id');
       var pool = Repo.all('bottles').filter(function (b) {
-        if (b.status !== 'disponivel') return false;
+        if (b.status !== 'disponivel' && b.status !== 'em_uso') return false;
         var w = wines[b.wine_id];
         if (!w) return false;
         if (filters.color && w.color && w.color !== filters.color) return false;
@@ -13278,7 +13286,7 @@ var Tastings = (function () {
       } else {
         pool = sessionGrapes.slice();
         Repo.all('bottles').forEach(function (b) {
-          if (b.status !== 'disponivel' && b.status !== 'reservada') return;
+          if (b.status !== 'disponivel' && b.status !== 'em_uso' && b.status !== 'reservada') return;
           (wg[b.wine_id] || []).forEach(function (x) { if (pool.indexOf(x.grape_id) < 0) pool.push(x.grape_id); });
         });
       }
@@ -13410,8 +13418,8 @@ var Tastings = (function () {
       var score = scores.length ? Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length * 10) / 10 : '';
       Repo.update('tastings', [{ id: t.id, status: 'revelada', revealed_at: now, score: score,
         scoring_snapshot: { rules: rules.map(function (r) { return { criterion: r.criterion, weight: r.weight, compare: r.compare, params: r.params, active: r.active }; }), settings: settings } }]);
-      var used = samples_(t.id).map(function (s) { return { id: s.bottle_id, status: 'utilizada', status_changed_at: now }; });
-      Repo.update('bottles', used);
+      // As garrafinhas continuam "reservadas" até você dizer, no resultado, se acabaram ou ainda têm vinho
+      // (nem toda garrafinha termina numa degustação).
       return getReport(id);
     });
   }
@@ -13465,7 +13473,7 @@ var Tastings = (function () {
       var free = {};
       (answers[s.id] || []).forEach(function (a) { if (FREE_CRITERIA[a.criterion]) free[a.criterion] = a.value_json || a.value; });
       return {
-        id: s.id, position: s.position, number: b.number, score: s.score,
+        id: s.id, position: s.position, number: b.number, score: s.score, bottle_id: b.id, bottle_status: b.status,
         wine: {
           id: w.id, name: w.name, producer: w.producer, vintage: w.vintage, country: w.country, region: w.region,
           abv: w.abv, grapes: w.grapes, profile: w.profile, profile_trusted: w.profile_trusted,
@@ -14228,7 +14236,7 @@ var Stats = (function () {
         grapes_in_wines: Object.keys(grapesInWines).length,
         regions: Object.keys(regionsUsed).length,
         tastings: tastings.length,
-        bottles_available: bottles.filter(function (b) { return b.status === 'disponivel'; }).length,
+        bottles_available: bottles.filter(function (b) { return b.status === 'disponivel' || b.status === 'em_uso'; }).length,
         bottles_total: bottles.length,
         notes: Repo.all('notes').length,
         ai_pending: Ctx.isAdmin() ? Enrichment.pendingCount() : 0
@@ -15989,8 +15997,8 @@ var Components = {
   /** Garrafinha estilizada. opts: {status, fill, stroke, label} */
   bottle: function (number, opts) {
     opts = opts || {};
-    var fill = opts.fill || ({ disponivel: 'var(--wine)', reservada: 'var(--gold)', utilizada: 'var(--line-2)', descartada: 'var(--line)' }[opts.status] || 'var(--wine)');
-    var level = opts.status === 'utilizada' || opts.status === 'descartada' ? 64 : 34;
+    var fill = opts.fill || ({ disponivel: 'var(--wine)', em_uso: 'var(--wine)', reservada: 'var(--gold)', utilizada: 'var(--line-2)', descartada: 'var(--line)' }[opts.status] || 'var(--wine)');
+    var level = opts.status === 'utilizada' || opts.status === 'descartada' ? 64 : (opts.status === 'em_uso' ? 50 : 34);   // em uso: meio cheia
     var stroke = opts.stroke || 'currentColor';
     return '<svg viewBox="0 0 40 92" aria-hidden="true">' +
       '<path d="M16 3h8v14c0 3 8 6 8 16v52a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V33c0-10 8-13 8-16z" fill="none" stroke="' + stroke + '" stroke-width="1.5" opacity=".75"/>' +
@@ -16604,9 +16612,9 @@ Pages.wine = {
       html += '<section class="panel"><div class="page-head" style="margin-bottom:8px"><h3 style="margin:0">Garrafinhas</h3>' +
         '<button class="btn small" data-action="add-bottles">+ Adicionar garrafinhas</button></div>';
       if (w.bottles.length) {
-        var avail = w.bottles.filter(function (b) { return b.status === 'disponivel'; }).length;
+        var avail = w.bottles.filter(function (b) { return b.status === 'disponivel' || b.status === 'em_uso'; }).length;
         html += '<p class="muted small">' + avail + ' disponível(is) de ' + w.bottles.length + '.</p><div class="cellar">' + w.bottles.map(function (b) {
-          return '<div class="btl' + (b.status === 'disponivel' ? '' : ' dim') + '" title="' + esc(b.status) + '">' + Components.bottle(b.number, { status: b.status }) + '<span class="n">#' + b.number + '</span></div>';
+          return '<div class="btl' + (b.status === 'disponivel' || b.status === 'em_uso' ? '' : ' dim') + '" title="' + esc(BOTTLE_STATUS[b.status] || b.status) + '">' + Components.bottle(b.number, { status: b.status }) + '<span class="n">#' + b.number + '</span></div>';
         }).join('') + '</div>';
       } else {
         html += '<p class="muted">Nenhuma garrafinha ainda. Use <b>Adicionar garrafinhas</b> para fracionar uma garrafa e escolher os números.</p>';
@@ -17429,7 +17437,10 @@ var LabelScan = (function () {
 
   <script>
 /* ============================== MINHA ADEGA ============================== */
-var BOTTLE_STATUS = { disponivel: 'Disponível', reservada: 'Reservada p/ degustação', utilizada: 'Utilizada', descartada: 'Descartada' };
+// Nomes: Disponível (com vinho, livre) · Em uso (aberta, ainda tem vinho) · Separada (para uma degustação, ou aguardando você decidir) · Finalizada (acabou) · Descartada.
+var BOTTLE_STATUS = { disponivel: 'Disponível', em_uso: 'Em uso (ainda tem vinho)', reservada: 'Separada p/ degustação', utilizada: 'Finalizada', descartada: 'Descartada' };
+var BOTTLE_USABLE = { disponivel: 1, em_uso: 1 };      // podem ir para uma degustação
+var BOTTLE_ACTIVE = { disponivel: 1, em_uso: 1, reservada: 1 };   // ocupam o número
 
 Pages.cellar = {
   // Modo discreto: esconde o conteúdo das garrafinhas (preserva o "às cegas").
@@ -17444,12 +17455,16 @@ Pages.cellar = {
       var list = r[0];
       var n = function (s) { return list.filter(function (b) { return b.status === s; }).length; };
       var html = '<div class="page-head"><div><div class="eyebrow">Minha Adega</div><h1>Adega de degustação</h1>' +
-        '<p class="sub">' + n('disponivel') + ' disponíveis · ' + n('reservada') + ' reservadas · ' + n('utilizada') + ' utilizadas</p></div>' +
+        '<p class="sub">' + n('disponivel') + ' disponíveis · ' + n('em_uso') + ' em uso · ' + n('reservada') + ' separadas · ' + n('utilizada') + ' finalizadas</p></div>' +
         '<div class="btn-row"><a class="btn" href="#/adega/fracionar">Fracionar garrafa</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>' +
         '<p class="callout small" style="margin-bottom:16px">Toque nas garrafinhas para selecionar; com as selecionadas, use <b>Degustar às cegas</b> na barra que aparece embaixo.</p>';
+      var waiting = list.filter(function (b) { return b.awaiting; });
+      if (waiting.length) html += '<div class="callout warn small" style="margin-bottom:16px"><b>' + plural(waiting.length, 'garrafinha aguarda', 'garrafinhas aguardam') + ' sua decisão</b> depois da degustação: ' +
+        waiting.map(function (b) { return '#' + b.number; }).join(', ') + '. Selecione-as e marque <b>Em uso</b> (ainda tem vinho) ou <b>Finalizada</b> (acabou). ' +
+        '<button class="btn small" data-action="select-waiting">Selecionar estas</button></div>';
       if (!list.length) return html + Components.empty('Nenhuma garrafinha cadastrada.', 'Fracione uma garrafa ou sincronize a planilha.', '<a class="btn primary" href="#/adega/fracionar">Fracionar garrafa</a>');
       html += '<div class="btn-row" style="justify-content:space-between;margin-bottom:18px">' +
-        '<div class="seg" id="cellar-filter">' + [['ativas', 'Ativas'], ['disponivel', 'Disponíveis'], ['reservada', 'Reservadas'], ['utilizada', 'Utilizadas'], ['descartada', 'Descartadas'], ['todas', 'Todas']].map(function (f) {
+        '<div class="seg" id="cellar-filter">' + [['ativas', 'Ativas'], ['disponivel', 'Disponíveis'], ['em_uso', 'Em uso'], ['reservada', 'Separadas'], ['utilizada', 'Finalizadas'], ['descartada', 'Descartadas'], ['todas', 'Todas']].map(function (f) {
           return '<button type="button" data-action="filter" data-f="' + f[0] + '" class="' + (Pages.cellar.filter === f[0] ? 'on' : '') + '">' + f[1] + '</button>';
         }).join('') + '</div>' +
         '<label class="small"><input type="checkbox" data-change="discreet"' + (Pages.cellar.discreet ? ' checked' : '') + '> Modo discreto (esconde o conteúdo)</label></div>' +
@@ -17468,7 +17483,7 @@ Pages.cellar = {
   draw: function () {
     var f = Pages.cellar.filter, d = Pages.cellar.discreet;
     var rows = Pages.cellar.data.filter(function (b) {
-      return f === 'todas' || (f === 'ativas' ? (b.status === 'disponivel' || b.status === 'reservada') : b.status === f);
+      return f === 'todas' || (f === 'ativas' ? !!BOTTLE_ACTIVE[b.status] : b.status === f);
     });
     document.getElementById('cellar-grid').innerHTML = rows.length ? '<div class="cellar">' + rows.map(function (b) {
       return '<button class="btl' + (b.status === 'utilizada' || b.status === 'descartada' ? ' dim' : '') + (Pages.cellar.selected[b.id] ? ' sel' : '') + '" data-action="pick" data-id="' + b.id + '" title="' + esc(BOTTLE_STATUS[b.status]) + '">' +
@@ -17484,17 +17499,25 @@ Pages.cellar = {
     bar.style.display = '';
     var byId = {};
     Pages.cellar.data.forEach(function (b) { byId[b.id] = b; });
-    var allAvail = ids.every(function (id) { return byId[id] && byId[id].status === 'disponivel'; });
+    var allAvail = ids.every(function (id) { return byId[id] && BOTTLE_USABLE[byId[id].status]; });
     bar.innerHTML = '<div class="btn-row" style="justify-content:space-between"><span><b>' + ids.length + '</b> selecionada(s)</span><span class="btn-row">' +
       (allAvail && ids.length <= 12 ? '<button class="btn primary small" data-action="blind">Degustar às cegas</button>'
-        : '<span class="small muted">Para degustar às cegas, escolha só garrafinhas disponíveis (até 12).</span>') +
+        : '<span class="small muted">Para degustar às cegas, escolha só garrafinhas disponíveis ou em uso (até 12).</span>') +
       (ids.length === 1 ? '<button class="btn small" data-action="details">Ver detalhes</button>' : '') +
       '<button class="btn small" data-action="set-status" data-s="disponivel">Disponível</button>' +
-      '<button class="btn small" data-action="set-status" data-s="utilizada">Utilizada</button>' +
+      '<button class="btn small" data-action="set-status" data-s="em_uso">Em uso</button>' +
+      '<button class="btn small" data-action="set-status" data-s="utilizada">Finalizada</button>' +
       '<button class="btn small" data-action="set-status" data-s="descartada">Descartada</button>' +
       '<button class="btn small ghost" data-action="clear">Limpar</button></span></div>';
   },
   actions: {
+    'select-waiting': function () {
+      Pages.cellar.selected = {};
+      Pages.cellar.data.forEach(function (b) { if (b.awaiting) Pages.cellar.selected[b.id] = true; });
+      Pages.cellar.filter = 'reservada';
+      document.querySelectorAll('#cellar-filter button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-f') === 'reservada'); });
+      Pages.cellar.draw();
+    },
     blind: function (btn) {
       var ids = Object.keys(Pages.cellar.selected);
       UI.busy(btn, true);
@@ -17536,7 +17559,7 @@ Pages.cellar = {
     },
     'set-status': function (btn) {
       var ids = Object.keys(Pages.cellar.selected), s = btn.getAttribute('data-s');
-      var reserved = Pages.cellar.data.filter(function (b) { return ids.indexOf(b.id) >= 0 && b.status === 'reservada'; });
+      var reserved = Pages.cellar.data.filter(function (b) { return ids.indexOf(b.id) >= 0 && b.status === 'reservada' && !b.awaiting; });
       var go = function () {
         return API.call('bottles.setStatus', { ids: ids, status: s }).then(function (n) { UI.toast(plural(n, 'garrafinha atualizada', 'garrafinhas atualizadas') + '.'); Router.render(); });
       };
@@ -17555,10 +17578,10 @@ Pages.cellar = {
  * ou escolher os números à mão (ex.: 5, 9, 12-15), com conferência na hora dos que já estão em uso.
  */
 var Fractionate = {
-  /** Números ocupados (garrafinhas disponíveis ou reservadas), em um objeto {n: true}. */
+  /** Números ocupados (garrafinhas disponíveis, em uso ou separadas), em um objeto {n: true}. */
   usedFrom: function (bottles) {
     var used = {};
-    (bottles || []).forEach(function (b) { if (b.status === 'disponivel' || b.status === 'reservada') used[b.number] = true; });
+    (bottles || []).forEach(function (b) { if (BOTTLE_ACTIVE[b.status]) used[b.number] = true; });
     return used;
   },
   freeLow: function (used, n) {
@@ -17731,7 +17754,7 @@ var DIFFICULTY = {
 Pages.tastingNew = {
   render: function () {
     return Promise.all([API.call('bottles.list'), API.call('wines.list')]).then(function (r) {
-      var bottles = r[0].filter(function (b) { return b.status === 'disponivel'; });
+      var bottles = r[0].filter(function (b) { return BOTTLE_USABLE[b.status]; });
       var wines = r[1].filter(function (w) { return w.bottles_available > 0; });
       Pages.tastingNew.wines = wines;
       var L = Store.lookups;
@@ -18010,7 +18033,7 @@ Pages.tastingPlay = {
     reveal: function () {
       var P = Pages.tastingPlay, S = P.state;
       return P.save().then(function () {
-        return UI.confirm('Você deseja revelar os vinhos?', 'Depois de revelar, as respostas ficam travadas e as garrafinhas são marcadas como utilizadas.', 'Revelar');
+        return UI.confirm('Você deseja revelar os vinhos?', 'Depois de revelar, as respostas ficam travadas. No resultado você marca, para cada garrafinha, se o vinho acabou ou se ainda tem.', 'Revelar');
       }).then(function (ok) {
         if (!ok) return;
         document.getElementById('t-reveal').innerHTML = '<div class="t-reveal"><div class="serif" style="font-size:1.6rem;font-style:italic">Tirando as etiquetas…</div></div>';
@@ -18035,6 +18058,23 @@ Pages.tastingPlay = {
 
 /* ============================== RELATÓRIO ============================== */
 Pages.tastingReport = {
+  mount: function () { Pages.tastingReport.drawDecide(); },
+  /** E as garrafinhas? Acabou ou ainda tem vinho — nem toda garrafinha termina numa degustação. */
+  drawDecide: function () {
+    var r = Pages.tastingReport.data, box = document.getElementById('bottle-decide');
+    if (!r || !box) return;
+    var pend = r.samples.filter(function (s) { return s.bottle_status === 'reservada'; }).length;
+    var chip = function (st) { return '<span class="src ' + (st === 'utilizada' ? 'sistema' : st === 'em_uso' ? 'pesquisado' : 'ia') + '">' + esc(BOTTLE_STATUS[st] || st) + '</span>'; };
+    box.innerHTML = '<div class="page-head" style="margin-bottom:10px"><div><h3 style="margin:0">E as garrafinhas?</h3>' +
+      '<div class="muted small">' + (pend ? 'Marque o que aconteceu com cada uma. As que ainda têm vinho ficam <b>Em uso</b> e podem voltar a uma próxima degustação; as que acabaram ficam <b>Finalizadas</b> e liberam o número.' : 'Tudo certo: você já decidiu o destino de todas.') + '</div></div>' +
+      (r.samples.length > 1 && pend ? '<div class="btn-row"><button class="btn small" data-action="bottle-all" data-s="utilizada">Todas acabaram</button><button class="btn small" data-action="bottle-all" data-s="em_uso">Todas ainda têm vinho</button></div>' : '') + '</div>' +
+      '<div class="list">' + r.samples.map(function (s) {
+        var st = s.bottle_status;
+        return '<div class="row"><div><div class="t">#' + s.number + ' · ' + esc(s.wine.name) + (s.wine.vintage ? ' ' + esc(s.wine.vintage) : '') + '</div><div class="m">' + chip(st) + (st === 'reservada' ? ' <b>falta decidir</b>' : '') + '</div></div>' +
+          '<div class="btn-row"><button class="btn small' + (st === 'utilizada' ? ' primary' : '') + '" data-action="bottle-set" data-id="' + esc(s.bottle_id) + '" data-s="utilizada">Acabou</button>' +
+          '<button class="btn small' + (st === 'em_uso' ? ' primary' : '') + '" data-action="bottle-set" data-id="' + esc(s.bottle_id) + '" data-s="em_uso">Ainda tem vinho</button></div></div>';
+      }).join('') + '</div>';
+  },
   render: function (p) {
     return API.call('tastings.report', { id: p.id }).then(function (r) {
       var agg = {};
@@ -18062,6 +18102,7 @@ Pages.tastingReport = {
         'Eles não entraram na nota. Cadastre o perfil na página do vinho para que passem a contar.</div>';
       html += '</section>';
 
+      html += '<section class="panel" id="bottle-decide"></section>';
       r.samples.forEach(function (s) {
         var w = s.wine;
         html += '<article class="reveal-card"><div class="hd">' + Components.bottle(s.number, { status: 'disponivel', uid: 'rv' }) +
@@ -18096,8 +18137,28 @@ Pages.tastingReport = {
           '<p class="small muted">Em negrito: características que diferem entre os vinhos. Valores vêm do perfil de referência de cada vinho' +
           (r.samples.some(function (s) { return s.wine.profile && !s.wine.profile_trusted; }) ? ' (alguns ainda <b>não verificados</b>)' : '') + '.</p></div>';
       }
+      Pages.tastingReport.data = r;
       return html;
       function prof(k) { return function (w) { return w.profile && w.profile[k] ? Store.scaleLabel(k, w.profile[k]) + (w.profile_trusted ? '' : ' *') : ''; }; }
+    });
+  },
+  actions: {
+    'bottle-set': function (btn) {
+      var id = btn.getAttribute('data-id'), st = btn.getAttribute('data-s');
+      return Pages.tastingReport.setBottles([id], st);
+    },
+    'bottle-all': function (btn) {
+      var r = Pages.tastingReport.data, st = btn.getAttribute('data-s');
+      return Pages.tastingReport.setBottles(r.samples.filter(function (s) { return s.bottle_status === 'reservada'; }).map(function (s) { return s.bottle_id; }), st);
+    }
+  },
+  setBottles: function (ids, status) {
+    var r = Pages.tastingReport.data;
+    return API.call('bottles.setStatus', { ids: ids, status: status }).then(function () {
+      r.samples.forEach(function (s) { if (ids.indexOf(s.bottle_id) >= 0) s.bottle_status = status; });
+      Pages.tastingReport.drawDecide();
+      UI.toast(status === 'utilizada' ? 'Marcada como finalizada.' : 'Marcada como em uso — ainda tem vinho.');
+      return Store.refreshLookups();
     });
   }
 };
