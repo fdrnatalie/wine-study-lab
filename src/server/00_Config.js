@@ -11,7 +11,7 @@
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 5,
+  SCHEMA_VERSION: 6,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -32,6 +32,8 @@ var CONFIG = {
   NOTE_KINDS: ['impressao', 'comparacao', 'frase', 'associacao', 'descoberta', 'duvida', 'aula', 'degustacao'],
   AROMA_CATEGORIES: ['Frutas', 'Flores', 'Vegetais', 'Herbáceos', 'Especiarias', 'Terrosos', 'Minerais', 'Animais', 'Madeira', 'Evolução', 'Outros'],
   WINE_COLORS: ['tinto', 'branco', 'rose', 'laranja'],
+  BALANCE_LEVELS: ['desequilibrado', 'pouco_equilibrado', 'equilibrado', 'harmonico'],
+  COMPLEXITY_LEVELS: ['simples', 'media', 'complexa'],
   WINE_TYPES: ['tranquilo', 'espumante', 'fortificado', 'sobremesa']
 };
 
@@ -65,7 +67,9 @@ var SCHEMA = {
   // Para uvas, valores podem ser faixa "3-4".
   profiles: { sheet: 'db_profiles', prefix: 'PRF', cols: [
     'entity_type', 'entity_id', 'acidity', 'tannin', 'body', 'alcohol', 'sweetness',
-    'intensity', 'finish', 'color_hue', 'color_intensity', 'oak', 'texture', 'visual_text', 'nose_text', 'palate_text'] },
+    'intensity', 'finish', 'color_hue', 'color_intensity', 'oak', 'texture', 'visual_text', 'nose_text', 'palate_text',
+    // v6: conclusão da avaliação (vinho): equilíbrio, complexidade e notas livres (harmônico, evolução, guarda…).
+    'balance', 'complexity', 'conclusion_text'] },
 
   grape_relationships: { sheet: 'db_grape_relationships', prefix: 'GRL', cols: [
     // kind: parent_of (grape_a é pai/mãe de grape_b) | confused_with | synonym_of

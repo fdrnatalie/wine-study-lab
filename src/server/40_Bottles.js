@@ -30,25 +30,58 @@ var Bottles = (function () {
     return used;
   }
 
+  /** "5, 9, 12-15" (ou lista) → números inteiros únicos, em ordem de digitação. */
+  function parseNumbers_(v, max) {
+    var parts = Array.isArray(v) ? v.map(String) : String(v || '').split(/[\s,;]+/);
+    var out = [], seen = {};
+    parts.forEach(function (p) {
+      p = String(p).trim();
+      if (!p) return;
+      var m = p.match(/^(\d{1,4})\s*[-–]\s*(\d{1,4})$/);
+      var list = [];
+      if (m) {
+        var a = +m[1], b = +m[2];
+        if (b < a || b - a > 200) throw new Error('Intervalo inválido: ' + p);
+        for (var i = a; i <= b; i++) list.push(i);
+      } else if (/^\d{1,4}$/.test(p)) list.push(+p);
+      else throw new Error('Número inválido: "' + p + '". Use por exemplo 5, 9, 12-15.');
+      list.forEach(function (n) {
+        if (n < 1 || n > max) throw new Error('Os números vão de 1 a ' + max + '.');
+        if (!seen[n]) { seen[n] = true; out.push(n); }
+      });
+    });
+    return out;
+  }
+
   /**
    * Registra o fracionamento de uma garrafa em N garrafinhas.
-   * numbering: "aleatoria" (sorteia números livres de 1..max_number) ou "sequencial".
+   * numbering: "aleatoria" (sorteia números livres), "sequencial" (depois do maior número ativo),
+   * "lacunas" (os menores números livres: repõe os que foram acabando) ou "manual" (você escolhe os números).
    */
   function fractionate(input) {
     return Repo.withLock(function () {
       var wine = Repo.get('wines', Validate.id(input.wine_id, 'wines'));
-      var count = Validate.num(input.count, 1, 100, 'Quantidade de garrafinhas');
-      if (!count) throw new Error('Informe a quantidade de garrafinhas.');
+      var numbering = Validate.oneOf(input.numbering || 'aleatoria', ['aleatoria', 'sequencial', 'lacunas', 'manual'], 'numeração');
+      var maxNumber = Validate.num(input.max_number, 10, 9999, 'Número máximo') || 999;
+      var chosen = numbering === 'manual' ? parseNumbers_(input.numbers, 9999) : null;
+      var count = chosen ? chosen.length : Validate.num(input.count, 1, 100, 'Quantidade de garrafinhas');
+      if (!count) throw new Error(chosen ? 'Informe os números das garrafinhas.' : 'Informe a quantidade de garrafinhas.');
+      if (count > 100) throw new Error('No máximo 100 garrafinhas por fracionamento.');
       var original = Validate.num(input.original_volume_ml, 50, 20000, 'Volume original') || 750;
       var each = Validate.num(input.bottle_volume_ml, 5, 1000, 'Volume da garrafinha') || Math.round(original / count);
-      var numbering = Validate.oneOf(input.numbering || 'aleatoria', ['aleatoria', 'sequencial'], 'numeração');
-      var maxNumber = Validate.num(input.max_number, 10, 9999, 'Número máximo') || 999;
       var used = usedNumbers_();
       var free = [];
       for (var n = 1; n <= maxNumber; n++) if (!used[n]) free.push(n);
-      if (free.length < count) throw new Error('Não há números livres suficientes até ' + maxNumber + '.');
       var numbers;
-      if (numbering === 'aleatoria') {
+      if (chosen) {
+        var taken = chosen.filter(function (x) { return used[x]; });
+        if (taken.length) throw new Error((taken.length === 1 ? 'O número ' : 'Os números ') + taken.join(', ') + (taken.length === 1 ? ' já está' : ' já estão') + ' em uso (garrafinha disponível ou reservada).');
+        numbers = chosen;
+      } else if (free.length < count) {
+        throw new Error('Não há números livres suficientes até ' + maxNumber + '.');
+      } else if (numbering === 'lacunas') {
+        numbers = free.slice(0, count);
+      } else if (numbering === 'aleatoria') {
         numbers = Util.shuffle(free).slice(0, count);
       } else {
         var maxUsed = Object.keys(used).reduce(function (m, k) { return Math.max(m, +k); }, 0);

@@ -120,48 +120,171 @@ Pages.cellar = {
 };
 
 /* ============================== FRACIONAR ============================== */
+/**
+ * Fracionamento (usado na página "Fracionar garrafa" e na janela aberta dentro do detalhe do vinho).
+ * Numeração: aleatória, sequencial, "preencher lacunas" (menores números livres — repõe os que acabaram)
+ * ou escolher os números à mão (ex.: 5, 9, 12-15), com conferência na hora dos que já estão em uso.
+ */
+var Fractionate = {
+  /** Números ocupados (garrafinhas disponíveis ou reservadas), em um objeto {n: true}. */
+  usedFrom: function (bottles) {
+    var used = {};
+    (bottles || []).forEach(function (b) { if (b.status === 'disponivel' || b.status === 'reservada') used[b.number] = true; });
+    return used;
+  },
+  freeLow: function (used, n) {
+    var out = [];
+    for (var i = 1; out.length < n && i <= 9999; i++) if (!used[i]) out.push(i);
+    return out;
+  },
+  /** "5, 9, 12-15" → { nums: [..], error: '' } */
+  parse: function (text) {
+    var nums = [], seen = {};
+    var parts = String(text || '').split(/[\s,;]+/).filter(Boolean);
+    for (var i = 0; i < parts.length; i++) {
+      var m = parts[i].match(/^(\d{1,4})\s*[-–]\s*(\d{1,4})$/), list = [];
+      if (m) {
+        var a = +m[1], b = +m[2];
+        if (b < a || b - a > 200) return { nums: [], error: 'Intervalo inválido: ' + parts[i] };
+        for (var k = a; k <= b; k++) list.push(k);
+      } else if (/^\d{1,4}$/.test(parts[i])) list.push(+parts[i]);
+      else return { nums: [], error: 'Use números como 5, 9, 12-15 (separados por vírgula).' };
+      for (var j = 0; j < list.length; j++) { if (list[j] < 1) return { nums: [], error: 'Os números começam em 1.' }; if (!seen[list[j]]) { seen[list[j]] = true; nums.push(list[j]); } }
+    }
+    return { nums: nums, error: '' };
+  },
+
+  /** Campos do formulário. wineHtml = seletor do vinho ou campo oculto. */
+  fieldsHtml: function (wineHtml) {
+    return '<div class="form-grid">' + wineHtml +
+      '<div><label class="f">Data do fracionamento</label><input class="in" type="date" name="date" value="' + new Date().toISOString().slice(0, 10) + '"></div>' +
+      '<div><label class="f">Volume original (ml)</label><input class="in" type="number" name="original_volume_ml" value="750" data-input="calc"></div>' +
+      '<div><label class="f">Quantidade de garrafinhas *</label><input class="in" type="number" name="count" value="22" min="1" max="100" data-input="calc"></div>' +
+      '<div><label class="f">Volume por garrafinha (ml)</label><input class="in" type="number" name="bottle_volume_ml" value="30" data-input="calc"></div>' +
+      '<div class="wide"><label class="f">Numeração</label>' +
+      '<label class="frac-opt"><input type="radio" name="numbering" value="aleatoria" checked data-change="frac-mode"> <b>Aleatória</b> — o sistema sorteia números livres (recomendado: o número não revela o vinho).</label>' +
+      '<label class="frac-opt"><input type="radio" name="numbering" value="lacunas" data-change="frac-mode"> <b>Preencher os números livres</b> — usa os menores números disponíveis (repõe os que foram acabando).</label>' +
+      '<label class="frac-opt"><input type="radio" name="numbering" value="manual" data-change="frac-mode"> <b>Escolher os números</b> — você digita quais.</label>' +
+      '<label class="frac-opt"><input type="radio" name="numbering" value="sequencial" data-change="frac-mode"> Sequencial — em sequência, depois do maior número em uso.</label></div>' +
+      '<div class="wide" id="frac-manual" hidden><label class="f">Números das garrafinhas</label>' +
+      '<input class="in" name="numbers" placeholder="ex.: 5, 9, 12-15" autocomplete="off" data-input="calc">' +
+      '<div class="small muted" id="frac-free" style="margin-top:6px"></div>' +
+      '<div class="btn-row" style="margin-top:6px"><button type="button" class="btn small" data-action="frac-fill">Usar os livres mais baixos</button></div></div>' +
+      '<div class="wide"><label class="f">Observações</label><textarea class="in" name="notes"></textarea></div>' +
+      '</div><p class="muted small" id="calc-hint"></p>';
+  },
+
+  /** Liga a conferência ao vivo (chame depois de inserir o formulário). */
+  wire: function (form) {
+    var self = this;
+    form._used = {};
+    API.call('bottles.list').then(function (list) { form._used = self.usedFrom(list); self.refresh(form); }).catch(function () {});
+    self.refresh(form);
+  },
+
+  refresh: function (form) {
+    var d = formData(form), manual = d.numbering === 'manual', used = form._used || {};
+    document.getElementById('frac-manual').hidden = !manual;
+    var countEl = form.count;
+    countEl.disabled = manual;
+    var hint = '';
+    var free = this.freeLow(used, 12);
+    var freeEl = document.getElementById('frac-free');
+    if (freeEl) freeEl.textContent = 'Livres mais baixos agora: ' + (free.join(', ') || '—') + (Object.keys(used).length ? ' · em uso: ' + Object.keys(used).length + ' garrafinha(s)' : '');
+    if (manual) {
+      var r = this.parse(d.numbers);
+      if (r.error) hint = r.error;
+      else if (!r.nums.length) hint = 'Digite os números das garrafinhas.';
+      else {
+        countEl.value = r.nums.length;
+        var taken = r.nums.filter(function (n) { return used[n]; });
+        hint = taken.length ? '⚠ Já em uso: ' + taken.join(', ') + '.' : r.nums.length + ' garrafinha(s): ' + r.nums.slice().sort(function (a, b) { return a - b; }).join(', ') + '.';
+      }
+    }
+    var total = (+countEl.value || 0) * (+form.bottle_volume_ml.value || 0), orig = +form.original_volume_ml.value || 0;
+    var vol = total ? 'Total: ' + total + ' ml de ' + orig + ' ml' + (total > orig ? ' — mais do que a garrafa!' : ' (sobram ~' + (orig - total) + ' ml)') : '';
+    document.getElementById('calc-hint').textContent = [hint, vol].filter(Boolean).join(' · ');
+  },
+
+  fill: function (form) {
+    var n = Math.max(1, Math.min(100, +form.count.value || 1));
+    var d = formData(form), r = this.parse(d.numbers);
+    n = r.nums.length || n;
+    form.numbers.value = this.freeLow(form._used || {}, n).join(', ');
+    this.refresh(form);
+  },
+
+  /** Envia; devolve o resultado ({numbers, wine_name}). */
+  submit: function (form) {
+    var d = formData(form);
+    if (d.numbering !== 'manual') delete d.numbers;
+    return API.call('bottles.fractionate', d);
+  },
+
+  resultHtml: function (r) {
+    return '<p class="sub">Etiquete as garrafinhas com estes números. Guarde esta lista longe de quem vai degustar — inclusive de você.</p>' +
+      '<div class="cellar">' + r.numbers.map(function (n) {
+        return '<div class="btl">' + Components.bottle(n, { status: 'disponivel' }) + '<span class="n">#' + n + '</span></div>';
+      }).join('') + '</div><p class="serif" style="font-size:1.3rem;margin-top:14px">' + r.numbers.join(' · ') + '</p>';
+  },
+
+  /** Janela dentro do detalhe do vinho: sem trocar de página. */
+  openModal: function (wine, done) {
+    var html = '<h2>Adicionar garrafinhas</h2><p class="muted small">' + esc(wine.name + (wine.vintage ? ' ' + wine.vintage : '')) + '</p>' +
+      '<form data-frac-modal><input type="hidden" name="wine_id" value="' + esc(wine.id) + '">' + Fractionate.fieldsHtml('') +
+      '<div class="btn-row" style="justify-content:flex-end;margin-top:14px"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn primary">Registrar e numerar</button></div></form>' +
+      '<div id="frac-result" hidden></div>';
+    var m = UI.modal(html, { sticky: true });
+    var form = m.querySelector('form');
+    form.addEventListener('input', function () { Fractionate.refresh(form); });
+    form.addEventListener('change', function () { Fractionate.refresh(form); });
+    form.addEventListener('click', function (e) { if (e.target.closest('[data-action=frac-fill]')) { e.stopPropagation(); Fractionate.fill(form); } });
+    Fractionate.wire(form);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = form.querySelector('button.primary');
+      UI.busy(btn, true);
+      Fractionate.submit(form).then(function (r) {
+        form.hidden = true;
+        var box = document.getElementById('frac-result');
+        box.hidden = false;
+        box.innerHTML = '<h3 style="margin-top:0">Garrafinhas registradas</h3>' + Fractionate.resultHtml(r) +
+          '<div class="btn-row" style="justify-content:flex-end;margin-top:14px"><button class="btn" onclick="window.print()">Imprimir</button><button class="btn primary" data-action="frac-done">Concluir</button></div>';
+        box.querySelector('[data-action=frac-done]').addEventListener('click', function () { UI.closeModal(); done && done(); });
+      }).catch(function (err) { UI.busy(btn, false); UI.error(err); });
+    });
+  }
+};
+
 Pages.fractionate = {
   render: function (p) {
     return API.call('wines.list').then(function (wines) {
       var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/adega">Minha Adega</a></div><h1>Fracionar uma garrafa</h1>' +
         '<p class="sub">Registre a divisão da garrafa em garrafinhas numeradas.</p></div></div>';
       if (!wines.length) return html + Components.empty('Cadastre o vinho primeiro.', '', '<a class="btn primary" href="#/vinhos/novo">Cadastrar vinho</a>');
-      html += '<form class="panel" data-action="save"><div class="form-grid">' +
-        '<div class="wide"><label class="f">Vinho *</label><select class="in" name="wine_id" required>' +
-        Components.options(wines.map(function (w) { return { v: w.id, t: w.name + (w.vintage ? ' ' + w.vintage : '') + (w.producer ? ' — ' + w.producer : '') }; }), p.query.wine || '', 'Selecione…') + '</select></div>' +
-        '<div><label class="f">Data do fracionamento</label><input class="in" type="date" name="date" value="' + new Date().toISOString().slice(0, 10) + '"></div>' +
-        '<div><label class="f">Volume original (ml)</label><input class="in" type="number" name="original_volume_ml" value="750" data-input="calc"></div>' +
-        '<div><label class="f">Quantidade de garrafinhas *</label><input class="in" type="number" name="count" value="22" min="1" max="100" required data-input="calc"></div>' +
-        '<div><label class="f">Volume por garrafinha (ml)</label><input class="in" type="number" name="bottle_volume_ml" value="30" data-input="calc"></div>' +
-        '<div class="wide"><label class="f">Numeração</label>' +
-        '<label style="display:block;margin:6px 0"><input type="radio" name="numbering" value="aleatoria" checked> <b>Aleatória</b> — o sistema sorteia números livres. Recomendado: você não consegue deduzir o vinho pelo número.</label>' +
-        '<label style="display:block;margin:6px 0"><input type="radio" name="numbering" value="sequencial"> Sequencial — números em sequência depois do maior número ativo.</label></div>' +
-        '<div class="wide"><label class="f">Observações</label><textarea class="in" name="notes"></textarea></div>' +
-        '</div><p class="muted small" id="calc-hint"></p><div class="btn-row" style="justify-content:flex-end"><a class="btn" href="#/adega">Cancelar</a><button class="btn primary">Registrar e numerar</button></div></form>';
+      var sel = '<div class="wide"><label class="f">Vinho *</label><select class="in" name="wine_id" required>' +
+        Components.options(wines.map(function (w) { return { v: w.id, t: w.name + (w.vintage ? ' ' + w.vintage : '') + (w.producer ? ' — ' + w.producer : '') }; }), p.query.wine || '', 'Selecione…') + '</select></div>';
+      html += '<form class="panel" data-action="save">' + Fractionate.fieldsHtml(sel) +
+        '<div class="btn-row" style="justify-content:flex-end"><a class="btn" href="#/adega">Cancelar</a><button class="btn primary">Registrar e numerar</button></div></form>';
       return html;
     });
   },
-  mount: function () { Pages.fractionate.actions.calc(); },
+  mount: function () {
+    var f = document.querySelector('form[data-action="save"]');
+    if (f) Fractionate.wire(f);
+  },
   actions: {
-    calc: function () {
-      var f = document.querySelector('form[data-action="save"]');
-      if (!f) return;
-      var total = (+f.count.value || 0) * (+f.bottle_volume_ml.value || 0);
-      var orig = +f.original_volume_ml.value || 0;
-      document.getElementById('calc-hint').textContent = total ? 'Total: ' + total + ' ml de ' + orig + ' ml' + (total > orig ? ' — mais do que a garrafa!' : ' (sobram ~' + (orig - total) + ' ml)') : '';
-    },
+    calc: function () { var f = document.querySelector('form[data-action="save"]'); if (f) Fractionate.refresh(f); },
+    'frac-mode': function () { var f = document.querySelector('form[data-action="save"]'); if (f) Fractionate.refresh(f); },
+    'frac-fill': function () { var f = document.querySelector('form[data-action="save"]'); if (f) Fractionate.fill(f); },
     save: function (form) {
-      var d = formData(form);
       var btn = form.querySelector('button.primary');
       UI.busy(btn, true);
-      return API.call('bottles.fractionate', d).then(function (r) {
+      return Fractionate.submit(form).then(function (r) {
         document.getElementById('view').innerHTML =
-          '<div class="page-head"><div><div class="eyebrow">Fracionamento registrado</div><h1>' + esc(r.wine_name) + '</h1>' +
-          '<p class="sub">Etiquete as garrafinhas com estes números. Guarde esta lista longe de quem vai degustar — inclusive de você.</p></div>' +
+          '<div class="page-head"><div><div class="eyebrow">Fracionamento registrado</div><h1>' + esc(r.wine_name) + '</h1></div>' +
           '<div class="btn-row"><button class="btn" onclick="window.print()">Imprimir</button><a class="btn primary" href="#/adega">Ir para a adega</a></div></div>' +
-          '<div class="panel"><div class="cellar">' + r.numbers.map(function (n) {
-            return '<div class="btl">' + Components.bottle(n, { status: 'disponivel' }) + '<span class="n">#' + n + '</span></div>';
-          }).join('') + '</div><p class="serif" style="font-size:1.3rem;margin-top:18px">' + r.numbers.join(' · ') + '</p></div>';
+          '<div class="panel">' + Fractionate.resultHtml(r) + '</div>';
       }).catch(function (e) { UI.busy(btn, false); throw e; });
     }
   }

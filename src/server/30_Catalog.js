@@ -146,7 +146,9 @@ var Catalog = (function () {
       rec[f] = v;
     });
     ['oak', 'texture'].forEach(function (f) { rec[f] = Validate.str(data[f], 200, f); });
-    ['visual_text', 'nose_text', 'palate_text'].forEach(function (f) { rec[f] = Validate.str(data[f], 3000, f); });
+    ['visual_text', 'nose_text', 'palate_text', 'conclusion_text'].forEach(function (f) { rec[f] = Validate.str(data[f], 3000, f); });
+    rec.balance = Validate.oneOf(Validate.str(data.balance, 40, 'equilíbrio'), CONFIG.BALANCE_LEVELS, 'equilíbrio');
+    rec.complexity = Validate.oneOf(Validate.str(data.complexity, 40, 'complexidade'), CONFIG.COMPLEXITY_LEVELS, 'complexidade');
     var existing = profileOf(entityType, entityId);
     if (existing) Repo.update('profiles', [Object.assign({ id: existing.id }, rec)]);
     else Repo.insert('profiles', [rec]);

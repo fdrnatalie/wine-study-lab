@@ -71,7 +71,7 @@ var Enrichment = (function () {
     return { type: 'string', enum: out };
   }
 
-  var PROFILE_TEXTS = ['visual_text', 'nose_text', 'palate_text'];
+  var PROFILE_TEXTS = ['visual_text', 'nose_text', 'palate_text', 'conclusion_text'];
 
   function profileSchema(allowRange) {
     var p = {};
@@ -161,7 +161,7 @@ var Enrichment = (function () {
       Object.keys(known).length ? 'Já cadastrado:\n' + JSON.stringify(known, null, 1) : '',
       'Campos possíveis (em fields):\n' + fieldDoc(WINE_FIELDS),
       'Perfil sensorial deste vinho (em profile), um nível por característica, somente se a ficha técnica ou uma avaliação profissional descrever:\n' + scaleDoc() +
-        '\nEm profile.visual_text, profile.nose_text e profile.palate_text, resuma em português o que a ficha técnica (ou avaliação profissional) diz sobre a aparência, o nariz e a boca deste vinho; deixe vazio o que a fonte não disser.',
+        '\nEm profile.visual_text, profile.nose_text e profile.palate_text, resuma em português (nessa ordem: aparência, nariz, boca) o que a ficha técnica (ou avaliação profissional) diz sobre este vinho; em profile.conclusion_text, o que a fonte diz sobre o conjunto (equilíbrio, harmonia, complexidade, evolução, potencial de guarda). Deixe vazio o que a fonte não disser.',
       'Aromas descritos para este vinho (em aromas): use somente nomes do vocabulário permitido.'
     ].filter(Boolean).join('\n\n');
     var schema = obj({ fields: fieldsSchema(WINE_FIELDS), profile: profileSchema(false), aromas: aromaSchema(), not_found: STR });
@@ -386,7 +386,7 @@ var Enrichment = (function () {
       case 'profile': {
         var cur = Catalog.profileOf(r.entity_type, r.entity_id) || {};
         var merged = {};
-        Catalog.PROFILE_SCALES.concat(['oak', 'texture', 'visual_text', 'nose_text', 'palate_text']).forEach(function (k) { merged[k] = cur[k] || ''; });
+        Catalog.PROFILE_SCALES.concat(['oak', 'texture', 'visual_text', 'nose_text', 'palate_text', 'conclusion_text', 'balance', 'complexity']).forEach(function (k) { merged[k] = cur[k] || ''; });
         var vals = JSON.parse(r.proposed_value);
         Object.keys(vals).forEach(function (k) { merged[k] = vals[k]; });
         merged.source = 'ia_revisada';

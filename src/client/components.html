@@ -77,6 +77,24 @@ var Components = {
     return '<div class="scales">' + Components.PALATE.map(function (p) { return Components.scaleRow(p[1], p[0], profile[p[0]]); }).join('') + '</div>';
   },
 
+  /** Perfil de um vinho na ordem da degustação: visual → nariz → boca → conclusão. */
+  profileSections: function (pr, aromas) {
+    var BAL = { desequilibrado: 'Desequilibrado', pouco_equilibrado: 'Pouco equilibrado', equilibrado: 'Equilibrado', harmonico: 'Harmônico' };
+    var CPX = { simples: 'Simples', media: 'Complexidade média', complexa: 'Complexo' };
+    function sec(n, title, body) { return '<div class="prof-sec"><h4 class="prof-step"><span>' + n + '</span> ' + title + '</h4>' + body + '</div>'; }
+    if (!pr) return '<p>' + Components.missing('Perfil sensorial não cadastrado') + '</p>' + sec(2, 'Nariz', Components.aromaGroups(aromas));
+    var scaleRow = function (k, label) { return Components.scaleRow(label, k, pr[k]); };
+    var visual = '<div class="scales">' + scaleRow('color_intensity', 'Intensidade da cor') + scaleRow('color_hue', 'Tonalidade') + '</div>' +
+      (pr.visual_text ? '<p>' + esc(pr.visual_text) + '</p>' : '');
+    var nose = Components.aromaGroups(aromas) + (pr.nose_text ? '<p>' + esc(pr.nose_text) + '</p>' : '');
+    var order = [['sweetness', 'Dulçor'], ['acidity', 'Acidez'], ['tannin', 'Tanino'], ['alcohol', 'Álcool'], ['body', 'Corpo'], ['intensity', 'Intensidade de sabor'], ['finish', 'Persistência']];
+    var mouth = '<div class="scales">' + order.map(function (o) { return scaleRow(o[0], o[1]); }).join('') + '</div>' + (pr.palate_text ? '<p>' + esc(pr.palate_text) + '</p>' : '');
+    var chips = [BAL[pr.balance], CPX[pr.complexity]].filter(Boolean).map(function (t) { return '<span class="chip">' + esc(t) + '</span>'; }).join('');
+    var concl = (chips ? '<div class="chips" style="margin-bottom:8px">' + chips + '</div>' : '') + (pr.conclusion_text ? '<p>' + esc(pr.conclusion_text) + '</p>' : '');
+    return '<div class="prof-grid">' + sec(1, 'Visual', visual) + sec(2, 'Nariz', nose) + sec(3, 'Boca', mouth) +
+      sec(4, 'Conclusão', concl || '<p>' + Components.missing('Conclusão não cadastrada') + '</p>') + '</div>';
+  },
+
   /** Aromas agrupados por categoria (somente leitura). */
   aromaGroups: function (aromas) {
     if (!aromas || !aromas.length) return '<p>' + Components.missing('Aromas não cadastrados') + '</p>';

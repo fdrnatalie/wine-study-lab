@@ -88,11 +88,7 @@ Pages.wine = {
         html += '<div class="callout warn" style="margin-bottom:16px">Este perfil veio de uma fonte <b>não verificada</b> (' + esc(Components.SOURCE_LABELS[pr.source] || pr.source) + '). ' +
           'Ele não é usado como gabarito. Revise os valores e salve com a origem correta (ficha técnica, pesquisa ou sua avaliação) para ativá-lo.</div>';
       }
-      html += '<div class="grid two"><div>' + Components.palate(pr) + '</div><div>' +
-        (pr ? '<div class="fields">' +
-          Components.field('Visual', pr.visual_text, { wide: true }) + Components.field('Nariz', pr.nose_text, { wide: true }) + Components.field('Boca', pr.palate_text, { wide: true }) +
-          '</div>' : '') +
-        '<h3>Aromas</h3>' + Components.aromaGroups(w.aromas) + '</div></div>' +
+      html += Components.profileSections(pr, w.aromas) +
         (pr ? '<div class="small muted" style="margin-top:12px">Origem: ' + Components.src(pr.source) + (pr.source_ref ? ' · ' + esc(pr.source_ref) : '') + '</div>' : '') +
         '</section>';
 
@@ -103,14 +99,15 @@ Pages.wine = {
         Components.field('Minhas notas', w.my_notes, { wide: true }) +
         '</div></section>';
 
-      html += '<section class="panel"><h3 style="margin-top:0">Garrafinhas</h3>';
+      html += '<section class="panel"><div class="page-head" style="margin-bottom:8px"><h3 style="margin:0">Garrafinhas</h3>' +
+        '<button class="btn small" data-action="add-bottles">+ Adicionar garrafinhas</button></div>';
       if (w.bottles.length) {
         var avail = w.bottles.filter(function (b) { return b.status === 'disponivel'; }).length;
         html += '<p class="muted small">' + avail + ' disponível(is) de ' + w.bottles.length + '.</p><div class="cellar">' + w.bottles.map(function (b) {
           return '<div class="btl' + (b.status === 'disponivel' ? '' : ' dim') + '" title="' + esc(b.status) + '">' + Components.bottle(b.number, { status: b.status }) + '<span class="n">#' + b.number + '</span></div>';
         }).join('') + '</div>';
       } else {
-        html += '<p class="muted">Nenhuma garrafinha. <a href="#/adega/fracionar?wine=' + w.id + '">Fracionar uma garrafa</a>.</p>';
+        html += '<p class="muted">Nenhuma garrafinha ainda. Use <b>Adicionar garrafinhas</b> para fracionar uma garrafa e escolher os números.</p>';
       }
       html += '<h3>Meu desempenho com este vinho</h3>';
       if (w.my_results.length) {
@@ -130,6 +127,10 @@ Pages.wine = {
     'edit-profile': function () {
       var w = Pages.wine.data;
       ProfileEditor.open('wine', w.id, w.profile, w.aromas, function () { Router.render(); });
+    },
+    'add-bottles': function () {
+      var w = Pages.wine.data;
+      Fractionate.openModal(w, function () { Router.render(); });
     },
     'my-notes': function () {
       var w = Pages.wine.data;
@@ -154,23 +155,38 @@ function ruleLabel(criterion) {
 
 /** Editor de perfil sensorial (vinho = gabarito; uva = perfil típico, aceita faixas). */
 var ProfileEditor = {
+  BALANCE: [{ v: 'desequilibrado', t: 'Desequilibrado' }, { v: 'pouco_equilibrado', t: 'Pouco equilibrado' }, { v: 'equilibrado', t: 'Equilibrado' }, { v: 'harmonico', t: 'Harmônico' }],
+  COMPLEXITY: [{ v: 'simples', t: 'Simples' }, { v: 'media', t: 'Média' }, { v: 'complexa', t: 'Complexa' }],
   open: function (entityType, entityId, profile, aromas, done) {
     profile = profile || {};
     var isGrape = entityType === 'grape';
-    var fields = Components.PALATE.concat([['color_intensity', 'Intensidade da cor'], ['color_hue', 'Tonalidade']]);
-    var html = '<h2>' + (isGrape ? 'Perfil típico da uva' : 'Perfil de referência (gabarito)') + '</h2>' +
-      '<p class="muted small">' + (isGrape ? 'Selecione um nível, ou dois para indicar uma faixa (ex.: média a alta).' : 'Selecione um nível por característica. Deixe em branco o que você não souber.') + '</p>' +
-      '<form data-profile>' + fields.map(function (f) {
+    var visual = [['color_intensity', 'Intensidade da cor'], ['color_hue', 'Tonalidade']];
+    // Boca na ordem de degustação: dulçor, acidez, tanino, álcool, corpo, intensidade, persistência.
+    var palate = [['sweetness', 'Dulçor'], ['acidity', 'Acidez'], ['tannin', 'Tanino'], ['alcohol', 'Álcool'], ['body', 'Corpo'], ['intensity', 'Intensidade de sabor'], ['finish', 'Persistência']];
+    var fields = visual.concat(palate);
+    function segs(list) {
+      return list.map(function (f) {
         var v = profile[f[0]] || '';
         var sel = String(v).split('..').filter(Boolean);
         return '<div style="margin:12px 0"><label class="f">' + esc(f[1]) + '</label>' +
           Components.seg(f[0], f[0], isGrape ? sel : sel[0], { multi: isGrape }) + '</div>';
-      }).join('') +
-      '<div class="form-grid" style="margin-top:16px">' +
-      '<div class="wide"><label class="f">Visual</label><textarea class="in" name="visual_text">' + esc(profile.visual_text || '') + '</textarea></div>' +
-      '<div class="wide"><label class="f">Nariz</label><textarea class="in" name="nose_text">' + esc(profile.nose_text || '') + '</textarea></div>' +
-      '<div class="wide"><label class="f">Boca</label><textarea class="in" name="palate_text">' + esc(profile.palate_text || '') + '</textarea></div>' +
-      '</div><h3>Aromas</h3>' + Components.aromaPicker('aromas', (aromas || []).map(function (a) { return a.id; })) +
+      }).join('');
+    }
+    function step(n, title, hint) { return '<h3 class="prof-step"><span>' + n + '</span> ' + title + '</h3>' + (hint ? '<p class="muted small" style="margin:-4px 0 6px">' + hint + '</p>' : ''); }
+    var html = '<h2>' + (isGrape ? 'Perfil típico da uva' : 'Perfil de referência (gabarito)') + '</h2>' +
+      '<p class="muted small">' + (isGrape ? 'Selecione um nível, ou dois para indicar uma faixa (ex.: média a alta).' : 'Siga a ordem da degustação: visual, nariz, boca e conclusão. Deixe em branco o que você não souber.') + '</p>' +
+      '<form data-profile>' +
+      step(1, 'Visual') + segs(visual) +
+      '<div class="form-grid"><div class="wide"><label class="f">Visual — observações</label><textarea class="in" name="visual_text" rows="2">' + esc(profile.visual_text || '') + '</textarea></div></div>' +
+      step(2, 'Nariz') + Components.aromaPicker('aromas', (aromas || []).map(function (a) { return a.id; })) +
+      '<div class="form-grid" style="margin-top:12px"><div class="wide"><label class="f">Nariz — observações</label><textarea class="in" name="nose_text" rows="2">' + esc(profile.nose_text || '') + '</textarea></div></div>' +
+      step(3, 'Boca') + segs(palate) +
+      '<div class="form-grid"><div class="wide"><label class="f">Boca — observações</label><textarea class="in" name="palate_text" rows="2">' + esc(profile.palate_text || '') + '</textarea></div></div>' +
+      (isGrape ? '' :
+        step(4, 'Conclusão', 'O conjunto: é harmônico, equilibrado, complexo? Pede guarda? Evolui no copo?') +
+        '<div style="margin:12px 0"><label class="f">Equilíbrio</label>' + Components.seg('balance', '', profile.balance || '', { options: ProfileEditor.BALANCE }) + '</div>' +
+        '<div style="margin:12px 0"><label class="f">Complexidade</label>' + Components.seg('complexity', '', profile.complexity || '', { options: ProfileEditor.COMPLEXITY }) + '</div>' +
+        '<div class="form-grid"><div class="wide"><label class="f">Conclusão — detalhes sobre o vinho</label><textarea class="in" name="conclusion_text" rows="3" placeholder="ex.: harmônico, madeira bem integrada, final longo; bom para guardar mais 3–5 anos">' + esc(profile.conclusion_text || '') + '</textarea></div></div>') +
       '<div class="form-grid" style="margin-top:18px">' +
       '<div><label class="f">Origem destes dados</label><select class="in" name="source">' +
       Components.options([{ v: 'usuario', t: 'Minha avaliação' }, { v: 'rotulo', t: 'Rótulo / ficha técnica do produtor' }, { v: 'pesquisado', t: 'Pesquisado (fonte citada)' }, { v: 'ia_revisada', t: 'IA, revisado por mim' }, { v: 'ia_nao_verificada', t: 'Não verificado' }],
@@ -198,6 +214,7 @@ var ProfileEditor = {
         } else data[f[0]] = v;
       });
       data.aroma_ids = Components.readAromas(form);
+      if (!isGrape) { data.balance = Components.readSeg(form, 'balance') || ''; data.complexity = Components.readSeg(form, 'complexity') || ''; }
       var btn = form.querySelector('button.primary');
       UI.busy(btn, true);
       API.call('profiles.save', { entity_type: entityType, entity_id: entityId, profile: data }).then(function () {

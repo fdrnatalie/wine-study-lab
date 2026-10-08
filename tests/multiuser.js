@@ -154,6 +154,38 @@ test('código de barras → ficha; rotina de fichas técnicas', () => {
   ok(post('routine.configure', { enabled: true, use_ai: true, max_per_run: 20, max_cost_month: 0 }, owner.token));
   assert.strictEqual(ok(post('routine.run', {}, owner.token)).ai_runs, 0);
 });
+test('numeração: escolher números, lacunas e conflitos', () => {
+  const w = ok(post('wines.list', {}, owner.token))[0];
+  const fr = (extra) => post('bottles.fractionate', Object.assign({ wine_id: w.id, original_volume_ml: 750, bottle_volume_ml: 30 }, extra), ana.token);
+  const r1 = ok(fr({ numbering: 'manual', numbers: '5, 9, 12-14' }));
+  assert.strictEqual(JSON.stringify(r1.numbers), JSON.stringify([5, 9, 12, 13, 14]));
+  // conflito: 9 e 13 já estão em uso
+  const bad = fr({ numbering: 'manual', numbers: '9, 20, 13' });
+  assert.strictEqual(bad.ok, false); assert.ok(/9, 13/.test(bad.error), bad.error);
+  assert.strictEqual(fr({ numbering: 'manual', numbers: 'abc' }).ok, false);
+  assert.strictEqual(fr({ numbering: 'manual', numbers: '0' }).ok, false);
+  // nada foi gravado pela tentativa com conflito
+  assert.strictEqual(ok(post('bottles.list', {}, ana.token)).length >= 5, true);
+  assert.ok(!ok(post('bottles.list', {}, ana.token)).some((b) => b.number === 20));
+  // libera o 9 e preenche as lacunas: os menores números livres (1,2,3,4 ...)
+  const b9 = ok(post('bottles.list', {}, ana.token)).find((b) => b.number === 9);
+  ok(post('bottles.setStatus', { ids: [b9.id], status: 'utilizada' }, ana.token));
+  assert.strictEqual(ok(fr({ numbering: 'manual', numbers: '9' })).numbers[0], 9);          // número liberado é reaproveitado
+  assert.strictEqual(fr({ numbering: 'manual', numbers: '9' }).ok, false);                  // e volta a ficar em uso
+  const active = new Set(ok(post('bottles.list', {}, ana.token)).filter((b) => b.status === 'disponivel' || b.status === 'reservada').map((b) => b.number));
+  const expected = []; for (let n = 1; expected.length < 6; n++) if (!active.has(n)) expected.push(n);
+  const r2 = ok(fr({ numbering: 'lacunas', count: 6 }));
+  assert.strictEqual(JSON.stringify(r2.numbers), JSON.stringify(expected));
+  // a numeração é por usuário: a dona pode usar o mesmo número livremente
+  assert.strictEqual(ok(post('bottles.fractionate', { wine_id: w.id, count: 1, numbering: 'manual', numbers: '5', original_volume_ml: 750, bottle_volume_ml: 30 }, owner.token)).numbers[0], 5);
+});
+test('perfil do vinho: equilíbrio, complexidade e conclusão', () => {
+  const w = ok(post('wines.save', { wine: { name: 'Vinho do perfil' } }, owner.token));
+  const p = ok(post('profiles.save', { entity_type: 'wine', entity_id: w.id, profile: { source: 'usuario', acidity: 'alta', visual_text: 'rubi', nose_text: 'cereja', palate_text: 'fresco',
+    balance: 'harmonico', complexity: 'complexa', conclusion_text: 'harmônico, guarda 5 anos' } }, owner.token));
+  assert.strictEqual(p.balance, 'harmonico'); assert.strictEqual(p.complexity, 'complexa'); assert.ok(/guarda/.test(p.conclusion_text));
+  assert.strictEqual(post('profiles.save', { entity_type: 'wine', entity_id: w.id, profile: { source: 'usuario', balance: 'perfeito' } }, owner.token).ok, false);
+});
 test('IA, sincronização e usuários: só a administradora', () => {
   ['ai.status', 'sync.run', 'users.list', 'seed.grapes'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));
   assert.ok(ok(post('users.list', {}, owner.token)).length >= 3);
