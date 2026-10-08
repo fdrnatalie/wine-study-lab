@@ -149,6 +149,25 @@ var Quiz = (function () {
   }
 
 
+
+  // ---------- Nível de dificuldade ----------
+  // medio = o que é conhecido no mundo todo · avancado = menos conhecido · expert = quase ninguém sabe.
+  // Cartões: nível avaliado um a um no arquivo de dados; detalhes técnicos (álcool, extrato seco, área, comunas…) valem um nível acima.
+  var LEVELS = ['medio', 'avancado', 'expert'];
+  var TECH_KEYS = /^(álcool|extrato seco|área|estágio|subzonas|comunas|produtores|produção|volume|1ª safra|satélites|calendário|regra)/i;
+  function bump_(lv) { var i = LEVELS.indexOf(lv); return LEVELS[Math.min(2, (i < 0 ? 1 : i) + 1)]; }
+  function itemLevel_(card, item) { var base = card.level || 'avancado'; return item && item.k && TECH_KEYS.test(item.k) ? bump_(base) : base; }
+  function cleanLevel_(v) { return LEVELS.indexOf(v) >= 0 ? v : ''; }
+  // Uvas e regiões da enciclopédia: sem avaliação manual, usa quantas regiões cultivam a uva / quantas sub-regiões a região tem.
+  function grapeLevel_(c, g) {
+    var n = c.rg.filter(function (x) { return x.grape_id === g.id; }).length;
+    return n >= 6 ? 'medio' : n >= 2 ? 'avancado' : 'expert';
+  }
+  function regionLevel_(c, r) {
+    var n = c.regions.filter(function (x) { return x.parent_id === r.id; }).length;
+    return n >= 8 ? 'medio' : n >= 4 ? 'avancado' : 'expert';
+  }
+
   // ---------- Perguntas a partir dos cartões de estudo (material de aula) ----------
   function cardPool_(opts) {
     var cards = Repo.all('study_cards').filter(function (x) { return x.status !== 'revisar'; });
@@ -162,22 +181,24 @@ var Quiz = (function () {
     return r ? r.name : (cn ? cn.name : '');
   }
 
-  function qCard(card, all, countries, regions) {
+  function qCard(card, all, countries, regions, level) {
     var where = cardWhere_(null, card, countries, regions), items = (card.items || []).filter(okItem_);
-    var head = card.title + (where && card.topic !== 'historia' ? ' (' + where + ')' : '');
+    var pickable = items.filter(function (i) { return !level || itemLevel_(card, i) === level; });
+    if (!pickable.length) return null;
+    var head = card.title + (where && card.topic !== 'historia' && card.title.indexOf(where) < 0 ? ' (' + where + ')' : '');
     if (card.kind === 'fatos') {
-      var it = shuffle(items.filter(function (i) { return i.k && i.v && i.v.length <= 80; }))[0];
+      var it = shuffle(pickable.filter(function (i) { return i.k && i.v && i.v.length <= 80; }))[0];
       if (!it) return null;
       var wrong = [];
       all.forEach(function (o) { if (o.id !== card.id && o.kind === 'fatos') (o.items || []).forEach(function (i) { if (okItem_(i) && i.k === it.k && i.v !== it.v && i.v.length <= 80) wrong.push(i.v); }); });
       wrong = pickN(wrong.filter(function (v, i) { return wrong.indexOf(v) === i; }), 3);
-      return q('cartao', head + ': ' + it.k.toLowerCase() + '?', it.v, wrong,
+      return q('cartao', head + ' · ' + it.k + '?', it.v, wrong,
         items.map(function (i) { return i.k + ': ' + i.v; }).join(' · ').slice(0, 300), '');
     }
     if (card.kind === 'denominacoes') {
       var counts = {};
       all.forEach(function (o) { if (o.kind === 'denominacoes') (o.items || []).forEach(function (i) { counts[i.v] = (counts[i.v] || 0) + 1; }); });
-      var d = shuffle(items.filter(function (i) { return i.k && i.v && counts[i.v] === 1; }))[0];
+      var d = shuffle(pickable.filter(function (i) { return i.k && i.v && counts[i.v] === 1; }))[0];
       if (!d) return null;
       var names = [];
       all.forEach(function (o) { if (o.kind === 'denominacoes' && o.country_id === card.country_id) (o.items || []).forEach(function (i) { if (i.k !== d.k && i.v !== d.v) names.push(i.k); }); });
@@ -185,7 +206,7 @@ var Quiz = (function () {
         d.k, pickN(names, 3), d.k + ': ' + d.v + (d.tag ? ' (' + d.tag + ')' : '') + '.', '');
     }
     if (card.kind === 'linha') {
-      var t = shuffle(items.filter(function (i) { return i.k && i.v; }))[0];
+      var t = shuffle(pickable.filter(function (i) { return i.k && i.v; }))[0];
       if (!t) return null;
       var ks = [];
       all.forEach(function (o) { if (o.kind === 'linha' && o.topic === card.topic) (o.items || []).forEach(function (i) { if (okItem_(i) && i.k && i.k !== t.k && /^[0-9]/.test(i.k) === /^[0-9]/.test(t.k) && /a\.C\./.test(i.k) === /a\.C\./.test(t.k)) ks.push(i.k); }); });
@@ -193,7 +214,7 @@ var Quiz = (function () {
       return q('cartao', 'Em que época: ' + t.v.replace(/;.*$/, '') + '?', t.k, pickN(ks, 3), t.k + ': ' + t.v + '.', '');
     }
     if (card.kind === 'numeros') {
-      var m = shuffle(items.filter(function (i) { return /^[0-9]/.test(i.k); }))[0];
+      var m = shuffle(pickable.filter(function (i) { return /^[0-9]/.test(i.k); }))[0];
       if (!m) return null;
       var nums = [];
       all.forEach(function (o) { if (o.id !== card.id && o.kind === 'numeros') (o.items || []).forEach(function (i) { if (okItem_(i) && /^[0-9]/.test(i.k) && i.k !== m.k) nums.push(i.k); }); });
@@ -207,9 +228,9 @@ var Quiz = (function () {
     if (!all.length) return [];
     var countries = Util.indexBy(Repo.all('countries'), 'id'), regions = Util.indexBy(Repo.all('regions'), 'id');
     var out = [], seen = {}, tries = 0;
-    while (out.length < n && tries < n * 15) {
+    while (out.length < n && tries < n * 40) {
       tries++;
-      var x = qCard(all[Math.floor(Math.random() * all.length)], all, countries, regions);
+      var x = qCard(all[Math.floor(Math.random() * all.length)], all, countries, regions, opts.level || '');
       if (x && !seen[x.question]) { seen[x.question] = true; out.push(x); }
     }
     return out;
@@ -223,8 +244,8 @@ var Quiz = (function () {
     opts = opts || {};
     var n = Math.max(3, Math.min(20, Number(opts.n) || 10));
     if (opts.cards) {   // só cartões de estudo (seção, tema ou país)
-      var onlyCards = cardQuestions_({ cards: String(opts.cards), country_id: opts.country_id ? Validate.id(opts.country_id, 'countries') : '' }, n);
-      return { title: 'Quiz do material de aula', questions: shuffle(onlyCards) };
+      var onlyCards = cardQuestions_({ cards: String(opts.cards), level: cleanLevel_(opts.level), country_id: opts.country_id ? Validate.id(opts.country_id, 'countries') : '' }, n);
+      return { title: 'Quiz do material de aula', level: cleanLevel_(opts.level), questions: shuffle(onlyCards) };
     }
     var c = context();
     var grapes = [], regions = [], out = [], wineQs = [];
@@ -261,8 +282,11 @@ var Quiz = (function () {
     var seenG = {}, seenR = {};
     grapes = grapes.filter(function (g) { return !seenG[g.id] && (seenG[g.id] = true); });
     regions = regions.filter(function (r) { return !seenR[r.id] && (seenR[r.id] = true); });
-    if (!grapes.length) grapes = shuffle(c.known).slice(0, Math.ceil(n * 0.7));
-    if (!regions.length) regions = shuffle(c.regions.filter(function (r) { return !r.parent_id && r.description; })).slice(0, Math.ceil(n * 0.4));
+    var level = opts.tasting_id ? '' : cleanLevel_(opts.level);
+    var knownPool = level ? c.known.filter(function (g) { return grapeLevel_(c, g) === level; }) : c.known;
+    var regionPool = c.regions.filter(function (r) { return !r.parent_id && r.description && (!level || regionLevel_(c, r) === level); });
+    if (!grapes.length) grapes = shuffle(knownPool).slice(0, Math.ceil(n * 0.7));
+    if (!regions.length) regions = shuffle(regionPool).slice(0, Math.ceil(n * 0.4));
 
     wineQs.filter(Boolean).slice(0, Math.ceil(n / 3)).forEach(function (x) { out.push(x); });
     // Rodízio entre tipos e entre uvas/regiões, até completar.
@@ -277,10 +301,10 @@ var Quiz = (function () {
     }
     // Modo aleatório: parte das perguntas vem dos cartões de estudo, quando existem.
     if (!opts.tasting_id) {
-      var fromCards = cardQuestions_({ cards: 'todos' }, Math.ceil(n * 0.35));
+      var fromCards = cardQuestions_({ cards: 'todos', level: level }, Math.ceil(n * 0.35));
       out = out.slice(0, n - fromCards.length).concat(fromCards);
     }
-    return { title: opts.tasting_id ? 'Quiz da degustação' : 'Quiz aleatório', questions: shuffle(out).slice(0, n) };
+    return { title: opts.tasting_id ? 'Quiz da degustação' : 'Quiz aleatório', level: level, questions: shuffle(out).slice(0, n) };
   }
 
   return { generate: generate };

@@ -11,7 +11,7 @@
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 7,
+  SCHEMA_VERSION: 8,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -58,7 +58,9 @@ var SCHEMA = {
   // items: [{k, v, tag}] — o tipo (kind) define o desenho: fatos, lista, linha (linha do tempo), numeros, denominacoes, produtores.
   // pack/key identificam o cartão no arquivo de dados (reimportar atualiza no lugar, sem duplicar).
   study_cards: { sheet: 'db_study_cards', prefix: 'STC', cols: [
-    'key', 'pack', 'topic', 'country_id', 'region_id', 'group', 'title', 'kind', 'items:json', 'sort:number', 'status'] },
+    'key', 'pack', 'topic', 'country_id', 'region_id', 'group', 'title', 'kind', 'items:json', 'sort:number', 'status',
+    // v8: nível de dificuldade no quiz, por notoriedade: medio (conhecido no mundo todo) | avancado | expert (quase ninguém sabe).
+    'level'] },
 
   appellations: { sheet: 'db_appellations', prefix: 'APL', cols: [
     'name', 'name_key', 'region_id', 'classification', 'rules', 'notes'] },

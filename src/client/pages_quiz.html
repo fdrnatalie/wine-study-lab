@@ -5,13 +5,18 @@
 Pages.quiz = {
   render: function (p) {
     var tid = p.query && p.query.degustacao;
-    var cards = (p.query && p.query.cartoes) || '', cty = (p.query && p.query.pais) || '';
-    return API.raw_('quiz.generate', { tasting_id: tid || '', n: 10, cards: cards, country_id: cty }).then(function (r) {
+    var cards = (p.query && p.query.cartoes) || '', cty = (p.query && p.query.pais) || '', lvl = (p.query && p.query.nivel) || '';
+    return API.raw_('quiz.generate', { tasting_id: tid || '', n: 10, cards: cards, country_id: cty, level: lvl }).then(function (r) {
       Pages.quiz.state = { data: r, i: 0, score: 0, answered: false, tid: tid || '' };
+      var params = [['degustacao', tid || ''], ['cartoes', cards], ['pais', cty]].filter(function (x) { return x[1]; });
+      function lvHref(l) { return '#/quiz' + (params.concat(l ? [['nivel', l]] : []).map(function (x, i) { return (i ? '&' : '?') + x[0] + '=' + encodeURIComponent(x[1]); }).join('')); }
+      var chips = !tid ? '<div class="chips" style="margin:0 0 6px">' + [['', 'Misto'], ['medio', 'Médio'], ['avancado', 'Avançado'], ['expert', 'Expert']].map(function (l) {
+        return '<a class="chip' + (l[0] === lvl ? ' on' : '') + '" href="' + lvHref(l[0]) + '">' + l[1] + '</a>';
+      }).join('') + '</div><p class="small muted" style="margin:0 0 14px">Médio: o que é conhecido no mundo todo · Avançado: menos conhecido · Expert: quase ninguém sabe.</p>' : '';
       return '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>' + esc(r.title) + '</h1>' +
         '<p class="sub">' + (tid ? 'Perguntas sobre as uvas, regiões e vinhos desta degustação.' : cards ? 'Perguntas dos cartões de estudo: história, regiões, denominações e produção.' : 'Perguntas sorteadas da enciclopédia: uvas, regiões, aromas, estrutura e confusões clássicas.') + '</p></div>' +
         '<div class="btn-row">' + (tid ? '<a class="btn" href="#/degustacao/' + esc(tid) + '/resultado">Voltar ao resultado</a>' : '') +
-        '<button class="btn" data-action="restart">Novo quiz</button></div></div><div id="quiz-box"></div>';
+        '<button class="btn" data-action="restart">Novo quiz</button></div></div>' + chips + '<div id="quiz-box"></div>';
     });
   },
   mount: function () { Pages.quiz.draw(); },

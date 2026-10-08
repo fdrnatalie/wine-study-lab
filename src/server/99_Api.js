@@ -90,7 +90,7 @@ var API_METHODS = {
   'notes.remove': function (a) { return Notes.remove(a.id); },
 
   'search': function (a) { return Search.run(a.q); },
-  'quiz.generate': function (a) { return Quiz.generate({ tasting_id: a.tasting_id, n: a.n, cards: a.cards, country_id: a.country_id }); },
+  'quiz.generate': function (a) { return Quiz.generate({ tasting_id: a.tasting_id, n: a.n, cards: a.cards, country_id: a.country_id, level: a.level }); },
 
   'settings.get': function () {
     return { settings: Repo.all('settings'), rules: Settings.rules(), scales: Settings.scales(), last_log: Ctx.isAdmin() ? Import.lastLog(60) : [] };

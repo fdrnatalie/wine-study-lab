@@ -5,7 +5,7 @@
    ============================================================ */
 Components.studyCard = function (c) {
   var head = '<div class="sc-head"><div class="sc-title">' + esc(c.title) + '</div>' +
-    (c.status === 'revisar' ? '<span class="chip sc-flag" title="O material de aula pode ter erro aqui">conferir</span>' : '') + '</div>';
+    '<span class="sc-lv ' + esc(c.level || '') + '" title="Nível no quiz">' + ({ medio: 'Médio', avancado: 'Avançado', expert: 'Expert' }[c.level] || '') + '</span>' + (c.status === 'revisar' ? '<span class="chip sc-flag" title="O material de aula pode ter erro aqui">conferir</span>' : '') + '</div>';
   function tag(t) {
     if (!t) return '';
     var cls = t === 'conferir' ? 'warn' : t === 'corrigido' ? 'fix' : /DOCG|AOC|DOP/.test(t) ? 'wine' : '';

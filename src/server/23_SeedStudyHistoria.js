@@ -63,5 +63,10 @@ STUDY_PACKS.push((function () {
     ['2022', 'Várias regiões vinícolas e qualidade crescendo; vinhos premiados']
   ]);
 
-  return { code: 'HIS', version: 1, cards: cards };
+  // Nível no quiz, por notoriedade (avaliação editorial; ajustável): medio = conhecido no mundo todo.
+  var LEVELS = { 'Os primeiros vinhos': 'medio', 'Do Indo à Grécia': 'avancado', 'Roma leva a vinha à Europa': 'medio', 'Marcos da França': 'avancado',
+    'Américas': 'avancado', 'Oceania e Canadá': 'expert', 'Vinho no Brasil': 'avancado' };
+  cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
+
+  return { code: 'HIS', version: 2, cards: cards };
 })());

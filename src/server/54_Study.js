@@ -9,7 +9,7 @@ var Study = (function () {
   var TOPICS = { historia: 'História do vinho', producao: 'Produção de vinho', harmonizacao: 'Harmonizações' };
 
   function view_(c) {
-    return { id: c.id, topic: c.topic, group: c.group, title: c.title, kind: c.kind, items: c.items || [], status: c.status || '', sort: c.sort || 0 };
+    return { id: c.id, topic: c.topic, group: c.group, title: c.title, kind: c.kind, items: c.items || [], status: c.status || '', sort: c.sort || 0, level: c.level || 'avancado' };
   }
   function bySort_(a, b) { return (a.sort - b.sort) || String(a.title).localeCompare(String(b.title), 'pt'); }
 
@@ -89,12 +89,12 @@ var SeedStudy = (function () {
         var key = s.topic + '|' + (s.ref ? s.ref.join('/') : '') + '|' + Util.normKey(s.title);
         seen[key] = true;
         var rec = { key: key, pack: E.code, topic: s.topic, country_id: scope.country_id, region_id: scope.region_id,
-          group: s.group || '', title: s.title, kind: s.kind, items: s.items, sort: s.sort === undefined ? i : s.sort, status: s.status || 'ok' };
+          group: s.group || '', title: s.title, kind: s.kind, items: s.items, sort: s.sort === undefined ? i : s.sort, status: s.status || 'ok', level: s.level || 'avancado' };
         var cur = byKey[key];
         if (!cur) { rec.source = 'aula'; inserts.push(rec); report.added++; return; }
         if (cur.source !== 'aula') { report.skipped++; return; }
-        if (JSON.stringify([cur.group, cur.title, cur.kind, cur.items, cur.sort, cur.status, cur.country_id, cur.region_id]) ===
-            JSON.stringify([rec.group, rec.title, rec.kind, rec.items, rec.sort, rec.status, rec.country_id, rec.region_id])) return;
+        if (JSON.stringify([cur.group, cur.title, cur.kind, cur.items, cur.sort, cur.status, cur.level, cur.country_id, cur.region_id]) ===
+            JSON.stringify([rec.group, rec.title, rec.kind, rec.items, rec.sort, rec.status, rec.level, rec.country_id, rec.region_id])) return;
         rec.id = cur.id; updates.push(rec); report.updated++;
       });
       if (inserts.length) Repo.insert('study_cards', inserts);
