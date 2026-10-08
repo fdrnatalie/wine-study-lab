@@ -158,15 +158,9 @@ var Quiz = (function () {
   function bump_(lv) { var i = LEVELS.indexOf(lv); return LEVELS[Math.min(2, (i < 0 ? 1 : i) + 1)]; }
   function itemLevel_(card, item) { var base = card.level || 'avancado'; return item && item.k && TECH_KEYS.test(item.k) ? bump_(base) : base; }
   function cleanLevel_(v) { return LEVELS.indexOf(v) >= 0 ? v : ''; }
-  // Uvas e regiões da enciclopédia: sem avaliação manual, usa quantas regiões cultivam a uva / quantas sub-regiões a região tem.
-  function grapeLevel_(c, g) {
-    var n = c.rg.filter(function (x) { return x.grape_id === g.id; }).length;
-    return n >= 6 ? 'medio' : n >= 2 ? 'avancado' : 'expert';
-  }
-  function regionLevel_(c, r) {
-    var n = c.regions.filter(function (x) { return x.parent_id === r.id; }).length;
-    return n >= 8 ? 'medio' : n >= 4 ? 'avancado' : 'expert';
-  }
+  // Uvas e regiões da enciclopédia: nível por notoriedade em 53_QuizLevels.js (o que não está nas listas é "expert").
+  function grapeLevel_(c, g) { return QuizLevels.grape(g); }
+  function regionLevel_(c, r) { return QuizLevels.region(r); }
 
   // ---------- Perguntas a partir dos cartões de estudo (material de aula) ----------
   function cardPool_(opts) {
@@ -187,7 +181,8 @@ var Quiz = (function () {
     if (!pickable.length) return null;
     var head = card.title + (where && card.topic !== 'historia' && card.title.indexOf(where) < 0 ? ' (' + where + ')' : '');
     if (card.kind === 'fatos') {
-      var it = shuffle(pickable.filter(function (i) { return i.k && i.v && i.v.length <= 80; }))[0];
+      if (card.topic === 'harmonizacao') return null;   // prato × região não rende pergunta de múltipla escolha clara
+      var it = shuffle(pickable.filter(function (i) { return i.k && i.v && i.v.length <= 80 && !/^produtores?$/i.test(i.k); }))[0];
       if (!it) return null;
       var wrong = [];
       all.forEach(function (o) { if (o.id !== card.id && o.kind === 'fatos') (o.items || []).forEach(function (i) { if (okItem_(i) && i.k === it.k && i.v !== it.v && i.v.length <= 80) wrong.push(i.v); }); });
