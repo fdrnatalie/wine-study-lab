@@ -376,6 +376,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .sc-tag.warn { background: var(--near-soft); color: var(--near); }
 .sc-tag.fix { background: var(--info-soft); color: var(--info); }
 .sc-flag { border-color: var(--near); color: var(--near); }
+.sc-lv { font-size: .64rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--muted); white-space: nowrap; margin-top: 4px; }
+.sc-lv.expert { color: var(--wine); }
 .sc-facts { margin: 0; display: grid; gap: 7px; }
 .sc-facts div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; font-size: .92rem; line-height: 1.35; }
 .sc-facts dt { color: var(--muted); font-size: .76rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; padding-top: 2px; }
@@ -3821,13 +3823,18 @@ Pages.region = {
 Pages.quiz = {
   render: function (p) {
     var tid = p.query && p.query.degustacao;
-    var cards = (p.query && p.query.cartoes) || '', cty = (p.query && p.query.pais) || '';
-    return API.raw_('quiz.generate', { tasting_id: tid || '', n: 10, cards: cards, country_id: cty }).then(function (r) {
+    var cards = (p.query && p.query.cartoes) || '', cty = (p.query && p.query.pais) || '', lvl = (p.query && p.query.nivel) || '';
+    return API.raw_('quiz.generate', { tasting_id: tid || '', n: 10, cards: cards, country_id: cty, level: lvl }).then(function (r) {
       Pages.quiz.state = { data: r, i: 0, score: 0, answered: false, tid: tid || '' };
+      var params = [['degustacao', tid || ''], ['cartoes', cards], ['pais', cty]].filter(function (x) { return x[1]; });
+      function lvHref(l) { return '#/quiz' + (params.concat(l ? [['nivel', l]] : []).map(function (x, i) { return (i ? '&' : '?') + x[0] + '=' + encodeURIComponent(x[1]); }).join('')); }
+      var chips = !tid ? '<div class="chips" style="margin:0 0 6px">' + [['', 'Misto'], ['medio', 'Médio'], ['avancado', 'Avançado'], ['expert', 'Expert']].map(function (l) {
+        return '<a class="chip' + (l[0] === lvl ? ' on' : '') + '" href="' + lvHref(l[0]) + '">' + l[1] + '</a>';
+      }).join('') + '</div><p class="small muted" style="margin:0 0 14px">Médio: o que é conhecido no mundo todo · Avançado: menos conhecido · Expert: quase ninguém sabe.</p>' : '';
       return '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>' + esc(r.title) + '</h1>' +
         '<p class="sub">' + (tid ? 'Perguntas sobre as uvas, regiões e vinhos desta degustação.' : cards ? 'Perguntas dos cartões de estudo: história, regiões, denominações e produção.' : 'Perguntas sorteadas da enciclopédia: uvas, regiões, aromas, estrutura e confusões clássicas.') + '</p></div>' +
         '<div class="btn-row">' + (tid ? '<a class="btn" href="#/degustacao/' + esc(tid) + '/resultado">Voltar ao resultado</a>' : '') +
-        '<button class="btn" data-action="restart">Novo quiz</button></div></div><div id="quiz-box"></div>';
+        '<button class="btn" data-action="restart">Novo quiz</button></div></div>' + chips + '<div id="quiz-box"></div>';
     });
   },
   mount: function () { Pages.quiz.draw(); },
@@ -3881,7 +3888,7 @@ Pages.quiz = {
    ============================================================ */
 Components.studyCard = function (c) {
   var head = '<div class="sc-head"><div class="sc-title">' + esc(c.title) + '</div>' +
-    (c.status === 'revisar' ? '<span class="chip sc-flag" title="O material de aula pode ter erro aqui">conferir</span>' : '') + '</div>';
+    '<span class="sc-lv ' + esc(c.level || '') + '" title="Nível no quiz">' + ({ medio: 'Médio', avancado: 'Avançado', expert: 'Expert' }[c.level] || '') + '</span>' + (c.status === 'revisar' ? '<span class="chip sc-flag" title="O material de aula pode ter erro aqui">conferir</span>' : '') + '</div>';
   function tag(t) {
     if (!t) return '';
     var cls = t === 'conferir' ? 'warn' : t === 'corrigido' ? 'fix' : /DOCG|AOC|DOP/.test(t) ? 'wine' : '';
