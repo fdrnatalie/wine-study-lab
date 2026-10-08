@@ -27,7 +27,9 @@ var CONFIG = {
   // Fontes que podem servir de gabarito numa degustação.
   TRUSTED_SOURCES: ['usuario', 'rotulo', 'pesquisado', 'planilha', 'ia_revisada'],
 
-  BOTTLE_STATUSES: ['disponivel', 'reservada', 'utilizada', 'descartada'],
+  // disponivel = com vinho, livre · em_uso = aberta, ainda tem vinho (também serve para novas degustações) ·
+  // reservada = separada para uma degustação (ou aguardando você decidir depois dela) · utilizada = finalizada · descartada.
+  BOTTLE_STATUSES: ['disponivel', 'em_uso', 'reservada', 'utilizada', 'descartada'],
   TASTING_STATUSES: ['em_andamento', 'aguardando_revelacao', 'revelada', 'cancelada'],
   NOTE_KINDS: ['impressao', 'comparacao', 'frase', 'associacao', 'descoberta', 'duvida', 'aula', 'degustacao'],
   AROMA_CATEGORIES: ['Frutas', 'Flores', 'Vegetais', 'Herbáceos', 'Especiarias', 'Terrosos', 'Minerais', 'Animais', 'Madeira', 'Evolução', 'Outros'],

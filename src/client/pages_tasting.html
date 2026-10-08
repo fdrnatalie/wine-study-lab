@@ -9,7 +9,7 @@ var DIFFICULTY = {
 Pages.tastingNew = {
   render: function () {
     return Promise.all([API.call('bottles.list'), API.call('wines.list')]).then(function (r) {
-      var bottles = r[0].filter(function (b) { return b.status === 'disponivel'; });
+      var bottles = r[0].filter(function (b) { return BOTTLE_USABLE[b.status]; });
       var wines = r[1].filter(function (w) { return w.bottles_available > 0; });
       Pages.tastingNew.wines = wines;
       var L = Store.lookups;
@@ -288,7 +288,7 @@ Pages.tastingPlay = {
     reveal: function () {
       var P = Pages.tastingPlay, S = P.state;
       return P.save().then(function () {
-        return UI.confirm('Você deseja revelar os vinhos?', 'Depois de revelar, as respostas ficam travadas e as garrafinhas são marcadas como utilizadas.', 'Revelar');
+        return UI.confirm('Você deseja revelar os vinhos?', 'Depois de revelar, as respostas ficam travadas. No resultado você marca, para cada garrafinha, se o vinho acabou ou se ainda tem.', 'Revelar');
       }).then(function (ok) {
         if (!ok) return;
         document.getElementById('t-reveal').innerHTML = '<div class="t-reveal"><div class="serif" style="font-size:1.6rem;font-style:italic">Tirando as etiquetas…</div></div>';
@@ -313,6 +313,23 @@ Pages.tastingPlay = {
 
 /* ============================== RELATÓRIO ============================== */
 Pages.tastingReport = {
+  mount: function () { Pages.tastingReport.drawDecide(); },
+  /** E as garrafinhas? Acabou ou ainda tem vinho — nem toda garrafinha termina numa degustação. */
+  drawDecide: function () {
+    var r = Pages.tastingReport.data, box = document.getElementById('bottle-decide');
+    if (!r || !box) return;
+    var pend = r.samples.filter(function (s) { return s.bottle_status === 'reservada'; }).length;
+    var chip = function (st) { return '<span class="src ' + (st === 'utilizada' ? 'sistema' : st === 'em_uso' ? 'pesquisado' : 'ia') + '">' + esc(BOTTLE_STATUS[st] || st) + '</span>'; };
+    box.innerHTML = '<div class="page-head" style="margin-bottom:10px"><div><h3 style="margin:0">E as garrafinhas?</h3>' +
+      '<div class="muted small">' + (pend ? 'Marque o que aconteceu com cada uma. As que ainda têm vinho ficam <b>Em uso</b> e podem voltar a uma próxima degustação; as que acabaram ficam <b>Finalizadas</b> e liberam o número.' : 'Tudo certo: você já decidiu o destino de todas.') + '</div></div>' +
+      (r.samples.length > 1 && pend ? '<div class="btn-row"><button class="btn small" data-action="bottle-all" data-s="utilizada">Todas acabaram</button><button class="btn small" data-action="bottle-all" data-s="em_uso">Todas ainda têm vinho</button></div>' : '') + '</div>' +
+      '<div class="list">' + r.samples.map(function (s) {
+        var st = s.bottle_status;
+        return '<div class="row"><div><div class="t">#' + s.number + ' · ' + esc(s.wine.name) + (s.wine.vintage ? ' ' + esc(s.wine.vintage) : '') + '</div><div class="m">' + chip(st) + (st === 'reservada' ? ' <b>falta decidir</b>' : '') + '</div></div>' +
+          '<div class="btn-row"><button class="btn small' + (st === 'utilizada' ? ' primary' : '') + '" data-action="bottle-set" data-id="' + esc(s.bottle_id) + '" data-s="utilizada">Acabou</button>' +
+          '<button class="btn small' + (st === 'em_uso' ? ' primary' : '') + '" data-action="bottle-set" data-id="' + esc(s.bottle_id) + '" data-s="em_uso">Ainda tem vinho</button></div></div>';
+      }).join('') + '</div>';
+  },
   render: function (p) {
     return API.call('tastings.report', { id: p.id }).then(function (r) {
       var agg = {};
@@ -340,6 +357,7 @@ Pages.tastingReport = {
         'Eles não entraram na nota. Cadastre o perfil na página do vinho para que passem a contar.</div>';
       html += '</section>';
 
+      html += '<section class="panel" id="bottle-decide"></section>';
       r.samples.forEach(function (s) {
         var w = s.wine;
         html += '<article class="reveal-card"><div class="hd">' + Components.bottle(s.number, { status: 'disponivel', uid: 'rv' }) +
@@ -374,8 +392,28 @@ Pages.tastingReport = {
           '<p class="small muted">Em negrito: características que diferem entre os vinhos. Valores vêm do perfil de referência de cada vinho' +
           (r.samples.some(function (s) { return s.wine.profile && !s.wine.profile_trusted; }) ? ' (alguns ainda <b>não verificados</b>)' : '') + '.</p></div>';
       }
+      Pages.tastingReport.data = r;
       return html;
       function prof(k) { return function (w) { return w.profile && w.profile[k] ? Store.scaleLabel(k, w.profile[k]) + (w.profile_trusted ? '' : ' *') : ''; }; }
+    });
+  },
+  actions: {
+    'bottle-set': function (btn) {
+      var id = btn.getAttribute('data-id'), st = btn.getAttribute('data-s');
+      return Pages.tastingReport.setBottles([id], st);
+    },
+    'bottle-all': function (btn) {
+      var r = Pages.tastingReport.data, st = btn.getAttribute('data-s');
+      return Pages.tastingReport.setBottles(r.samples.filter(function (s) { return s.bottle_status === 'reservada'; }).map(function (s) { return s.bottle_id; }), st);
+    }
+  },
+  setBottles: function (ids, status) {
+    var r = Pages.tastingReport.data;
+    return API.call('bottles.setStatus', { ids: ids, status: status }).then(function () {
+      r.samples.forEach(function (s) { if (ids.indexOf(s.bottle_id) >= 0) s.bottle_status = status; });
+      Pages.tastingReport.drawDecide();
+      UI.toast(status === 'utilizada' ? 'Marcada como finalizada.' : 'Marcada como em uso — ainda tem vinho.');
+      return Store.refreshLookups();
     });
   }
 };

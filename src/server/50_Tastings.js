@@ -35,7 +35,7 @@ var Tastings = (function () {
         if (picked.length > 12) throw new Error('Escolha no máximo 12 garrafinhas.');
         picked.forEach(function (b) {
           if (!b) throw new Error('Garrafinha não encontrada.');
-          if (b.status !== 'disponivel') throw new Error('A garrafinha #' + b.number + ' não está disponível.');
+          if (b.status !== 'disponivel' && b.status !== 'em_uso') throw new Error('A garrafinha #' + b.number + ' não está disponível.');
         });
         picked.sort(function (a, b) { return a.number - b.number; });
         return start_(picked, Validate.str(input.title, 200, 'título') ||
@@ -46,7 +46,7 @@ var Tastings = (function () {
       var wines = Util.indexBy(Repo.all('wines'), 'id');
       var wg = Util.groupBy(Repo.all('wine_grapes'), 'wine_id');
       var pool = Repo.all('bottles').filter(function (b) {
-        if (b.status !== 'disponivel') return false;
+        if (b.status !== 'disponivel' && b.status !== 'em_uso') return false;
         var w = wines[b.wine_id];
         if (!w) return false;
         if (filters.color && w.color && w.color !== filters.color) return false;
@@ -137,7 +137,7 @@ var Tastings = (function () {
       } else {
         pool = sessionGrapes.slice();
         Repo.all('bottles').forEach(function (b) {
-          if (b.status !== 'disponivel' && b.status !== 'reservada') return;
+          if (b.status !== 'disponivel' && b.status !== 'em_uso' && b.status !== 'reservada') return;
           (wg[b.wine_id] || []).forEach(function (x) { if (pool.indexOf(x.grape_id) < 0) pool.push(x.grape_id); });
         });
       }
@@ -269,8 +269,8 @@ var Tastings = (function () {
       var score = scores.length ? Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length * 10) / 10 : '';
       Repo.update('tastings', [{ id: t.id, status: 'revelada', revealed_at: now, score: score,
         scoring_snapshot: { rules: rules.map(function (r) { return { criterion: r.criterion, weight: r.weight, compare: r.compare, params: r.params, active: r.active }; }), settings: settings } }]);
-      var used = samples_(t.id).map(function (s) { return { id: s.bottle_id, status: 'utilizada', status_changed_at: now }; });
-      Repo.update('bottles', used);
+      // As garrafinhas continuam "reservadas" até você dizer, no resultado, se acabaram ou ainda têm vinho
+      // (nem toda garrafinha termina numa degustação).
       return getReport(id);
     });
   }
@@ -324,7 +324,7 @@ var Tastings = (function () {
       var free = {};
       (answers[s.id] || []).forEach(function (a) { if (FREE_CRITERIA[a.criterion]) free[a.criterion] = a.value_json || a.value; });
       return {
-        id: s.id, position: s.position, number: b.number, score: s.score,
+        id: s.id, position: s.position, number: b.number, score: s.score, bottle_id: b.id, bottle_status: b.status,
         wine: {
           id: w.id, name: w.name, producer: w.producer, vintage: w.vintage, country: w.country, region: w.region,
           abv: w.abv, grapes: w.grapes, profile: w.profile, profile_trusted: w.profile_trusted,

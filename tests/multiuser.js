@@ -177,7 +177,10 @@ test('numeração: escolher números, lacunas e conflitos', () => {
   const r2 = ok(fr({ numbering: 'lacunas', count: 6 }));
   assert.strictEqual(JSON.stringify(r2.numbers), JSON.stringify(expected));
   // a numeração é por usuário: a dona pode usar o mesmo número livremente
-  assert.strictEqual(ok(post('bottles.fractionate', { wine_id: w.id, count: 1, numbering: 'manual', numbers: '5', original_volume_ml: 750, bottle_volume_ml: 30 }, owner.token)).numbers[0], 5);
+  // (a dona tem a sua numeração: escolhe um número que ela não usa, mesmo que a Ana use)
+  const ownerUsed = new Set(ok(post('bottles.list', {}, owner.token)).filter((x) => ['disponivel', 'em_uso', 'reservada'].includes(x.status)).map((x) => x.number));
+  let free = 1; while (ownerUsed.has(free)) free++;
+  assert.strictEqual(ok(post('bottles.fractionate', { wine_id: w.id, count: 1, numbering: 'manual', numbers: String(free), original_volume_ml: 750, bottle_volume_ml: 30 }, owner.token)).numbers[0], free);
 });
 test('perfil do vinho: equilíbrio, complexidade e conclusão', () => {
   const w = ok(post('wines.save', { wine: { name: 'Vinho do perfil' } }, owner.token));
@@ -185,6 +188,34 @@ test('perfil do vinho: equilíbrio, complexidade e conclusão', () => {
     balance: 'harmonico', complexity: 'complexa', conclusion_text: 'harmônico, guarda 5 anos' } }, owner.token));
   assert.strictEqual(p.balance, 'harmonico'); assert.strictEqual(p.complexity, 'complexa'); assert.ok(/guarda/.test(p.conclusion_text));
   assert.strictEqual(post('profiles.save', { entity_type: 'wine', entity_id: w.id, profile: { source: 'usuario', balance: 'perfeito' } }, owner.token).ok, false);
+});
+test('garrafinha só acaba quando você decide: em uso continua disponível', () => {
+  const lk = ok(post('wines.list', {}, owner.token));
+  const bottles = ok(post('bottles.list', {}, owner.token)).filter((b) => b.status === 'disponivel').slice(0, 2);
+  const t = ok(post('tastings.create', { bottle_ids: bottles.map((b) => b.id) }, owner.token));
+  const play = ok(post('tastings.play', { id: t.id }, owner.token));
+  play.samples.forEach((sm) => ok(post('tastings.saveAnswers', { sample_id: sm.id, answers: { acidity: { value: 'alta' } }, completed: true }, owner.token)));
+  const rep = ok(post('tastings.reveal', { id: t.id }, owner.token));
+  // revelar NÃO finaliza: continuam separadas, aguardando decisão
+  assert.ok(rep.samples.every((s) => s.bottle_status === 'reservada'));
+  const ids = bottles.map((b) => b.id);
+  const waiting = ok(post('bottles.list', {}, owner.token)).filter((b) => b.awaiting && ids.includes(b.id));
+  assert.strictEqual(waiting.length, 2);
+  // uma acabou, a outra ainda tem vinho
+  ok(post('bottles.setStatus', { ids: [bottles[0].id], status: 'utilizada' }, owner.token));
+  ok(post('bottles.setStatus', { ids: [bottles[1].id], status: 'em_uso' }, owner.token));
+  const after = ok(post('bottles.list', {}, owner.token));
+  assert.strictEqual(after.find((b) => b.id === bottles[0].id).status, 'utilizada');
+  assert.strictEqual(after.find((b) => b.id === bottles[1].id).status, 'em_uso');
+  assert.strictEqual(after.filter((b) => b.awaiting && ids.includes(b.id)).length, 0);
+  // em uso entra em nova degustação; finalizada não
+  const again = post('tastings.create', { bottle_ids: [bottles[1].id] }, owner.token);
+  assert.ok(again.ok, again.error);
+  assert.strictEqual(post('tastings.create', { bottle_ids: [bottles[0].id] }, owner.token).ok, false);
+  // o número da finalizada foi liberado; o da em uso continua ocupado
+  const w = lk[0];
+  assert.strictEqual(post('bottles.fractionate', { wine_id: w.id, numbering: 'manual', numbers: String(bottles[1].number), original_volume_ml: 750, bottle_volume_ml: 30 }, owner.token).ok, false);
+  assert.ok(post('bottles.fractionate', { wine_id: w.id, numbering: 'manual', numbers: String(bottles[0].number), original_volume_ml: 750, bottle_volume_ml: 30 }, owner.token).ok);
 });
 test('IA, sincronização e usuários: só a administradora', () => {
   ['ai.status', 'sync.run', 'users.list', 'seed.grapes'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));

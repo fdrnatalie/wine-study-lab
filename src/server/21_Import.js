@@ -186,7 +186,7 @@ var Import = (function () {
     var profileByWine = Util.indexBy(profiles, 'entity_id');
     var bottles = Repo.all('bottles');
     var activeByNumber = {};
-    bottles.forEach(function (b) { if (b.status === 'disponivel' || b.status === 'reservada') activeByNumber[b.number] = b; });
+    bottles.forEach(function (b) { if (b.status === 'disponivel' || b.status === 'em_uso' || b.status === 'reservada') activeByNumber[b.number] = b; });
     var batches = Repo.all('bottling_batches');
 
     var newWines = [], winePatches = [], newWG = [], newProfiles = [], profilePatches = [], newBottles = [], newBatches = [];

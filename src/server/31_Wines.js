@@ -32,7 +32,7 @@ var Wines = (function () {
       grapes: (c.wineGrapes[w.id] || []).map(function (x) {
         return { id: x.grape_id, name: nameOf_(c.grapes, x.grape_id), percent: x.percent };
       }),
-      bottles_available: bottles.filter(function (b) { return b.status === 'disponivel'; }).length,
+      bottles_available: bottles.filter(function (b) { return b.status === 'disponivel' || b.status === 'em_uso'; }).length,
       bottles_total: bottles.length,
       source: w.source
     };

@@ -1,6 +1,9 @@
 <script>
 /* ============================== MINHA ADEGA ============================== */
-var BOTTLE_STATUS = { disponivel: 'Disponível', reservada: 'Reservada p/ degustação', utilizada: 'Utilizada', descartada: 'Descartada' };
+// Nomes: Disponível (com vinho, livre) · Em uso (aberta, ainda tem vinho) · Separada (para uma degustação, ou aguardando você decidir) · Finalizada (acabou) · Descartada.
+var BOTTLE_STATUS = { disponivel: 'Disponível', em_uso: 'Em uso (ainda tem vinho)', reservada: 'Separada p/ degustação', utilizada: 'Finalizada', descartada: 'Descartada' };
+var BOTTLE_USABLE = { disponivel: 1, em_uso: 1 };      // podem ir para uma degustação
+var BOTTLE_ACTIVE = { disponivel: 1, em_uso: 1, reservada: 1 };   // ocupam o número
 
 Pages.cellar = {
   // Modo discreto: esconde o conteúdo das garrafinhas (preserva o "às cegas").
@@ -15,12 +18,16 @@ Pages.cellar = {
       var list = r[0];
       var n = function (s) { return list.filter(function (b) { return b.status === s; }).length; };
       var html = '<div class="page-head"><div><div class="eyebrow">Minha Adega</div><h1>Adega de degustação</h1>' +
-        '<p class="sub">' + n('disponivel') + ' disponíveis · ' + n('reservada') + ' reservadas · ' + n('utilizada') + ' utilizadas</p></div>' +
+        '<p class="sub">' + n('disponivel') + ' disponíveis · ' + n('em_uso') + ' em uso · ' + n('reservada') + ' separadas · ' + n('utilizada') + ' finalizadas</p></div>' +
         '<div class="btn-row"><a class="btn" href="#/adega/fracionar">Fracionar garrafa</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>' +
         '<p class="callout small" style="margin-bottom:16px">Toque nas garrafinhas para selecionar; com as selecionadas, use <b>Degustar às cegas</b> na barra que aparece embaixo.</p>';
+      var waiting = list.filter(function (b) { return b.awaiting; });
+      if (waiting.length) html += '<div class="callout warn small" style="margin-bottom:16px"><b>' + plural(waiting.length, 'garrafinha aguarda', 'garrafinhas aguardam') + ' sua decisão</b> depois da degustação: ' +
+        waiting.map(function (b) { return '#' + b.number; }).join(', ') + '. Selecione-as e marque <b>Em uso</b> (ainda tem vinho) ou <b>Finalizada</b> (acabou). ' +
+        '<button class="btn small" data-action="select-waiting">Selecionar estas</button></div>';
       if (!list.length) return html + Components.empty('Nenhuma garrafinha cadastrada.', 'Fracione uma garrafa ou sincronize a planilha.', '<a class="btn primary" href="#/adega/fracionar">Fracionar garrafa</a>');
       html += '<div class="btn-row" style="justify-content:space-between;margin-bottom:18px">' +
-        '<div class="seg" id="cellar-filter">' + [['ativas', 'Ativas'], ['disponivel', 'Disponíveis'], ['reservada', 'Reservadas'], ['utilizada', 'Utilizadas'], ['descartada', 'Descartadas'], ['todas', 'Todas']].map(function (f) {
+        '<div class="seg" id="cellar-filter">' + [['ativas', 'Ativas'], ['disponivel', 'Disponíveis'], ['em_uso', 'Em uso'], ['reservada', 'Separadas'], ['utilizada', 'Finalizadas'], ['descartada', 'Descartadas'], ['todas', 'Todas']].map(function (f) {
           return '<button type="button" data-action="filter" data-f="' + f[0] + '" class="' + (Pages.cellar.filter === f[0] ? 'on' : '') + '">' + f[1] + '</button>';
         }).join('') + '</div>' +
         '<label class="small"><input type="checkbox" data-change="discreet"' + (Pages.cellar.discreet ? ' checked' : '') + '> Modo discreto (esconde o conteúdo)</label></div>' +
@@ -39,7 +46,7 @@ Pages.cellar = {
   draw: function () {
     var f = Pages.cellar.filter, d = Pages.cellar.discreet;
     var rows = Pages.cellar.data.filter(function (b) {
-      return f === 'todas' || (f === 'ativas' ? (b.status === 'disponivel' || b.status === 'reservada') : b.status === f);
+      return f === 'todas' || (f === 'ativas' ? !!BOTTLE_ACTIVE[b.status] : b.status === f);
     });
     document.getElementById('cellar-grid').innerHTML = rows.length ? '<div class="cellar">' + rows.map(function (b) {
       return '<button class="btl' + (b.status === 'utilizada' || b.status === 'descartada' ? ' dim' : '') + (Pages.cellar.selected[b.id] ? ' sel' : '') + '" data-action="pick" data-id="' + b.id + '" title="' + esc(BOTTLE_STATUS[b.status]) + '">' +
@@ -55,17 +62,25 @@ Pages.cellar = {
     bar.style.display = '';
     var byId = {};
     Pages.cellar.data.forEach(function (b) { byId[b.id] = b; });
-    var allAvail = ids.every(function (id) { return byId[id] && byId[id].status === 'disponivel'; });
+    var allAvail = ids.every(function (id) { return byId[id] && BOTTLE_USABLE[byId[id].status]; });
     bar.innerHTML = '<div class="btn-row" style="justify-content:space-between"><span><b>' + ids.length + '</b> selecionada(s)</span><span class="btn-row">' +
       (allAvail && ids.length <= 12 ? '<button class="btn primary small" data-action="blind">Degustar às cegas</button>'
-        : '<span class="small muted">Para degustar às cegas, escolha só garrafinhas disponíveis (até 12).</span>') +
+        : '<span class="small muted">Para degustar às cegas, escolha só garrafinhas disponíveis ou em uso (até 12).</span>') +
       (ids.length === 1 ? '<button class="btn small" data-action="details">Ver detalhes</button>' : '') +
       '<button class="btn small" data-action="set-status" data-s="disponivel">Disponível</button>' +
-      '<button class="btn small" data-action="set-status" data-s="utilizada">Utilizada</button>' +
+      '<button class="btn small" data-action="set-status" data-s="em_uso">Em uso</button>' +
+      '<button class="btn small" data-action="set-status" data-s="utilizada">Finalizada</button>' +
       '<button class="btn small" data-action="set-status" data-s="descartada">Descartada</button>' +
       '<button class="btn small ghost" data-action="clear">Limpar</button></span></div>';
   },
   actions: {
+    'select-waiting': function () {
+      Pages.cellar.selected = {};
+      Pages.cellar.data.forEach(function (b) { if (b.awaiting) Pages.cellar.selected[b.id] = true; });
+      Pages.cellar.filter = 'reservada';
+      document.querySelectorAll('#cellar-filter button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-f') === 'reservada'); });
+      Pages.cellar.draw();
+    },
     blind: function (btn) {
       var ids = Object.keys(Pages.cellar.selected);
       UI.busy(btn, true);
@@ -107,7 +122,7 @@ Pages.cellar = {
     },
     'set-status': function (btn) {
       var ids = Object.keys(Pages.cellar.selected), s = btn.getAttribute('data-s');
-      var reserved = Pages.cellar.data.filter(function (b) { return ids.indexOf(b.id) >= 0 && b.status === 'reservada'; });
+      var reserved = Pages.cellar.data.filter(function (b) { return ids.indexOf(b.id) >= 0 && b.status === 'reservada' && !b.awaiting; });
       var go = function () {
         return API.call('bottles.setStatus', { ids: ids, status: s }).then(function (n) { UI.toast(plural(n, 'garrafinha atualizada', 'garrafinhas atualizadas') + '.'); Router.render(); });
       };
@@ -126,10 +141,10 @@ Pages.cellar = {
  * ou escolher os números à mão (ex.: 5, 9, 12-15), com conferência na hora dos que já estão em uso.
  */
 var Fractionate = {
-  /** Números ocupados (garrafinhas disponíveis ou reservadas), em um objeto {n: true}. */
+  /** Números ocupados (garrafinhas disponíveis, em uso ou separadas), em um objeto {n: true}. */
   usedFrom: function (bottles) {
     var used = {};
-    (bottles || []).forEach(function (b) { if (b.status === 'disponivel' || b.status === 'reservada') used[b.number] = true; });
+    (bottles || []).forEach(function (b) { if (BOTTLE_ACTIVE[b.status]) used[b.number] = true; });
     return used;
   },
   freeLow: function (used, n) {

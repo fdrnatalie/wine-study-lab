@@ -42,7 +42,7 @@ var Stats = (function () {
         grapes_in_wines: Object.keys(grapesInWines).length,
         regions: Object.keys(regionsUsed).length,
         tastings: tastings.length,
-        bottles_available: bottles.filter(function (b) { return b.status === 'disponivel'; }).length,
+        bottles_available: bottles.filter(function (b) { return b.status === 'disponivel' || b.status === 'em_uso'; }).length,
         bottles_total: bottles.length,
         notes: Repo.all('notes').length,
         ai_pending: Ctx.isAdmin() ? Enrichment.pendingCount() : 0

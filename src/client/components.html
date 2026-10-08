@@ -39,8 +39,8 @@ var Components = {
   /** Garrafinha estilizada. opts: {status, fill, stroke, label} */
   bottle: function (number, opts) {
     opts = opts || {};
-    var fill = opts.fill || ({ disponivel: 'var(--wine)', reservada: 'var(--gold)', utilizada: 'var(--line-2)', descartada: 'var(--line)' }[opts.status] || 'var(--wine)');
-    var level = opts.status === 'utilizada' || opts.status === 'descartada' ? 64 : 34;
+    var fill = opts.fill || ({ disponivel: 'var(--wine)', em_uso: 'var(--wine)', reservada: 'var(--gold)', utilizada: 'var(--line-2)', descartada: 'var(--line)' }[opts.status] || 'var(--wine)');
+    var level = opts.status === 'utilizada' || opts.status === 'descartada' ? 64 : (opts.status === 'em_uso' ? 50 : 34);   // em uso: meio cheia
     var stroke = opts.stroke || 'currentColor';
     return '<svg viewBox="0 0 40 92" aria-hidden="true">' +
       '<path d="M16 3h8v14c0 3 8 6 8 16v52a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V33c0-10 8-13 8-16z" fill="none" stroke="' + stroke + '" stroke-width="1.5" opacity=".75"/>' +

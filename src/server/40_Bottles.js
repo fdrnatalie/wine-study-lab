@@ -2,18 +2,24 @@
  * Minha Adega de Degustação: fracionamentos e garrafinhas.
  *
  * Um número de garrafinha fica "ocupado" enquanto a garrafinha estiver disponível ou
- * reservada; depois de utilizada/descartada, o número pode ser reaproveitado.
+ * em uso ou reservada; depois de finalizada (utilizada) ou descartada, o número pode ser reaproveitado.
  */
 var Bottles = (function () {
-  var ACTIVE = { disponivel: 1, reservada: 1 };
+  var ACTIVE = { disponivel: 1, em_uso: 1, reservada: 1 };
 
   function list() {
     var wines = Util.indexBy(Repo.all('wines'), 'id');
     var grapes = Util.indexBy(Repo.all('grapes'), 'id');
     var wg = Util.groupBy(Repo.all('wine_grapes'), 'wine_id');
+    // Reservada numa degustação já revelada = aguardando você decidir (acabou? ainda tem vinho?).
+    var sampleOf = {};
+    Repo.all('tasting_samples').forEach(function (s) { sampleOf[s.bottle_id] = s.tasting_id; });
+    var tastings = Util.indexBy(Repo.all('tastings'), 'id');
     return Repo.all('bottles').map(function (b) {
       var w = wines[b.wine_id] || {};
+      var t = tastings[sampleOf[b.id]];
       return {
+        awaiting: b.status === 'reservada' && !!t && t.status === 'revelada', tasting_id: sampleOf[b.id] || '',
         id: b.id, number: b.number, status: b.status, volume_ml: b.volume_ml, batch_id: b.batch_id, notes: b.notes,
         wine_id: b.wine_id, wine_name: w.name || '?', vintage: w.vintage, color: w.color,
         grapes: (wg[b.wine_id] || []).map(function (x) { return grapes[x.grape_id] ? grapes[x.grape_id].name : ''; }).filter(Boolean)
@@ -121,7 +127,7 @@ var Bottles = (function () {
       var bs = bottles[b.id] || [];
       return Object.assign({}, b, {
         wine_name: wines[b.wine_id] ? wines[b.wine_id].name : '?',
-        available: bs.filter(function (x) { return x.status === 'disponivel'; }).length,
+        available: bs.filter(function (x) { return x.status === 'disponivel' || x.status === 'em_uso'; }).length,
         total: bs.length
       });
     }).sort(function (a, b) { return String(b.date || b.created_at).localeCompare(String(a.date || a.created_at)); });

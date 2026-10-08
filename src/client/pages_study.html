@@ -102,9 +102,9 @@ Pages.wine = {
       html += '<section class="panel"><div class="page-head" style="margin-bottom:8px"><h3 style="margin:0">Garrafinhas</h3>' +
         '<button class="btn small" data-action="add-bottles">+ Adicionar garrafinhas</button></div>';
       if (w.bottles.length) {
-        var avail = w.bottles.filter(function (b) { return b.status === 'disponivel'; }).length;
+        var avail = w.bottles.filter(function (b) { return b.status === 'disponivel' || b.status === 'em_uso'; }).length;
         html += '<p class="muted small">' + avail + ' disponível(is) de ' + w.bottles.length + '.</p><div class="cellar">' + w.bottles.map(function (b) {
-          return '<div class="btl' + (b.status === 'disponivel' ? '' : ' dim') + '" title="' + esc(b.status) + '">' + Components.bottle(b.number, { status: b.status }) + '<span class="n">#' + b.number + '</span></div>';
+          return '<div class="btl' + (b.status === 'disponivel' || b.status === 'em_uso' ? '' : ' dim') + '" title="' + esc(BOTTLE_STATUS[b.status] || b.status) + '">' + Components.bottle(b.number, { status: b.status }) + '<span class="n">#' + b.number + '</span></div>';
         }).join('') + '</div>';
       } else {
         html += '<p class="muted">Nenhuma garrafinha ainda. Use <b>Adicionar garrafinhas</b> para fracionar uma garrafa e escolher os números.</p>';
