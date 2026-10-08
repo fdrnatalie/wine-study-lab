@@ -244,6 +244,25 @@ GitHub Pages (index.html, jogo.html)  ──POST text/plain {method,args,token}�
 
 ---
 
+### D12. Cartões de estudo (material de aula) — ✅ implementado (v7)
+
+- **O quê:** tópicos curtos (nunca parágrafos) que complementam as páginas de país e região e formam as seções
+  Estudar → História do vinho, Produção de vinho e Harmonizações. Servem também para consultar na hora de gravar vídeos.
+- **Tabela `db_study_cards`** (`00_Config.js`: `study_cards`): `topic` (pais | regiao | historia | producao | harmonizacao),
+  `country_id`/`region_id` (ligação com o que já existe, sub-região incluída), `group`, `title`, `kind`
+  (fatos | lista | linha | numeros | denominacoes | produtores), `items` (JSON `[{k, v, tag}]`), `sort`, `status`.
+  Itens estruturados (e não texto corrido) permitem filtrar, comparar e gerar quiz.
+- **Dados:** `src/server/23_SeedStudy*.js` (`STUDY_PACKS`, um pacote por assunto/país, com versão), empacotados em
+  `src/seed/study.html` e importados por `SeedStudy.ensure` (idempotente: casa por pacote+chave, não mexe no que foi editado
+  — origem diferente de "aula" —, remove o que saiu do arquivo). O conteúdo é público (decisão da dona): vai no repositório.
+- **Origem:** `source = 'aula'` ("material de aula"), considerada confiável; não se guarda qual aula/slide.
+- **Erros do material:** o slide pode errar. O que foi conferido em fonte aberta é corrigido e marcado `corrigido`; o que não
+  deu para confirmar fica `conferir`. Itens `conferir`/`corrigido` e cartões `status = revisar` ficam fora do quiz.
+- **Quiz:** `Quiz.generate({cards})` monta perguntas dos cartões (fato, denominação, época, número); no modo aleatório ~35%
+  vêm dos cartões; páginas de seção e de país têm o botão "Quiz".
+- **API:** `study.topic`, `study.counts`; `regions.country` e `regions.get` já trazem `cards`. Leitura para todos os usuários;
+  escrita só pela administradora (política `admin`).
+
 ## 4. Modelo de dados (abas `db_*`)
 
 Definido em `src/server/00_Config.js` (objeto `SCHEMA`). Toda aba tem as colunas comuns

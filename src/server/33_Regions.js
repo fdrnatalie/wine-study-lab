@@ -31,7 +31,7 @@ var Regions = (function () {
     var geo = {};
     top.forEach(function (r) { if (r.geo_key && geoKeys[r.geo_key]) geo[r.id] = r.geo_key; });
     return {
-      id: c.id, name: c.name, description: c.description, source: c.source, source_ref: c.source_ref, field_refs: c.field_refs || {}, field_sources: c.field_sources || {},
+      id: c.id, name: c.name, description: c.description, cards: Study.forCountry(c.id), source: c.source, source_ref: c.source_ref, field_refs: c.field_refs || {}, field_sources: c.field_sources || {},
       regions: top.map(function (r) {
         var subs = regs.filter(function (s) { return s.parent_id === r.id; });
         var ids = [r.id].concat(subs.map(function (s) { return s.id; }));
@@ -61,6 +61,7 @@ var Regions = (function () {
     var subs = regs.filter(function (s) { return s.parent_id === r.id; })
       .sort(function (a, b) { return classRank_(a.classification) - classRank_(b.classification) || String(a.name).localeCompare(String(b.name), 'pt'); });
     var ids = [r.id].concat(subs.map(function (s) { return s.id; }));
+    var cards = Study.forRegions(ids);
     function grapeList(regionId) {
       return (rg[regionId] || []).map(function (x) {
         var g = grapes[x.grape_id];
@@ -89,8 +90,9 @@ var Regions = (function () {
       grapes: grapeList(r.id),
       producers: prodList(r.id),
       geo_key: r.geo_key || '',
+      cards: cards[r.id] || [],
       subregions: subs.map(function (s) {
-        return { id: s.id, name: s.name, classification: s.classification, description: s.description,
+        return { id: s.id, name: s.name, cards: cards[s.id] || [], classification: s.classification, description: s.description,
           notable_wines: s.notable_wines, lat: s.lat, lng: s.lng, source: s.source, source_ref: s.source_ref,
           grapes: grapeList(s.id), producers: prodList(s.id),
           wines: wines.filter(function (w) { return Repo.get('wines', w.id).subregion_id === s.id; }).map(function (w) { return w.id; }) };

@@ -1,0 +1,85 @@
+<script>
+/* ============================================================
+   Cartões de estudo (material de aula): tópicos curtos, feitos para bater o olho (e para gravar vídeos).
+   Aparecem nas páginas de país e região e nas seções História, Produção e Harmonizações.
+   ============================================================ */
+Components.studyCard = function (c) {
+  var head = '<div class="sc-head"><div class="sc-title">' + esc(c.title) + '</div>' +
+    (c.status === 'revisar' ? '<span class="chip sc-flag" title="O material de aula pode ter erro aqui">conferir</span>' : '') + '</div>';
+  function tag(t) {
+    if (!t) return '';
+    var cls = t === 'conferir' ? 'warn' : t === 'corrigido' ? 'fix' : /DOCG|AOC|DOP/.test(t) ? 'wine' : '';
+    return '<span class="sc-tag ' + cls + '">' + esc(t) + '</span>';
+  }
+  var body = '';
+  switch (c.kind) {
+    case 'numeros':
+      body = '<div class="sc-nums">' + c.items.map(function (i) {
+        return '<div class="sc-num"><div class="n">' + esc(i.k) + '</div><div class="d">' + esc(i.v) + '</div></div>';
+      }).join('') + '</div>';
+      break;
+    case 'linha':
+      body = '<ol class="sc-line">' + c.items.map(function (i) {
+        return '<li>' + (i.k ? '<span class="y">' + esc(i.k) + '</span>' : '') + '<span class="t">' + esc(i.v) + '</span>' + tag(i.tag) + '</li>';
+      }).join('') + '</ol>';
+      break;
+    case 'denominacoes':
+      body = '<ul class="sc-den">' + c.items.map(function (i) {
+        return '<li><div class="top"><b>' + esc(i.k) + '</b>' + tag(i.tag) + '</div><div class="d">' + esc(i.v) + '</div></li>';
+      }).join('') + '</ul>';
+      break;
+    case 'produtores':
+      body = '<div class="chips">' + c.items.map(function (i) { return '<span class="chip">' + esc(i.k) + '</span>'; }).join('') + '</div>';
+      break;
+    case 'lista':
+      body = '<ul class="sc-list">' + c.items.map(function (i) { return '<li>' + esc(i.v || i.k) + tag(i.tag) + '</li>'; }).join('') + '</ul>';
+      break;
+    default:   // fatos
+      body = '<dl class="sc-facts">' + c.items.map(function (i) {
+        return '<div><dt>' + esc(i.k) + '</dt><dd>' + esc(i.v) + tag(i.tag) + '</dd></div>';
+      }).join('') + '</dl>';
+  }
+  return '<article class="sc sc-' + esc(c.kind) + '">' + head + body + '</article>';
+};
+
+/** Cartões em grade; devolve '' quando não há nenhum. */
+Components.studyCards = function (cards, title) {
+  if (!cards || !cards.length) return '';
+  return (title ? '<h3 class="sc-sec">' + esc(title) + '</h3>' : '') +
+    '<div class="sc-grid">' + cards.map(Components.studyCard).join('') + '</div>';
+};
+
+/* ---------------- Seções: História, Produção, Harmonizações ---------------- */
+Pages.estudo = {
+  render: function (p) {
+    return API.call('study.topic', { topic: p.tema }).then(function (d) {
+      Pages.estudo.data = d;
+      var sub = { historia: 'Linhas do tempo curtas: do primeiro vinho ao vinho no Brasil.',
+        producao: 'Do plantio à garrafa: viticultura, vinificação, amadurecimento e tipos de vinho.',
+        harmonizacao: 'Princípios e pratos clássicos, região por região.' }[d.topic];
+      var html = '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>' + esc(d.title) + '</h1><p class="sub">' + esc(sub) + '</p></div>' +
+        (d.count ? '<div class="btn-row"><a class="btn" href="#/quiz?cartoes=' + esc(d.topic) + '">Quiz desta seção</a></div>' : '') + '</div>';
+      if (!d.count) {
+        return html + Components.empty('Em preparação', 'Esta seção entra nos próximos lotes. Quando você enviar a apostila, ela ajuda a completar.');
+      }
+      html += '<div class="toolbar"><input type="search" id="sc-q" placeholder="Buscar nesta seção…" style="max-width:340px"></div><div id="sc-body">' + Pages.estudo.body(d, '') + '</div>';
+      return html;
+    });
+  },
+  body: function (d, q) {
+    q = Util2.norm(q);
+    var out = '';
+    d.groups.forEach(function (g) {
+      var cards = q ? g.cards.filter(function (c) { return Util2.norm(JSON.stringify([c.title, c.items])).indexOf(q) >= 0 || Util2.norm(g.name).indexOf(q) >= 0; }) : g.cards;
+      out += Components.studyCards(cards, g.name);
+    });
+    return out || Components.empty('Nada encontrado', 'Tente outra palavra.');
+  },
+  mount: function () {
+    var el = document.getElementById('sc-q');
+    if (!el) return;
+    el.addEventListener('input', function () { document.getElementById('sc-body').innerHTML = Pages.estudo.body(Pages.estudo.data, el.value); });
+  }
+};
+var Util2 = { norm: function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); } };
+</script>

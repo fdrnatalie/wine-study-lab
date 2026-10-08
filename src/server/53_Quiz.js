@@ -148,6 +148,73 @@ var Quiz = (function () {
     return q('regiao-pais', 'Em que país fica a região ' + region.name + '?', right, wrong, trim(region.description || '', 220), refOf(region, 'description'));
   }
 
+
+  // ---------- Perguntas a partir dos cartões de estudo (material de aula) ----------
+  function cardPool_(opts) {
+    var cards = Repo.all('study_cards').filter(function (x) { return x.status !== 'revisar'; });
+    if (opts.cards && opts.cards !== 'todos') cards = cards.filter(function (x) { return x.topic === opts.cards; });
+    if (opts.country_id) cards = cards.filter(function (x) { return x.country_id === opts.country_id; });
+    return cards;
+  }
+  function okItem_(i) { return i && i.tag !== 'conferir' && i.tag !== 'corrigido'; }
+  function cardWhere_(c, card, countries, regions) {
+    var r = card.region_id && regions[card.region_id], cn = countries[card.country_id];
+    return r ? r.name : (cn ? cn.name : '');
+  }
+
+  function qCard(card, all, countries, regions) {
+    var where = cardWhere_(null, card, countries, regions), items = (card.items || []).filter(okItem_);
+    var head = card.title + (where && card.topic !== 'historia' ? ' (' + where + ')' : '');
+    if (card.kind === 'fatos') {
+      var it = shuffle(items.filter(function (i) { return i.k && i.v && i.v.length <= 80; }))[0];
+      if (!it) return null;
+      var wrong = [];
+      all.forEach(function (o) { if (o.id !== card.id && o.kind === 'fatos') (o.items || []).forEach(function (i) { if (okItem_(i) && i.k === it.k && i.v !== it.v && i.v.length <= 80) wrong.push(i.v); }); });
+      wrong = pickN(wrong.filter(function (v, i) { return wrong.indexOf(v) === i; }), 3);
+      return q('cartao', head + ': ' + it.k.toLowerCase() + '?', it.v, wrong,
+        items.map(function (i) { return i.k + ': ' + i.v; }).join(' · ').slice(0, 300), '');
+    }
+    if (card.kind === 'denominacoes') {
+      var counts = {};
+      all.forEach(function (o) { if (o.kind === 'denominacoes') (o.items || []).forEach(function (i) { counts[i.v] = (counts[i.v] || 0) + 1; }); });
+      var d = shuffle(items.filter(function (i) { return i.k && i.v && counts[i.v] === 1; }))[0];
+      if (!d) return null;
+      var names = [];
+      all.forEach(function (o) { if (o.kind === 'denominacoes' && o.country_id === card.country_id) (o.items || []).forEach(function (i) { if (i.k !== d.k && i.v !== d.v) names.push(i.k); }); });
+      return q('cartao', 'Qual denominação' + (where ? ' de ' + where : '') + ' é esta: ' + d.v + (d.tag ? ' (' + d.tag + ')' : '') + '?',
+        d.k, pickN(names, 3), d.k + ': ' + d.v + (d.tag ? ' (' + d.tag + ')' : '') + '.', '');
+    }
+    if (card.kind === 'linha') {
+      var t = shuffle(items.filter(function (i) { return i.k && i.v; }))[0];
+      if (!t) return null;
+      var ks = [];
+      all.forEach(function (o) { if (o.kind === 'linha' && o.topic === card.topic) (o.items || []).forEach(function (i) { if (okItem_(i) && i.k && i.k !== t.k && /^[0-9]/.test(i.k) === /^[0-9]/.test(t.k) && /a\.C\./.test(i.k) === /a\.C\./.test(t.k)) ks.push(i.k); }); });
+      ks = ks.filter(function (v, i) { return ks.indexOf(v) === i; });
+      return q('cartao', 'Em que época: ' + t.v.replace(/;.*$/, '') + '?', t.k, pickN(ks, 3), t.k + ': ' + t.v + '.', '');
+    }
+    if (card.kind === 'numeros') {
+      var m = shuffle(items.filter(function (i) { return /^[0-9]/.test(i.k); }))[0];
+      if (!m) return null;
+      var nums = [];
+      all.forEach(function (o) { if (o.id !== card.id && o.kind === 'numeros') (o.items || []).forEach(function (i) { if (okItem_(i) && /^[0-9]/.test(i.k) && i.k !== m.k) nums.push(i.k); }); });
+      return q('cartao', head + ': ' + m.v + '. Qual é o número?', m.k, pickN(nums, 3), m.k + ': ' + m.v + '.', '');
+    }
+    return null;
+  }
+
+  function cardQuestions_(opts, n) {
+    var all = cardPool_(opts);
+    if (!all.length) return [];
+    var countries = Util.indexBy(Repo.all('countries'), 'id'), regions = Util.indexBy(Repo.all('regions'), 'id');
+    var out = [], seen = {}, tries = 0;
+    while (out.length < n && tries < n * 15) {
+      tries++;
+      var x = qCard(all[Math.floor(Math.random() * all.length)], all, countries, regions);
+      if (x && !seen[x.question]) { seen[x.question] = true; out.push(x); }
+    }
+    return out;
+  }
+
   var BY_GRAPE = [qCountry, qRegionOfGrape, qAroma, qStructure, qConfusion, qParent];
   var BY_REGION = [qGrapeOfRegion, qRegionCountry];
 
@@ -155,6 +222,10 @@ var Quiz = (function () {
   function generate(opts) {
     opts = opts || {};
     var n = Math.max(3, Math.min(20, Number(opts.n) || 10));
+    if (opts.cards) {   // só cartões de estudo (seção, tema ou país)
+      var onlyCards = cardQuestions_({ cards: String(opts.cards), country_id: opts.country_id ? Validate.id(opts.country_id, 'countries') : '' }, n);
+      return { title: 'Quiz do material de aula', questions: shuffle(onlyCards) };
+    }
     var c = context();
     var grapes = [], regions = [], out = [], wineQs = [];
 
@@ -203,6 +274,11 @@ var Quiz = (function () {
       var gens = useRegion ? BY_REGION : BY_GRAPE;
       var x = gens[Math.floor(Math.random() * gens.length)](c, item);
       if (x && !out.some(function (o) { return o.question === x.question; })) out.push(x);
+    }
+    // Modo aleatório: parte das perguntas vem dos cartões de estudo, quando existem.
+    if (!opts.tasting_id) {
+      var fromCards = cardQuestions_({ cards: 'todos' }, Math.ceil(n * 0.35));
+      out = out.slice(0, n - fromCards.length).concat(fromCards);
     }
     return { title: opts.tasting_id ? 'Quiz da degustação' : 'Quiz aleatório', questions: shuffle(out).slice(0, n) };
   }

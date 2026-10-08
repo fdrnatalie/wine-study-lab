@@ -217,6 +217,21 @@ test('garrafinha só acaba quando você decide: em uso continua disponível', ()
   assert.strictEqual(post('bottles.fractionate', { wine_id: w.id, numbering: 'manual', numbers: String(bottles[1].number), original_volume_ml: 750, bottle_volume_ml: 30 }, owner.token).ok, false);
   assert.ok(post('bottles.fractionate', { wine_id: w.id, numbering: 'manual', numbers: String(bottles[0].number), original_volume_ml: 750, bottle_volume_ml: 30 }, owner.token).ok);
 });
+test('cartões de estudo: membro lê, aparecem em país/região e no quiz', () => {
+  const hist = ok(post('study.topic', { topic: 'historia' }, ana.token));
+  assert.ok(hist.count > 0 && hist.groups.length > 1);
+  assert.strictEqual(post('study.topic', { topic: 'xyz' }, ana.token).ok, false);
+  const countries = ok(post('regions.countries', {}, ana.token));
+  const it = countries.find((c) => c.name === 'Itália');
+  const country = ok(post('regions.country', { id: it.id }, ana.token));
+  assert.ok(country.cards.length > 0);
+  const tosc = ok(post('regions.get', { id: country.regions.find((r) => r.name === 'Toscana').id }, ana.token));
+  assert.ok(tosc.cards.length > 0 && tosc.subregions.some((s) => s.cards.length));
+  const q = ok(post('quiz.generate', { cards: 'todos', n: 6 }, ana.token));
+  assert.ok(q.questions.length > 0 && q.questions.every((x) => x.type === 'cartao' && x.options.length >= 3 && x.answer >= 0));
+  const qi = ok(post('quiz.generate', { cards: 'todos', country_id: it.id, n: 4 }, ana.token));
+  assert.ok(qi.questions.length > 0);
+});
 test('IA, sincronização e usuários: só a administradora', () => {
   ['ai.status', 'sync.run', 'users.list', 'seed.grapes'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));
   assert.ok(ok(post('users.list', {}, owner.token)).length >= 3);

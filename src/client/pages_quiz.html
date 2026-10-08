@@ -5,10 +5,11 @@
 Pages.quiz = {
   render: function (p) {
     var tid = p.query && p.query.degustacao;
-    return API.raw_('quiz.generate', { tasting_id: tid || '', n: 10 }).then(function (r) {
+    var cards = (p.query && p.query.cartoes) || '', cty = (p.query && p.query.pais) || '';
+    return API.raw_('quiz.generate', { tasting_id: tid || '', n: 10, cards: cards, country_id: cty }).then(function (r) {
       Pages.quiz.state = { data: r, i: 0, score: 0, answered: false, tid: tid || '' };
       return '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>' + esc(r.title) + '</h1>' +
-        '<p class="sub">' + (tid ? 'Perguntas sobre as uvas, regiões e vinhos desta degustação.' : 'Perguntas sorteadas da enciclopédia: uvas, regiões, aromas, estrutura e confusões clássicas.') + '</p></div>' +
+        '<p class="sub">' + (tid ? 'Perguntas sobre as uvas, regiões e vinhos desta degustação.' : cards ? 'Perguntas dos cartões de estudo: história, regiões, denominações e produção.' : 'Perguntas sorteadas da enciclopédia: uvas, regiões, aromas, estrutura e confusões clássicas.') + '</p></div>' +
         '<div class="btn-row">' + (tid ? '<a class="btn" href="#/degustacao/' + esc(tid) + '/resultado">Voltar ao resultado</a>' : '') +
         '<button class="btn" data-action="restart">Novo quiz</button></div></div><div id="quiz-box"></div>';
     });

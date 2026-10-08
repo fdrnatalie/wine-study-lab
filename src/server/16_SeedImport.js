@@ -16,7 +16,8 @@
 var SeedData = (function () {
   var loaded = {};
   var CHECK = { grapes: function () { return typeof GRAPE_ENCYCLOPEDIA !== 'undefined'; },
-    regions: function () { return typeof REGION_PACKS !== 'undefined' && REGION_PACKS.length > 0; } };
+    regions: function () { return typeof REGION_PACKS !== 'undefined' && REGION_PACKS.length > 0; },
+    study: function () { return typeof STUDY_PACKS !== 'undefined' && STUDY_PACKS.length > 0; } };
   function load(name) {
     if (loaded[name] || CHECK[name]()) { loaded[name] = true; return; }
     var code = HtmlService.createHtmlOutputFromFile('seed/' + name).getContent();

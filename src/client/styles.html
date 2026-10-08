@@ -355,4 +355,33 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .prof-step span { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--wine); color: #fff; font-size: .75rem; font-weight: 700; }
 .prof-grid { display: grid; gap: 4px 28px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .prof-sec h4.prof-step { margin-top: 6px; }
+
+/* Cartões de estudo */
+.sc-sec { margin: 26px 0 10px; font-family: var(--serif); font-size: 1.35rem; font-weight: 600; }
+.sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; margin: 8px 0 4px; }
+.sc { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+.sc-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
+.sc-title { font-family: var(--serif); font-size: 1.25rem; font-weight: 600; line-height: 1.15; }
+.sc-tag { display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; font-size: .68rem; font-weight: 600; letter-spacing: .04em; background: var(--paper-2); color: var(--muted); vertical-align: middle; }
+.sc-tag.wine { background: var(--wine-soft); color: var(--wine); }
+.sc-tag.warn { background: var(--near-soft); color: var(--near); }
+.sc-tag.fix { background: var(--info-soft); color: var(--info); }
+.sc-flag { border-color: var(--near); color: var(--near); }
+.sc-facts { margin: 0; display: grid; gap: 7px; }
+.sc-facts div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; font-size: .92rem; line-height: 1.35; }
+.sc-facts dt { color: var(--muted); font-size: .76rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; padding-top: 2px; }
+.sc-facts dd { margin: 0; }
+.sc-nums { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sc-num { background: var(--paper-2); border-radius: 8px; padding: 10px 12px; }
+.sc-num .n { font-family: var(--serif); font-size: 1.5rem; font-weight: 600; color: var(--wine); line-height: 1.1; }
+.sc-num .d { font-size: .8rem; color: var(--ink-2); margin-top: 2px; line-height: 1.3; }
+.sc-line { list-style: none; margin: 0; padding: 0 0 0 4px; border-left: 2px solid var(--line-2); }
+.sc-line li { position: relative; padding: 0 0 10px 14px; font-size: .92rem; line-height: 1.35; }
+.sc-line li::before { content: ''; position: absolute; left: -7px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--wine); }
+.sc-line .y { display: block; font-weight: 700; font-size: .8rem; color: var(--wine); letter-spacing: .04em; }
+.sc-den { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.sc-den .top { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.sc-den .d { font-size: .85rem; color: var(--ink-2); line-height: 1.35; }
+.sc-list { margin: 0; padding-left: 18px; font-size: .92rem; line-height: 1.5; }
+.src.aula { color: var(--info); background: var(--info-soft); }
 </style>

@@ -90,7 +90,7 @@ var API_METHODS = {
   'notes.remove': function (a) { return Notes.remove(a.id); },
 
   'search': function (a) { return Search.run(a.q); },
-  'quiz.generate': function (a) { return Quiz.generate({ tasting_id: a.tasting_id, n: a.n }); },
+  'quiz.generate': function (a) { return Quiz.generate({ tasting_id: a.tasting_id, n: a.n, cards: a.cards, country_id: a.country_id }); },
 
   'settings.get': function () {
     return { settings: Repo.all('settings'), rules: Settings.rules(), scales: Settings.scales(), last_log: Ctx.isAdmin() ? Import.lastLog(60) : [] };
@@ -112,6 +112,8 @@ var API_METHODS = {
   'regions.countries': function () { return Regions.countries(); },
   'regions.country': function (a) { return Regions.country(a.id); },
   'regions.get': function (a) { return Regions.get(a.id); },
+  'study.topic': function (a) { return Study.topic(String(a.topic || '')); },
+  'study.counts': function () { return Study.counts(); },
   'seed.regions': function (p) { var r = SeedRegions.run(!(p && p.resume)); r.lookups = Catalog.lookups(); return r; },
   'seed.grapes': function () { var x = SeedEncyclopedia.runAll(true); var r = Object.assign({}, x.report || {}, { remaining: x.remaining }); r.lookups = Catalog.lookups(); return r; },
 
@@ -211,7 +213,8 @@ function ensureSchema_() {
   // Atalho: se nada mudou desde a última verificação (mesma estrutura e mesmas versões dos dados), não
   // consulta propriedades nem planilha — economiza ~0,5 s em toda chamada.
   var sig = CONFIG.SCHEMA_VERSION + '|' + SEED_MANIFEST.grapes.version + '|' +
-    SEED_MANIFEST.packs.map(function (p) { return p.code + p.version; }).join(',');
+    SEED_MANIFEST.packs.map(function (p) { return p.code + p.version; }).join(',') + '|' +
+    SEED_MANIFEST.study.map(function (p) { return p.code + p.version; }).join(',');
   var cache = CacheService.getScriptCache();
   if (cache.get('seeds_ok') === sig) return;
   var props = PropertiesService.getScriptProperties();
@@ -228,7 +231,8 @@ function ensureSchema_() {
     // Em etapas curtas: a primeira abertura depois de uma versão nova não trava o app.
     var g = SeedEncyclopedia.ensure(8000);
     var r = SeedRegions.ensure(8000);
-    if (g === null && !r.length) cache.put('seeds_ok', sig, 21600);
+    var st = SeedStudy.ensure();
+    if (g === null && !r.length && !st.length) cache.put('seeds_ok', sig, 21600);
   } catch (e) {
     // Não bloqueia o app: registra e tenta de novo na próxima chamada.
     console.error('Enciclopédia de uvas', e && e.stack || e);
@@ -251,6 +255,7 @@ function setup() {
   var sync = Import.run();
   SeedEncyclopedia.runAll();
   SeedRegions.ensure(240000);
+  SeedStudy.ensure();
   var msg = ['Dono: ' + owner, 'Abas: ' + (schema.join('; ') || 'nenhuma alteração'),
     'Sementes: ' + (seeds.join('; ') || 'nenhuma'), 'Sincronização: ' + JSON.stringify(sync.stats)].join('\n');
   console.log(msg);

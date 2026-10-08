@@ -100,6 +100,8 @@ Pages.country = {
           return '<a class="row" href="#/regioes/' + r.id + '" data-region="' + r.id + '"><div><div class="t">' + esc(r.name) + '</div>' +
             '<div class="m">' + plural(r.subregions, 'sub-região', 'sub-regiões') + (r.wines ? ' · ' + plural(r.wines, 'vinho seu', 'vinhos seus') : '') + '</div></div><div></div></a>';
         }).join('') + '</div></section></div>';
+      html += Components.studyCards(c.cards, 'Para estudar: ' + c.name);
+      if (c.cards.length) html += '<p><a class="btn" href="#/quiz?cartoes=todos&pais=' + c.id + '">Quiz sobre ' + esc(c.name) + '</a></p>';
       return html;
     });
   },
@@ -178,6 +180,7 @@ Pages.region = {
         }).join('') + '</ul>' : '') +
         '<p class="small muted" style="margin-top:14px">Fonte: ' + Components.src(r.source) + ' ' + sourceLink(r.source_ref) + '</p></section>';
 
+      html += Components.studyCards(r.cards, 'Para estudar');
       html += '<h2>Sub-regiões e denominações</h2>';
       html += r.subregions.length ? r.subregions.map(function (s) {
         var mine = r.wines.filter(function (w) { return s.wines.indexOf(w.id) >= 0; });
@@ -191,7 +194,7 @@ Pages.region = {
             return '<li style="margin:3px 0"><b>' + esc(p.name) + '</b>' + (p.notable_labels ? ' <span class="muted small">— ' + esc(p.notable_labels) + '</span>' : '') + '</li>';
           }).join('') + '</ul>' : '<span class="missing">Nenhum produtor citado nas fontes pesquisadas</span>') +
           (mine.length ? '<div class="eyebrow" style="margin:12px 0 4px">No seu estudo</div>' + mine.map(function (w) { return '<a href="#/vinhos/' + w.id + '">' + esc(w.name) + (w.vintage ? ' ' + w.vintage : '') + '</a>'; }).join(', ') : '') +
-          '</div></div><p class="small muted" style="margin:10px 0 0">Fonte: ' + sourceLink(s.source_ref) + '</p></article>';
+          '</div></div>' + Components.studyCards(s.cards) + '<p class="small muted" style="margin:10px 0 0">Fonte: ' + sourceLink(s.source_ref) + '</p></article>';
       }).join('') : Components.empty('Nenhuma sub-região cadastrada.');
 
       if (r.wines.length) {

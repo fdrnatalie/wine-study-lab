@@ -11,7 +11,7 @@
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 6,
+  SCHEMA_VERSION: 7,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -23,9 +23,9 @@ var CONFIG = {
   CACHE_PREFIX: 'wsl:v1:',
 
   // Valores de `source` aceitos (ver docs/ARQUITETURA.md §2).
-  SOURCES: ['usuario', 'rotulo', 'pesquisado', 'planilha', 'ia', 'ia_revisada', 'ia_nao_verificada', 'sistema'],
+  SOURCES: ['usuario', 'rotulo', 'pesquisado', 'planilha', 'ia', 'ia_revisada', 'ia_nao_verificada', 'sistema', 'aula'],
   // Fontes que podem servir de gabarito numa degustação.
-  TRUSTED_SOURCES: ['usuario', 'rotulo', 'pesquisado', 'planilha', 'ia_revisada'],
+  TRUSTED_SOURCES: ['usuario', 'rotulo', 'pesquisado', 'planilha', 'ia_revisada', 'aula'],
 
   // disponivel = com vinho, livre · em_uso = aberta, ainda tem vinho (também serve para novas degustações) ·
   // reservada = separada para uma degustação (ou aguardando você decidir depois dela) · utilizada = finalizada · descartada.
@@ -53,6 +53,12 @@ var SCHEMA = {
     'climate', 'altitude', 'soils', 'styles', 'history', 'notes',
     // v3: descrição, classificação (DOCG, DOC, AOC, zona…), vinhos de destaque e chave do contorno no mapa.
     'description', 'classification', 'notable_wines', 'geo_key'] },
+
+  // v7: cartões de estudo (material de aula, em tópicos curtos). topic: pais | regiao | historia | producao | harmonizacao.
+  // items: [{k, v, tag}] — o tipo (kind) define o desenho: fatos, lista, linha (linha do tempo), numeros, denominacoes, produtores.
+  // pack/key identificam o cartão no arquivo de dados (reimportar atualiza no lugar, sem duplicar).
+  study_cards: { sheet: 'db_study_cards', prefix: 'STC', cols: [
+    'key', 'pack', 'topic', 'country_id', 'region_id', 'group', 'title', 'kind', 'items:json', 'sort:number', 'status'] },
 
   appellations: { sheet: 'db_appellations', prefix: 'APL', cols: [
     'name', 'name_key', 'region_id', 'classification', 'rules', 'notes'] },

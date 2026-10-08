@@ -824,7 +824,7 @@ h3 { font-size: 20px; margin-bottom: 7px; }
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 6,
+  SCHEMA_VERSION: 7,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -836,9 +836,9 @@ var CONFIG = {
   CACHE_PREFIX: 'wsl:v1:',
 
   // Valores de `source` aceitos (ver docs/ARQUITETURA.md §2).
-  SOURCES: ['usuario', 'rotulo', 'pesquisado', 'planilha', 'ia', 'ia_revisada', 'ia_nao_verificada', 'sistema'],
+  SOURCES: ['usuario', 'rotulo', 'pesquisado', 'planilha', 'ia', 'ia_revisada', 'ia_nao_verificada', 'sistema', 'aula'],
   // Fontes que podem servir de gabarito numa degustação.
-  TRUSTED_SOURCES: ['usuario', 'rotulo', 'pesquisado', 'planilha', 'ia_revisada'],
+  TRUSTED_SOURCES: ['usuario', 'rotulo', 'pesquisado', 'planilha', 'ia_revisada', 'aula'],
 
   // disponivel = com vinho, livre · em_uso = aberta, ainda tem vinho (também serve para novas degustações) ·
   // reservada = separada para uma degustação (ou aguardando você decidir depois dela) · utilizada = finalizada · descartada.
@@ -866,6 +866,12 @@ var SCHEMA = {
     'climate', 'altitude', 'soils', 'styles', 'history', 'notes',
     // v3: descrição, classificação (DOCG, DOC, AOC, zona…), vinhos de destaque e chave do contorno no mapa.
     'description', 'classification', 'notable_wines', 'geo_key'] },
+
+  // v7: cartões de estudo (material de aula, em tópicos curtos). topic: pais | regiao | historia | producao | harmonizacao.
+  // items: [{k, v, tag}] — o tipo (kind) define o desenho: fatos, lista, linha (linha do tempo), numeros, denominacoes, produtores.
+  // pack/key identificam o cartão no arquivo de dados (reimportar atualiza no lugar, sem duplicar).
+  study_cards: { sheet: 'db_study_cards', prefix: 'STC', cols: [
+    'key', 'pack', 'topic', 'country_id', 'region_id', 'group', 'title', 'kind', 'items:json', 'sort:number', 'status'] },
 
   appellations: { sheet: 'db_appellations', prefix: 'APL', cols: [
     'name', 'name_key', 'region_id', 'classification', 'rules', 'notes'] },
@@ -2069,7 +2075,7 @@ var Seeds = (function () {
 
 // ---- 14_SeedManifest.js
 /** Gerado por tools/build-seeds.js — não editar. Versões dos dados empacotados em src/seed/. */
-var SEED_MANIFEST = {"grapes":{"version":9,"count":351},"packs":[{"code":"AM","version":1,"country":"Armênia","regions":6},{"code":"AR","version":1,"country":"Argentina","regions":4},{"code":"AT","version":1,"country":"Áustria","regions":4},{"code":"AU","version":1,"country":"Austrália","regions":5},{"code":"BG","version":1,"country":"Bulgária","regions":5},{"code":"BR","version":2,"country":"Brasil","regions":6},{"code":"CA","version":1,"country":"Canadá","regions":4},{"code":"CH","version":1,"country":"Suíça","regions":6},{"code":"CL","version":1,"country":"Chile","regions":4},{"code":"CN","version":1,"country":"China","regions":4},{"code":"DE","version":1,"country":"Alemanha","regions":13},{"code":"ES","version":1,"country":"Espanha","regions":15},{"code":"FR","version":1,"country":"França","regions":13},{"code":"GB","version":1,"country":"Inglaterra","regions":2},{"code":"GE","version":1,"country":"Geórgia","regions":5},{"code":"GR","version":1,"country":"Grécia","regions":8},{"code":"HR","version":1,"country":"Croácia","regions":4},{"code":"HU","version":1,"country":"Hungria","regions":6},{"code":"IL","version":1,"country":"Israel","regions":5},{"code":"IT","version":2,"country":"Itália","regions":20},{"code":"JP","version":1,"country":"Japão","regions":4},{"code":"LB","version":1,"country":"Líbano","regions":3},{"code":"MD","version":1,"country":"Moldávia","regions":3},{"code":"MX","version":1,"country":"México","regions":5},{"code":"NZ","version":1,"country":"Nova Zelândia","regions":8},{"code":"PT","version":1,"country":"Portugal","regions":14},{"code":"RO","version":1,"country":"Romênia","regions":8},{"code":"SI","version":1,"country":"Eslovênia","regions":3},{"code":"TR","version":1,"country":"Turquia","regions":5},{"code":"US","version":1,"country":"Estados Unidos","regions":4},{"code":"UY","version":1,"country":"Uruguai","regions":4},{"code":"ZA","version":1,"country":"África do Sul","regions":2}],"geo_keys":["AM:Aragatsotn","AM:Ararat","AM:Armavir","AM:Kotayk","AM:Tavush","AM:Vayots Dzor","AR:Mendoza","AR:Noroeste","AR:Patagônia","AR:San Juan","AT:Burgenland","AT:Niederösterreich","AT:Steiermark","AT:Wien","AU:New South Wales","AU:South Australia","AU:Tasmania","AU:Victoria","AU:Western Australia","Abruzzo","BG:Danúbio","BG:Mar Negro","BG:Struma","BG:Trácia","BR:Minas Gerais","BR:Paraná","BR:Rio Grande do Sul","BR:Santa Catarina","BR:São Francisco","BR:São Paulo","Basilicata","CA:British Columbia","CA:Nova Scotia","CA:Ontario","CA:Quebec","CH:Deutschschweiz","CH:Genève","CH:Ticino","CH:Três Lagos","CH:Valais","CH:Vaud","CL:Aconcágua","CL:Central","CL:Coquimbo","CL:Sul","CN:Hebei","CN:Ningxia","CN:Shandong","CN:Xinjiang","Calabria","Campania","DE:Ahr","DE:Baden","DE:Franken","DE:Hessische Bergstraße","DE:Mittelrhein","DE:Mosel","DE:Nahe","DE:Pfalz","DE:Rheingau","DE:Rheinhessen","DE:Saale-Unstrut","DE:Sachsen","DE:Württemberg","ES:Andalucia","ES:Aragon","ES:Baleares","ES:Canarias","ES:Castilla-La Mancha","ES:Castilla-Leon","ES:Cataluña","ES:Extremadura","ES:Galicia","ES:La Rioja","ES:Madrid","ES:Murcia","ES:Navarra","ES:Pais Vasco","ES:Valencia","Emilia-Romagna","FR:Alsácia","FR:Beaujolais","FR:Bordeaux","FR:Borgonha","FR:Champagne","FR:Córsega","FR:Jura","FR:Languedoc-Roussillon","FR:Provença","FR:Savoia","FR:Sudoeste","FR:Vale do Loire","FR:Vale do Rhône","Friuli-Venezia Giulia","GB:England","GB:Wales","GE:Imereti","GE:Kakheti","GE:Kartli","GE:Racha","GE:Samegrelo","GR:Central","GR:Creta","GR:Egeu","GR:Epiro","GR:Jônicas","GR:Macedônia","GR:Peloponeso","GR:Tessália","HR:Dalmácia","HR:Eslavônia","HR:Ocidental","HR:Ístria","HU:Balaton","HU:Duna","HU:Eger","HU:Pannon","HU:Tokaj","HU:Észak-Dunántúl","IL:Galileia","IL:Judeia","IL:Negev","IL:Samson","IL:Sharon","JP:Hokkaido","JP:Nagano","JP:Yamagata","JP:Yamanashi","LB:Bekaa","LB:Montanha","LB:Sul","Lazio","Liguria","Lombardia","MD:Codru","MD:Valul lui Traian","MD:Ștefan Vodă","MX:Baja California","MX:Centro","MX:Chihuahua","MX:Coahuila","MX:Sonora","Marche","Molise","NZ:Auckland","NZ:Canterbury","NZ:Gisborne","NZ:Hawke's Bay","NZ:Marlborough","NZ:Nelson","NZ:Otago","NZ:Wairarapa","PT:Alentejo","PT:Algarve","PT:Bairrada","PT:Beira Interior","PT:Douro","PT:Dão","PT:Lisboa","PT:Minho","PT:Setúbal","PT:Tejo","PT:Trás-os-Montes","Piemonte","Puglia","RO:Banat","RO:Crișana","RO:Danúbio","RO:Dobruja","RO:Moldávia","RO:Muntênia","RO:Transilvânia","SI:Podravje","SI:Posavje","SI:Primorska","Sardegna","Sicilia","TR:Anatólia Central","TR:Egeu","TR:Leste","TR:Outras","TR:Trácia","Toscana","Trentino-Alto Adige","US:California","US:New York","US:Oregon","US:Washington","UY:Norte","UY:Sudeste","UY:Sudoeste","UY:Sul","Umbria","Valle d'Aosta","Veneto","ZA:Northern Cape","ZA:Western Cape"]};
+var SEED_MANIFEST = {"grapes":{"version":9,"count":351},"packs":[{"code":"AM","version":1,"country":"Armênia","regions":6},{"code":"AR","version":1,"country":"Argentina","regions":4},{"code":"AT","version":1,"country":"Áustria","regions":4},{"code":"AU","version":1,"country":"Austrália","regions":5},{"code":"BG","version":1,"country":"Bulgária","regions":5},{"code":"BR","version":2,"country":"Brasil","regions":6},{"code":"CA","version":1,"country":"Canadá","regions":4},{"code":"CH","version":1,"country":"Suíça","regions":6},{"code":"CL","version":1,"country":"Chile","regions":4},{"code":"CN","version":1,"country":"China","regions":4},{"code":"DE","version":1,"country":"Alemanha","regions":13},{"code":"ES","version":1,"country":"Espanha","regions":15},{"code":"FR","version":1,"country":"França","regions":13},{"code":"GB","version":1,"country":"Inglaterra","regions":2},{"code":"GE","version":1,"country":"Geórgia","regions":5},{"code":"GR","version":1,"country":"Grécia","regions":8},{"code":"HR","version":1,"country":"Croácia","regions":4},{"code":"HU","version":1,"country":"Hungria","regions":6},{"code":"IL","version":1,"country":"Israel","regions":5},{"code":"IT","version":2,"country":"Itália","regions":20},{"code":"JP","version":1,"country":"Japão","regions":4},{"code":"LB","version":1,"country":"Líbano","regions":3},{"code":"MD","version":1,"country":"Moldávia","regions":3},{"code":"MX","version":1,"country":"México","regions":5},{"code":"NZ","version":1,"country":"Nova Zelândia","regions":8},{"code":"PT","version":1,"country":"Portugal","regions":14},{"code":"RO","version":1,"country":"Romênia","regions":8},{"code":"SI","version":1,"country":"Eslovênia","regions":3},{"code":"TR","version":1,"country":"Turquia","regions":5},{"code":"US","version":1,"country":"Estados Unidos","regions":4},{"code":"UY","version":1,"country":"Uruguai","regions":4},{"code":"ZA","version":1,"country":"África do Sul","regions":2}],"geo_keys":["AM:Aragatsotn","AM:Ararat","AM:Armavir","AM:Kotayk","AM:Tavush","AM:Vayots Dzor","AR:Mendoza","AR:Noroeste","AR:Patagônia","AR:San Juan","AT:Burgenland","AT:Niederösterreich","AT:Steiermark","AT:Wien","AU:New South Wales","AU:South Australia","AU:Tasmania","AU:Victoria","AU:Western Australia","Abruzzo","BG:Danúbio","BG:Mar Negro","BG:Struma","BG:Trácia","BR:Minas Gerais","BR:Paraná","BR:Rio Grande do Sul","BR:Santa Catarina","BR:São Francisco","BR:São Paulo","Basilicata","CA:British Columbia","CA:Nova Scotia","CA:Ontario","CA:Quebec","CH:Deutschschweiz","CH:Genève","CH:Ticino","CH:Três Lagos","CH:Valais","CH:Vaud","CL:Aconcágua","CL:Central","CL:Coquimbo","CL:Sul","CN:Hebei","CN:Ningxia","CN:Shandong","CN:Xinjiang","Calabria","Campania","DE:Ahr","DE:Baden","DE:Franken","DE:Hessische Bergstraße","DE:Mittelrhein","DE:Mosel","DE:Nahe","DE:Pfalz","DE:Rheingau","DE:Rheinhessen","DE:Saale-Unstrut","DE:Sachsen","DE:Württemberg","ES:Andalucia","ES:Aragon","ES:Baleares","ES:Canarias","ES:Castilla-La Mancha","ES:Castilla-Leon","ES:Cataluña","ES:Extremadura","ES:Galicia","ES:La Rioja","ES:Madrid","ES:Murcia","ES:Navarra","ES:Pais Vasco","ES:Valencia","Emilia-Romagna","FR:Alsácia","FR:Beaujolais","FR:Bordeaux","FR:Borgonha","FR:Champagne","FR:Córsega","FR:Jura","FR:Languedoc-Roussillon","FR:Provença","FR:Savoia","FR:Sudoeste","FR:Vale do Loire","FR:Vale do Rhône","Friuli-Venezia Giulia","GB:England","GB:Wales","GE:Imereti","GE:Kakheti","GE:Kartli","GE:Racha","GE:Samegrelo","GR:Central","GR:Creta","GR:Egeu","GR:Epiro","GR:Jônicas","GR:Macedônia","GR:Peloponeso","GR:Tessália","HR:Dalmácia","HR:Eslavônia","HR:Ocidental","HR:Ístria","HU:Balaton","HU:Duna","HU:Eger","HU:Pannon","HU:Tokaj","HU:Észak-Dunántúl","IL:Galileia","IL:Judeia","IL:Negev","IL:Samson","IL:Sharon","JP:Hokkaido","JP:Nagano","JP:Yamagata","JP:Yamanashi","LB:Bekaa","LB:Montanha","LB:Sul","Lazio","Liguria","Lombardia","MD:Codru","MD:Valul lui Traian","MD:Ștefan Vodă","MX:Baja California","MX:Centro","MX:Chihuahua","MX:Coahuila","MX:Sonora","Marche","Molise","NZ:Auckland","NZ:Canterbury","NZ:Gisborne","NZ:Hawke's Bay","NZ:Marlborough","NZ:Nelson","NZ:Otago","NZ:Wairarapa","PT:Alentejo","PT:Algarve","PT:Bairrada","PT:Beira Interior","PT:Douro","PT:Dão","PT:Lisboa","PT:Minho","PT:Setúbal","PT:Tejo","PT:Trás-os-Montes","Piemonte","Puglia","RO:Banat","RO:Crișana","RO:Danúbio","RO:Dobruja","RO:Moldávia","RO:Muntênia","RO:Transilvânia","SI:Podravje","SI:Posavje","SI:Primorska","Sardegna","Sicilia","TR:Anatólia Central","TR:Egeu","TR:Leste","TR:Outras","TR:Trácia","Toscana","Trentino-Alto Adige","US:California","US:New York","US:Oregon","US:Washington","UY:Norte","UY:Sudeste","UY:Sudoeste","UY:Sul","Umbria","Valle d'Aosta","Veneto","ZA:Northern Cape","ZA:Western Cape"],"study":[{"code":"HIS","version":1,"cards":7},{"code":"IT","version":1,"cards":24}]};
 
 // ---- 14_Settings.js
 /**
@@ -5453,7 +5459,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
 var SeedData = (function () {
   var loaded = {};
   var CHECK = { grapes: function () { return typeof GRAPE_ENCYCLOPEDIA !== 'undefined'; },
-    regions: function () { return typeof REGION_PACKS !== 'undefined' && REGION_PACKS.length > 0; } };
+    regions: function () { return typeof REGION_PACKS !== 'undefined' && REGION_PACKS.length > 0; },
+    study: function () { return typeof STUDY_PACKS !== 'undefined' && STUDY_PACKS.length > 0; } };
   function load(name) {
     if (loaded[name] || CHECK[name]()) { loaded[name] = true; return; }
     var code = HtmlService.createHtmlOutputFromFile('seed/' + name).getContent();
@@ -12368,6 +12375,247 @@ var Import = (function () {
   return { run: run, lastLog: lastLog, mergePatch: mergePatch };
 })();
 
+// ---- 23_SeedStudyHistoria.js
+/**
+ * CARTÕES DE ESTUDO — História do vinho (material de aula, v1).
+ * Condensado em tópicos curtos. O material pode ter erros: onde conferi com fonte aberta (Wikipedia, "History of wine")
+ * o dado foi corrigido e marcado "corrigido"; o que não consegui confirmar fica marcado "conferir" (fora do quiz).
+ * Itens: [chave, texto, marca?].
+ */
+var STUDY_PACKS = STUDY_PACKS || [];
+
+STUDY_PACKS.push((function () {
+  var cards = [];
+  function C(group, title, kind, items) {
+    cards.push({ topic: 'historia', group: group, title: title, kind: kind, items: items.map(function (i) {
+      var o = { k: i[0], v: i[1] }; if (i[2]) o.tag = i[2]; return o; }) });
+  }
+
+  C('Antiguidade', 'Os primeiros vinhos', 'linha', [
+    ['6000 a.C.', 'Geórgia: primeiras evidências arqueológicas de produção de vinho (achado de 2017)'],
+    ['4100 a.C.', 'Armênia: vinificação (vinícola mais antiga conhecida, Areni-1); o slide traz 5000 a.C.', 'corrigido'],
+    ['4000 a.C.', 'Mesopotâmia (entre os rios Tigre e Eufrates): uvas e vinho em maior escala'],
+    ['3100 a.C.', 'Egito: o vinho vira bebida divina, ligada a rituais religiosos e à vida após a morte'],
+    ['2500 a.C.', 'Suméria: registros escritos citam o vinho e sua importância cultural']
+  ]);
+  C('Antiguidade', 'Do Indo à Grécia', 'linha', [
+    ['2000 a.C.', 'Vale do Indo (hoje Paquistão e Índia) adota a produção de vinho', 'conferir'],
+    ['1700 a.C.', 'Babilônia e outras civilizações mesopotâmicas: vinho cerimonial e medicinal'],
+    ['1500 a.C.', 'China (dinastia Shang): vinho de uvas e outras frutas se torna comum', 'conferir'],
+    ['1300 a.C.', 'Fenícia: navegantes espalham a viticultura pelas rotas do Mediterrâneo'],
+    ['1100 a.C.', 'Grécia: o vinho floresce e é central nos simpósios (encontros sociais)']
+  ]);
+  C('Expansão romana', 'Roma leva a vinha à Europa', 'linha', [
+    ['800 a.C.', 'Roma se expande e absorve as práticas vinícolas gregas'],
+    ['300 a.C.', 'Gália (França): mudas e técnicas romanas', 'conferir'],
+    ['100 a.C.', 'Lusitânia (Portugal): colonização romana e início da viticultura'],
+    ['100 d.C.', 'Britânia (Inglaterra): vinhas e vinho no sul da ilha'],
+    ['100 d.C.', 'Germânia (Alemanha): vinhas nas partes mais quentes']
+  ]);
+  C('França', 'Marcos da França', 'linha', [
+    ['1100', 'Vinhas se expandem além do sul, puxadas pelo comércio'],
+    ['1309', 'Châteauneuf-du-Pape, perto de Avignon, nasce com o papado e vira região importante'],
+    ['1443', 'Hospices de Beaune (Borgonha) é fundado por Nicolas Rolin e esposa como hospital'],
+    ['1855', 'Classificação dos vinhos de Bordeaux para a Exposição Universal de Paris'],
+    ['1932', 'Bordeaux responde com a classificação Cru Bourgeois, revista a cada década']
+  ]);
+  C('Novo Mundo', 'Américas', 'linha', [
+    ['1492', 'Colombo chega ao Novo Mundo; videiras nas ilhas do Caribe (o slide cita Colombo plantando)', 'conferir'],
+    ['1513', 'Panamá: Vasco Núñez de Balboa introduz a viticultura na América Central'],
+    ['1524', 'México: videiras atribuídas ao conquistador Hernán Cortés'],
+    ['1554', 'Peru: frei Francisco de Carabantes; a uva se adapta bem ao clima andino'],
+    ['Séc. XVI', 'Chile: missionários espanhóis; o slide cita Pedro de Valdivia em 1560', 'corrigido'],
+    ['Séc. XVI', 'Argentina: colonizadores espanhóis; produção comercial só bem mais tarde (o slide diz 1600)', 'corrigido'],
+    ['1619', 'EUA: colonos ingleses plantam as primeiras vinhas na Virgínia'],
+    ['1769', 'Califórnia: franciscanos fundam a Missão San Diego de Alcalá e trazem a viticultura']
+  ]);
+  C('Novo Mundo', 'Oceania e Canadá', 'linha', [
+    ['1788', 'Austrália: Arthur Phillip introduz as primeiras videiras; o slide traz 1840 (Hunter Valley, vinho comercial)', 'corrigido'],
+    ['1830', 'Canadá: vinhas em Ontário e Quebec', 'conferir']
+  ]);
+  C('Brasil', 'Vinho no Brasil', 'linha', [
+    ['1532', 'Martim Afonso de Souza planta as primeiras videiras (Vila de São Vicente), sem sucesso'],
+    ['1870', 'Imigrantes italianos e alemães trazem conhecimento de viticultura e vinificação'],
+    ['1970', 'Renovação: novas vinícolas e técnicas avançadas, com interesse em vinhos de qualidade'],
+    ['1990', 'Vinhos brasileiros ganham reconhecimento em concursos internacionais'],
+    ['2022', 'Várias regiões vinícolas e qualidade crescendo; vinhos premiados']
+  ]);
+
+  return { code: 'HIS', version: 1, cards: cards };
+})());
+
+// ---- 23_SeedStudyIT.js
+/**
+ * CARTÕES DE ESTUDO — Itália (material de aula, v1: panorama e Centro).
+ * Tópicos curtos; o material pode ter erros: "conferir" = não confirmado em fonte aberta (fica fora do quiz).
+ * Itens: [chave, texto, marca?]. Para 'denominacoes': [nome, descrição, classificação].
+ */
+var STUDY_PACKS = STUDY_PACKS || [];
+
+STUDY_PACKS.push((function () {
+  var cards = [];
+  function mk(items) { return items.map(function (i) { var o = { k: i[0], v: i[1] }; if (i[2]) o.tag = i[2]; return o; }); }
+  function P(title, kind, items) { cards.push({ topic: 'pais', ref: ['Itália'], title: title, kind: kind, items: mk(items) }); }
+  function R(region, sub, title, kind, items) {
+    cards.push({ topic: 'regiao', ref: sub ? ['Itália', region, sub] : ['Itália', region], title: title, kind: kind, items: mk(items) });
+  }
+
+  // ---------- País ----------
+  P('A Itália em números (2022)', 'numeros', [
+    ['718 mil ha', 'Área plantada: 3ª do mundo (Espanha 955 mil, França 812 mil)'],
+    ['4,9 bi L', 'Produção: 1ª do mundo (França 4,5 bi, Espanha 3,5 bi)'],
+    ['2,3 bi L', 'Consumo: 2º maior da União Europeia'],
+    ['33,9 L', 'Consumo por habitante (Portugal lidera, com 67,5 L)']
+  ]);
+  P('Marcos do vinho italiano', 'linha', [
+    ['Séc. I a.C.', 'Romanos introduzem a videira, segundo o slide', 'conferir'],
+    ['Idade Média', 'Tradição vinícola floresce em mosteiros e abadias'],
+    ['Renascença', 'Inovações técnicas e maior apreciação cultural do vinho'],
+    ['1716', 'Área do Chianti é demarcada: nasce a ideia de proteger a origem'],
+    ['1861', 'Unificação italiana: revitalização e modernização da viticultura'],
+    ['1963', 'Sistema DOC: padrões de qualidade por região'],
+    ['', 'Super Toscanos: produtores desafiam as regras DOC e criam vinhos de alta qualidade'],
+    ['', 'DOCG: destaca vinhos de alta qualidade e autenticidade'],
+    ['', 'IGT: flexibilidade para bons vinhos fora do DOC/DOCG'],
+    ['2009', 'Prosecco tem a região demarcada; a uva é rebatizada Glera']
+  ]);
+  P('Estilos de destaque', 'fatos', [
+    ['Espumantes', 'Franciacorta, Prosecco'],
+    ['Brancos', 'Friuli, Sicília'],
+    ['Tintos da Toscana', 'Brunello, Chianti'],
+    ['Tintos do Piemonte', 'Barolo, Barbaresco'],
+    ['Campânia e Puglia', 'Taurasi, Primitivo']
+  ]);
+
+  // ---------- Toscana ----------
+  R('Toscana', '', 'Toscana em resumo', 'numeros', [
+    ['63 mil ha', 'Vinhedos (5ª maior produtora da Itália)'],
+    ['11', 'DOCGs: 3ª região em número de DOCGs'],
+    ['2', 'Zonas: costa e colinas'],
+    ['Sangiovese', 'Casta mais importante; Chianti e Brunello são os mais famosos']
+  ]);
+  R('Toscana', '', 'Sangiovese', 'fatos', [
+    ['Origem', 'Natural da Toscana; 1º registro no séc. XV'],
+    ['Nome', 'De "sanguis Jovis": sangue de Júpiter'],
+    ['Perfil', 'Casca grossa, muitos taninos e antocianinas: vinhos encorpados e aromáticos'],
+    ['Sinônimos', 'Brunello, Morellino, Prugnolo Gentile, Tignolo, Canina']
+  ]);
+  R('Toscana', 'Montalcino', 'Brunello di Montalcino', 'fatos', [
+    ['Criador', 'Ferruccio Biondi-Santi, propriedade Il Greppo'],
+    ['1ª safra', '1888; até 1950 só os Biondi-Santi o faziam'],
+    ['Uva', 'Sangiovese Grosso: 65 ha até 1970, cerca de 1.600 ha hoje'],
+    ['Estágio', 'Mínimo 24 meses em barril; Riserva, 30 meses'],
+    ['Volume', 'Cerca de 7 milhões de litros por ano'],
+    ['Curiosidade', 'Em 2012 um ex-funcionário da Case Basse (Soldera) abriu os tanques: 62 mil litros perdidos (safras 2007 a 2012)']
+  ]);
+  R('Toscana', 'Chianti (e subzonas)', 'Chianti', 'fatos', [
+    ['Nome', 'Vem de uma cadeia de montanhas; área demarcada pelo Duque da Toscana em 1716'],
+    ['Corte', 'Sangiovese em pelo menos 80%; também Canaiolo, Colorino, Cabernet e Merlot'],
+    ['Brancas', 'Barão Ricasoli (1872) permitiu Malvasia e Trebbiano; proibidas desde 2006'],
+    ['100% Sangiovese', 'Possível desde 1995'],
+    ['Riserva', '21 meses em barril e 3 em garrafa; álcool mínimo 12%'],
+    ['Satélites', 'Em 1932 foram incorporados Colli Aretini, Colli Senesi, Montalbano, Colli Pisane, Rufina e Montespertoli'],
+    ['Nomes grandes', 'Antinori, Ricasoli, La Massa, Isole e Olena']
+  ]);
+  R('Toscana', 'Chianti (e subzonas)', 'Governo alla Toscana', 'lista', [
+    ['', 'Técnica do Chianti: parte das uvas é desidratada por 6 semanas'],
+    ['', 'Essas uvas entram no mosto já fermentado do resto da colheita'],
+    ['', 'Objetivo: mais corpo e intensidade aromática']
+  ]);
+  R('Toscana', 'Montepulciano', 'Vino Nobile di Montepulciano', 'fatos', [
+    ['Onde', 'Comuna de Montepulciano, sudeste da Toscana'],
+    ['Uvas', 'Sangiovese (Prugnolo Gentile); também Canaiolo e Mammolo'],
+    ['Estágio', '24 meses em barril; Riserva, 38 meses em carvalho'],
+    ['Regra', 'A DOCG exige carvalho da Eslavônia (centro da Croácia)']
+  ]);
+  R('Toscana', 'San Gimignano', 'Vernaccia di San Gimignano', 'fatos', [
+    ['Destaque', 'Única DOCG de vinho branco da Toscana, segundo o slide', 'conferir'],
+    ['Cidade', 'Medieval, patrimônio da humanidade, no centro da Toscana; produção desde 1276'],
+    ['Uva', 'Vernaccia: mineralidade como marca'],
+    ['Riserva', '11 meses em barril e 3 em garrafa']
+  ]);
+  R('Toscana', '', 'Vin Santo', 'fatos', [
+    ['O que é', 'Vinho doce de uvas desidratadas; feito também em Úmbria, Abruzzo, Vêneto…'],
+    ['Uvas na Toscana', 'Malvasia e Trebbiano'],
+    ['Occhio di Pernice', 'Com Sangiovese na mistura: cor acastanhada, "olho de perdiz"'],
+    ['Calendário', 'Colheita em setembro, prensa em março'],
+    ['Álcool', '15% a 16%'],
+    ['Estágio', '2 a 6 anos em barris de carvalho']
+  ]);
+  R('Toscana', '', 'Outras denominações da Toscana', 'denominacoes', [
+    ['Elba Aleatico Passito', 'Doce de Aleatico', 'DOCG'],
+    ['Montecucco Sangiovese', 'Tinto de Sangiovese', 'DOCG'],
+    ['Morellino di Scansano', 'Tinto de Sangiovese', 'DOCG'],
+    ['Suvereto', 'Tinto de Cabernet, Merlot e Sangiovese', 'DOCG'],
+    ['Val di Cornia Rosso', 'Tinto de Cabernet, Merlot e Sangiovese', 'DOCG']
+  ]);
+
+  // ---------- Úmbria ----------
+  R('Úmbria', '', 'Úmbria em resumo', 'fatos', [
+    ['Área', 'Pouco mais de 19.000 ha'],
+    ['Local', 'Entre a Toscana e o Marche'],
+    ['Fama', 'Brancos Orvieto'],
+    ['Castas', 'Sangiovese, Sagrantino, Canaiolo, Trebbiano, Grechetto, Malvasia']
+  ]);
+  R('Úmbria', '', 'Denominações da Úmbria', 'denominacoes', [
+    ['Orvieto', 'Brancos de Trebbiano (Procanico), Malvasia, Grechetto e Drupeggio', 'DOC'],
+    ['Torgiano Bianco', 'Trebbiano e Grechetto', 'DOC'],
+    ['Torgiano Rosso Riserva', 'Sangiovese e Canaiolo; 3 anos em barril', 'DOCG'],
+    ['Sagrantino di Montefalco', 'Sagrantino, exclusiva da Úmbria (cerca de 600 ha); também versão doce "Passito"', 'DOCG']
+  ]);
+  R('Úmbria', '', 'Grandes produtores da Úmbria', 'produtores', [
+    ['Arnaldo Caprai', ''], ['Cervaro della Sala', ''], ['Cecchi', ''], ['Giorgio Lungarotti', ''], ['Antinori', ''],
+    ['Palazzone', ''], ['Castello delle Regine', ''], ['Frescobaldi', ''], ['Campo del Guardiano', '']
+  ]);
+
+  // ---------- Lácio ----------
+  R('Lácio', '', 'Lácio em resumo', 'fatos', [
+    ['Área', 'Pouco mais de 16.000 ha'],
+    ['Fama', '"Terra dos vinhos brancos"; tintos são menos de 20%'],
+    ['DOCGs', 'Apenas 3'],
+    ['Castas', 'Cesanese, Sangiovese, Canaiolo, Malvasia, Trebbiano, Bombino']
+  ]);
+  R('Lácio', '', 'Denominações do Lácio', 'denominacoes', [
+    ['Cannellino di Frascati', 'Branco das comunas de Frascati, Malvasia (70%) e Trebbiano', 'DOCG'],
+    ['Frascati Superiore', 'Branco; Malvasia, Trebbiano, Bellone, Bombino Bianco e Greco (nenhuma passa de 30%); álcool mínimo 12%', 'DOCG'],
+    ['Cesanese del Piglio', 'Tinto 100% Cesanese em três estilos: clássico, superiore e superiore riserva', 'DOCG']
+  ]);
+  R('Lácio', '', 'Grandes produtores do Lácio', 'produtores', [
+    ['Castel de Paolis', ''], ['Fontana Candida', ''], ['Di Mauro', ''], ['Villa Simone', ''], ['Colle Picchioni', ''], ['Di Norante', '']
+  ]);
+
+  // ---------- Marche e Abruzzo ----------
+  R('Marche', '', 'Marche e Abruzzo em resumo', 'fatos', [
+    ['Área', 'Juntas, passam de 55.000 ha'],
+    ['DOCGs', 'Marche tem 5; Abruzzo, apenas 1'],
+    ['Estilos', 'De brancos secos a espumantes tintos'],
+    ['Costa', 'As áreas costeiras têm os melhores custo-benefícios do Centro'],
+    ['Montepulciano', 'Casta forte em Abruzzo e também presente no Marche']
+  ]);
+  R('Marche', '', 'Castas de Marche e Abruzzo', 'lista', [
+    ['', 'Montepulciano (Abruzzo)'], ['', 'Vernaccia Nera (Marche)'], ['', 'Verdicchio'], ['', 'Trebbiano'], ['', 'Merlot'], ['', 'Albana']
+  ]);
+  R('Marche', '', 'Denominações do Marche', 'denominacoes', [
+    ['Verdicchio dei Castelli di Jesi', 'Branco de Verdicchio', 'DOCG'],
+    ['Verdicchio di Matelica', 'Branco de Verdicchio', 'DOCG'],
+    ['Offida', 'Tintos de Montepulciano e brancos de Pecorino', 'DOCG'],
+    ['Conero Rosso', 'Tinto de Montepulciano', 'DOCG'],
+    ['Vernaccia di Serrapetrona', 'Espumante tinto de Vernaccia Nera', 'DOCG']
+  ]);
+  R('Abruzzo', '', 'Denominações de Abruzzo', 'denominacoes', [
+    ['Montepulciano d\'Abruzzo', 'Tinto de Montepulciano', 'DOCG'],
+    ['Controguerra', 'Tintos e brancos', 'DOC']
+  ]);
+  R('Marche', '', 'Grandes produtores do Marche', 'produtores', [
+    ['Sartarelli', ''], ['Saladini Pilastri', ''], ['Bucci', '']
+  ]);
+  R('Abruzzo', '', 'Grandes produtores de Abruzzo', 'produtores', [
+    ['Valentini', ''], ['Illuminati', ''], ['Masciarelli', '']
+  ]);
+
+  return { code: 'IT', version: 1, cards: cards };
+})());
+
 // ---- 30_Catalog.js
 /**
  * Catálogo: validação de entrada, resolução de nomes em entidades (país, região,
@@ -12902,7 +13150,7 @@ var Regions = (function () {
     var geo = {};
     top.forEach(function (r) { if (r.geo_key && geoKeys[r.geo_key]) geo[r.id] = r.geo_key; });
     return {
-      id: c.id, name: c.name, description: c.description, source: c.source, source_ref: c.source_ref, field_refs: c.field_refs || {}, field_sources: c.field_sources || {},
+      id: c.id, name: c.name, description: c.description, cards: Study.forCountry(c.id), source: c.source, source_ref: c.source_ref, field_refs: c.field_refs || {}, field_sources: c.field_sources || {},
       regions: top.map(function (r) {
         var subs = regs.filter(function (s) { return s.parent_id === r.id; });
         var ids = [r.id].concat(subs.map(function (s) { return s.id; }));
@@ -12932,6 +13180,7 @@ var Regions = (function () {
     var subs = regs.filter(function (s) { return s.parent_id === r.id; })
       .sort(function (a, b) { return classRank_(a.classification) - classRank_(b.classification) || String(a.name).localeCompare(String(b.name), 'pt'); });
     var ids = [r.id].concat(subs.map(function (s) { return s.id; }));
+    var cards = Study.forRegions(ids);
     function grapeList(regionId) {
       return (rg[regionId] || []).map(function (x) {
         var g = grapes[x.grape_id];
@@ -12960,8 +13209,9 @@ var Regions = (function () {
       grapes: grapeList(r.id),
       producers: prodList(r.id),
       geo_key: r.geo_key || '',
+      cards: cards[r.id] || [],
       subregions: subs.map(function (s) {
-        return { id: s.id, name: s.name, classification: s.classification, description: s.description,
+        return { id: s.id, name: s.name, cards: cards[s.id] || [], classification: s.classification, description: s.description,
           notable_wines: s.notable_wines, lat: s.lat, lng: s.lng, source: s.source, source_ref: s.source_ref,
           grapes: grapeList(s.id), producers: prodList(s.id),
           wines: wines.filter(function (w) { return Repo.get('wines', w.id).subregion_id === s.id; }).map(function (w) { return w.id; }) };
@@ -14824,6 +15074,73 @@ var Quiz = (function () {
     return q('regiao-pais', 'Em que país fica a região ' + region.name + '?', right, wrong, trim(region.description || '', 220), refOf(region, 'description'));
   }
 
+
+  // ---------- Perguntas a partir dos cartões de estudo (material de aula) ----------
+  function cardPool_(opts) {
+    var cards = Repo.all('study_cards').filter(function (x) { return x.status !== 'revisar'; });
+    if (opts.cards && opts.cards !== 'todos') cards = cards.filter(function (x) { return x.topic === opts.cards; });
+    if (opts.country_id) cards = cards.filter(function (x) { return x.country_id === opts.country_id; });
+    return cards;
+  }
+  function okItem_(i) { return i && i.tag !== 'conferir' && i.tag !== 'corrigido'; }
+  function cardWhere_(c, card, countries, regions) {
+    var r = card.region_id && regions[card.region_id], cn = countries[card.country_id];
+    return r ? r.name : (cn ? cn.name : '');
+  }
+
+  function qCard(card, all, countries, regions) {
+    var where = cardWhere_(null, card, countries, regions), items = (card.items || []).filter(okItem_);
+    var head = card.title + (where && card.topic !== 'historia' ? ' (' + where + ')' : '');
+    if (card.kind === 'fatos') {
+      var it = shuffle(items.filter(function (i) { return i.k && i.v && i.v.length <= 80; }))[0];
+      if (!it) return null;
+      var wrong = [];
+      all.forEach(function (o) { if (o.id !== card.id && o.kind === 'fatos') (o.items || []).forEach(function (i) { if (okItem_(i) && i.k === it.k && i.v !== it.v && i.v.length <= 80) wrong.push(i.v); }); });
+      wrong = pickN(wrong.filter(function (v, i) { return wrong.indexOf(v) === i; }), 3);
+      return q('cartao', head + ': ' + it.k.toLowerCase() + '?', it.v, wrong,
+        items.map(function (i) { return i.k + ': ' + i.v; }).join(' · ').slice(0, 300), '');
+    }
+    if (card.kind === 'denominacoes') {
+      var counts = {};
+      all.forEach(function (o) { if (o.kind === 'denominacoes') (o.items || []).forEach(function (i) { counts[i.v] = (counts[i.v] || 0) + 1; }); });
+      var d = shuffle(items.filter(function (i) { return i.k && i.v && counts[i.v] === 1; }))[0];
+      if (!d) return null;
+      var names = [];
+      all.forEach(function (o) { if (o.kind === 'denominacoes' && o.country_id === card.country_id) (o.items || []).forEach(function (i) { if (i.k !== d.k && i.v !== d.v) names.push(i.k); }); });
+      return q('cartao', 'Qual denominação' + (where ? ' de ' + where : '') + ' é esta: ' + d.v + (d.tag ? ' (' + d.tag + ')' : '') + '?',
+        d.k, pickN(names, 3), d.k + ': ' + d.v + (d.tag ? ' (' + d.tag + ')' : '') + '.', '');
+    }
+    if (card.kind === 'linha') {
+      var t = shuffle(items.filter(function (i) { return i.k && i.v; }))[0];
+      if (!t) return null;
+      var ks = [];
+      all.forEach(function (o) { if (o.kind === 'linha' && o.topic === card.topic) (o.items || []).forEach(function (i) { if (okItem_(i) && i.k && i.k !== t.k && /^[0-9]/.test(i.k) === /^[0-9]/.test(t.k) && /a\.C\./.test(i.k) === /a\.C\./.test(t.k)) ks.push(i.k); }); });
+      ks = ks.filter(function (v, i) { return ks.indexOf(v) === i; });
+      return q('cartao', 'Em que época: ' + t.v.replace(/;.*$/, '') + '?', t.k, pickN(ks, 3), t.k + ': ' + t.v + '.', '');
+    }
+    if (card.kind === 'numeros') {
+      var m = shuffle(items.filter(function (i) { return /^[0-9]/.test(i.k); }))[0];
+      if (!m) return null;
+      var nums = [];
+      all.forEach(function (o) { if (o.id !== card.id && o.kind === 'numeros') (o.items || []).forEach(function (i) { if (okItem_(i) && /^[0-9]/.test(i.k) && i.k !== m.k) nums.push(i.k); }); });
+      return q('cartao', head + ': ' + m.v + '. Qual é o número?', m.k, pickN(nums, 3), m.k + ': ' + m.v + '.', '');
+    }
+    return null;
+  }
+
+  function cardQuestions_(opts, n) {
+    var all = cardPool_(opts);
+    if (!all.length) return [];
+    var countries = Util.indexBy(Repo.all('countries'), 'id'), regions = Util.indexBy(Repo.all('regions'), 'id');
+    var out = [], seen = {}, tries = 0;
+    while (out.length < n && tries < n * 15) {
+      tries++;
+      var x = qCard(all[Math.floor(Math.random() * all.length)], all, countries, regions);
+      if (x && !seen[x.question]) { seen[x.question] = true; out.push(x); }
+    }
+    return out;
+  }
+
   var BY_GRAPE = [qCountry, qRegionOfGrape, qAroma, qStructure, qConfusion, qParent];
   var BY_REGION = [qGrapeOfRegion, qRegionCountry];
 
@@ -14831,6 +15148,10 @@ var Quiz = (function () {
   function generate(opts) {
     opts = opts || {};
     var n = Math.max(3, Math.min(20, Number(opts.n) || 10));
+    if (opts.cards) {   // só cartões de estudo (seção, tema ou país)
+      var onlyCards = cardQuestions_({ cards: String(opts.cards), country_id: opts.country_id ? Validate.id(opts.country_id, 'countries') : '' }, n);
+      return { title: 'Quiz do material de aula', questions: shuffle(onlyCards) };
+    }
     var c = context();
     var grapes = [], regions = [], out = [], wineQs = [];
 
@@ -14880,10 +15201,145 @@ var Quiz = (function () {
       var x = gens[Math.floor(Math.random() * gens.length)](c, item);
       if (x && !out.some(function (o) { return o.question === x.question; })) out.push(x);
     }
+    // Modo aleatório: parte das perguntas vem dos cartões de estudo, quando existem.
+    if (!opts.tasting_id) {
+      var fromCards = cardQuestions_({ cards: 'todos' }, Math.ceil(n * 0.35));
+      out = out.slice(0, n - fromCards.length).concat(fromCards);
+    }
     return { title: opts.tasting_id ? 'Quiz da degustação' : 'Quiz aleatório', questions: shuffle(out).slice(0, n) };
   }
 
   return { generate: generate };
+})();
+
+// ---- 54_Study.js
+/**
+ * Cartões de estudo (material de aula): tópicos curtos que complementam as páginas de país e região
+ * e as seções "História do vinho", "Produção de vinho" e "Harmonizações".
+ *
+ * Os dados ficam em src/server/23_SeedStudy*.js (STUDY_PACKS) e são importados por pacote e versão.
+ * O material pode ter erros: cartão com status "revisar" aparece marcado e fora do quiz.
+ */
+var Study = (function () {
+  var TOPICS = { historia: 'História do vinho', producao: 'Produção de vinho', harmonizacao: 'Harmonizações' };
+
+  function view_(c) {
+    return { id: c.id, topic: c.topic, group: c.group, title: c.title, kind: c.kind, items: c.items || [], status: c.status || '', sort: c.sort || 0 };
+  }
+  function bySort_(a, b) { return (a.sort - b.sort) || String(a.title).localeCompare(String(b.title), 'pt'); }
+
+  function forCountry(countryId) {
+    return Repo.where('study_cards', { topic: 'pais', country_id: countryId }).map(view_).sort(bySort_);
+  }
+  /** Cartões da região e de cada sub-região, por id da região. */
+  function forRegions(ids) {
+    var set = {}; ids.forEach(function (i) { set[i] = true; });
+    var out = {};
+    Repo.where('study_cards', function (c) { return c.topic === 'regiao' && set[c.region_id]; }).forEach(function (c) {
+      (out[c.region_id] = out[c.region_id] || []).push(view_(c));
+    });
+    Object.keys(out).forEach(function (k) { out[k].sort(bySort_); });
+    return out;
+  }
+
+  /** Seção temática: cartões agrupados na ordem em que aparecem. */
+  function topic(name) {
+    if (!TOPICS[name]) throw new Error('Seção desconhecida.');
+    var cards = Repo.where('study_cards', { topic: name }).map(view_).sort(bySort_);
+    var groups = [], idx = {};
+    cards.forEach(function (c) {
+      var g = c.group || 'Geral';
+      if (idx[g] === undefined) { idx[g] = groups.length; groups.push({ name: g, cards: [] }); }
+      groups[idx[g]].cards.push(c);
+    });
+    return { topic: name, title: TOPICS[name], count: cards.length, groups: groups };
+  }
+
+  function counts() {
+    var c = {};
+    Repo.all('study_cards').forEach(function (x) { c[x.topic] = (c[x.topic] || 0) + 1; });
+    return c;
+  }
+
+  return { forCountry: forCountry, forRegions: forRegions, topic: topic, counts: counts, TOPICS: TOPICS };
+})();
+
+/**
+ * Importa STUDY_PACKS. Idempotente: casa por (pack, key); atualiza só cartões ainda com origem "aula" (o que você
+ * editou fica intacto); remove cartões do pacote que saíram do arquivo.
+ */
+var SeedStudy = (function () {
+  function packs() { SeedData.load('study'); return STUDY_PACKS; }
+
+  function find_(arr, name) {
+    var k = Util.normKey(name);
+    return arr.filter(function (x) { return x.name_key === k; })[0] || null;
+  }
+
+  /** Resolve [país, região, sub-região?] para ids; null quando a região ainda não existe. */
+  function resolve_(ref, countries, regions) {
+    var c = find_(countries, ref[0]);
+    if (!c) return null;
+    if (ref.length < 2) return { country_id: c.id, region_id: '' };
+    var top = regions.filter(function (r) { return r.country_id === c.id && !r.parent_id && r.name_key === Util.normKey(ref[1]); })[0];
+    if (!top) return null;
+    if (ref.length < 3) return { country_id: c.id, region_id: top.id };
+    var sub = regions.filter(function (r) { return r.parent_id === top.id && r.name_key === Util.normKey(ref[2]); })[0];
+    return sub ? { country_id: c.id, region_id: sub.id } : { country_id: c.id, region_id: top.id, fallback: true };
+  }
+
+  function runPack(E) {
+    return Repo.withLock(function () {
+      var report = { added: 0, updated: 0, removed: 0, skipped: 0, unresolved: [] };
+      var countries = Repo.all('countries'), regions = Repo.all('regions');
+      var existing = Repo.where('study_cards', { pack: E.code });
+      var byKey = Util.indexBy(existing, 'key');
+      var seen = {}, inserts = [], updates = [];
+      E.cards.forEach(function (s, i) {
+        var scope = { country_id: '', region_id: '' };
+        if (s.topic === 'pais' || s.topic === 'regiao') {
+          scope = resolve_(s.ref, countries, regions);
+          if (!scope) { report.unresolved.push(s.ref.join('/') + ' · ' + s.title); return; }
+        }
+        var key = s.topic + '|' + (s.ref ? s.ref.join('/') : '') + '|' + Util.normKey(s.title);
+        seen[key] = true;
+        var rec = { key: key, pack: E.code, topic: s.topic, country_id: scope.country_id, region_id: scope.region_id,
+          group: s.group || '', title: s.title, kind: s.kind, items: s.items, sort: s.sort === undefined ? i : s.sort, status: s.status || 'ok' };
+        var cur = byKey[key];
+        if (!cur) { rec.source = 'aula'; inserts.push(rec); report.added++; return; }
+        if (cur.source !== 'aula') { report.skipped++; return; }
+        if (JSON.stringify([cur.group, cur.title, cur.kind, cur.items, cur.sort, cur.status, cur.country_id, cur.region_id]) ===
+            JSON.stringify([rec.group, rec.title, rec.kind, rec.items, rec.sort, rec.status, rec.country_id, rec.region_id])) return;
+        rec.id = cur.id; updates.push(rec); report.updated++;
+      });
+      if (inserts.length) Repo.insert('study_cards', inserts);
+      if (updates.length) Repo.update('study_cards', updates);
+      var gone = existing.filter(function (c) { return !seen[c.key] && c.source === 'aula'; });
+      if (gone.length) { Repo.remove('study_cards', gone.map(function (c) { return c.id; })); report.removed = gone.length; }
+      return report;
+    });
+  }
+
+  /** Importa cada pacote uma vez por versão (pelo manifesto, sem carregar os dados quando nada mudou). */
+  function ensure() {
+    var props = PropertiesService.getScriptProperties();
+    var all = props.getProperties();
+    var pending = SEED_MANIFEST.study.some(function (m) { return all['STUDY_PACK_' + m.code + '_VERSION'] !== String(m.version); });
+    if (!pending) return [];
+    var done = [];
+    packs().forEach(function (E) {
+      var key = 'STUDY_PACK_' + E.code + '_VERSION';
+      if (props.getProperty(key) === String(E.version)) return;
+      var r = runPack(E);
+      props.setProperty(key, String(E.version));
+      Repo.insert('import_log', [{ run_at: Util.nowIso(), level: r.unresolved.length ? 'warn' : 'ok',
+        message: 'Cartões de estudo ' + E.code + ' v' + E.version + ': +' + r.added + ' novos, ' + r.updated + ' atualizados, ' + r.removed + ' removidos.', details: r, source: 'sistema' }]);
+      done.push(E.code);
+    });
+    return done;
+  }
+
+  return { run: runPack, ensure: ensure };
 })();
 
 // ---- 60_Stats.js
@@ -15933,7 +16389,7 @@ var API_METHODS = {
   'notes.remove': function (a) { return Notes.remove(a.id); },
 
   'search': function (a) { return Search.run(a.q); },
-  'quiz.generate': function (a) { return Quiz.generate({ tasting_id: a.tasting_id, n: a.n }); },
+  'quiz.generate': function (a) { return Quiz.generate({ tasting_id: a.tasting_id, n: a.n, cards: a.cards, country_id: a.country_id }); },
 
   'settings.get': function () {
     return { settings: Repo.all('settings'), rules: Settings.rules(), scales: Settings.scales(), last_log: Ctx.isAdmin() ? Import.lastLog(60) : [] };
@@ -15955,6 +16411,8 @@ var API_METHODS = {
   'regions.countries': function () { return Regions.countries(); },
   'regions.country': function (a) { return Regions.country(a.id); },
   'regions.get': function (a) { return Regions.get(a.id); },
+  'study.topic': function (a) { return Study.topic(String(a.topic || '')); },
+  'study.counts': function () { return Study.counts(); },
   'seed.regions': function (p) { var r = SeedRegions.run(!(p && p.resume)); r.lookups = Catalog.lookups(); return r; },
   'seed.grapes': function () { var x = SeedEncyclopedia.runAll(true); var r = Object.assign({}, x.report || {}, { remaining: x.remaining }); r.lookups = Catalog.lookups(); return r; },
 
@@ -16054,7 +16512,8 @@ function ensureSchema_() {
   // Atalho: se nada mudou desde a última verificação (mesma estrutura e mesmas versões dos dados), não
   // consulta propriedades nem planilha — economiza ~0,5 s em toda chamada.
   var sig = CONFIG.SCHEMA_VERSION + '|' + SEED_MANIFEST.grapes.version + '|' +
-    SEED_MANIFEST.packs.map(function (p) { return p.code + p.version; }).join(',');
+    SEED_MANIFEST.packs.map(function (p) { return p.code + p.version; }).join(',') + '|' +
+    SEED_MANIFEST.study.map(function (p) { return p.code + p.version; }).join(',');
   var cache = CacheService.getScriptCache();
   if (cache.get('seeds_ok') === sig) return;
   var props = PropertiesService.getScriptProperties();
@@ -16071,7 +16530,8 @@ function ensureSchema_() {
     // Em etapas curtas: a primeira abertura depois de uma versão nova não trava o app.
     var g = SeedEncyclopedia.ensure(8000);
     var r = SeedRegions.ensure(8000);
-    if (g === null && !r.length) cache.put('seeds_ok', sig, 21600);
+    var st = SeedStudy.ensure();
+    if (g === null && !r.length && !st.length) cache.put('seeds_ok', sig, 21600);
   } catch (e) {
     // Não bloqueia o app: registra e tenta de novo na próxima chamada.
     console.error('Enciclopédia de uvas', e && e.stack || e);
@@ -16094,6 +16554,7 @@ function setup() {
   var sync = Import.run();
   SeedEncyclopedia.runAll();
   SeedRegions.ensure(240000);
+  SeedStudy.ensure();
   var msg = ['Dono: ' + owner, 'Abas: ' + (schema.join('; ') || 'nenhuma alteração'),
     'Sementes: ' + (seeds.join('; ') || 'nenhuma'), 'Sincronização: ' + JSON.stringify(sync.stats)].join('\n');
   console.log(msg);
