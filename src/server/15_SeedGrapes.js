@@ -23,6 +23,7 @@
  * v3 (06/10/2026): fichas completas das uvas que só tinham o nome (vindas dos packs de regiões), começando pelas
  *   mais citadas: origem, história, onde se planta, viticultura, aromas e perfil (Wikipedia + Wine Folly; quando
  *   não há artigo próprio, a Wikipedia em outra língua ou o artigo do vinho do país, com o link em `wiki`).
+ * v10 (08/10/2026): lote 8, mais 21 uvas (Sardenha, Campânia, Douro e Minho, Madeira, Romênia, EUA…; sem ficha por falta de fonte: Granaccia, Batoca, Padeiro, Listrão).
  * v9 (08/10/2026): lote 7, mais 37 uvas (Suíça, Alemanha, Hungria, Rioja, Grécia, Argentina…; sem ficha por falta de fonte: Rumeni Plavec, Granaccia, Tintilla, Vijariego Negro, Maturana Tinta, Caíño Tinto).
  * v8 (07/10/2026): lote 6, mais 39 uvas (sul da Itália, Portugal, Romênia, Turquia…; sem ficha por falta de fonte: Egiodola, Zelen, Pinela, Lado, Malvasía Castellana, Mazrona).
  * v7 (07/10/2026): lote 5, mais 40 uvas (Espanha, sudoeste da França, Grécia/Creta, Piemonte, Friuli, Toscana…).
@@ -3232,6 +3233,171 @@ var GRAPE_ENCYCLOPEDIA = (function () {
   ];
 
 
+  var GRAPES_V10 = [
+    // ---------- v10 · lote 8 ----------
+    { name: 'Aleatico', color: 'tinta', wiki: 'Aleatico', wf: '',
+      origin: 'Itália. Possível variante escura da Muscat Blanc à Petits Grains (o DNA sugere relação de pai/filho); pode ter vindo com os gregos ou ser nativa da Puglia.',
+      synonyms: ['Livatica', 'Leatico', 'Agliano', 'Red Moscatel'],
+      main_countries: 'Itália, Chile, Austrália, EUA, Azerbaijão, Cazaquistão, Uzbequistão', main_regions: 'Toscana (sobretudo Elba), Lácio, Úmbria, Piemonte, Puglia; menos em Marche, Abruzzo e Sicília',
+      description: 'Usada sobretudo em vinhos de sobremesa: uvas secas (passito) ou fortificados (liquoroso). Aleatico dell\'Elba Passito é uma DOCG rara entre os doces. Aroma de rosas, como a família Muscat; álcool alto equilibrado pela acidez.',
+      profile: P('doce', '', '', '', 'alto'),
+      aromas_wf: [], aromas_wiki: ['Rosa', 'Lichia'] },
+
+    { name: 'Passerina', color: 'branca', wiki: 'Passerina_(grape)', wf: '',
+      origin: 'Itália (Marche); a origem é incerta.',
+      synonyms: ['Pagadebito Gentile', 'Campolese', 'Uva Passera'],
+      main_countries: 'Itália', main_regions: 'Marche (entra em Falerio dei Colli Ascolani DOC)',
+      description: 'Uva branca local e rara; o nome vem das bagas pequenas, muitas vezes sem sementes. Também dá nome a uma DOC.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Biancolella', color: 'branca', wiki: 'Biancolella', wf: '',
+      origin: 'Itália (Campânia).',
+      synonyms: ['Biancolillo', 'Jancolella', 'Janculillo', 'Petite Blanche'],
+      main_countries: 'Itália', main_regions: 'Campânia (permitida em algumas DOCs; usada sobretudo em cortes)',
+      description: 'Uva branca do sul da Itália usada principalmente como parceira de corte.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Asprinio', color: 'branca', wiki: 'Asprinio_bianco', wf: '',
+      origin: 'Itália (sudoeste, em torno de Nápoles, Campânia). Não parece relacionada à francesa Aspiran.',
+      synonyms: ['Asprinio Bianco', 'Asprinia di Aversa', 'Asprino', 'Greco', 'Olivese', 'Ragusano', 'Uva Asprina'],
+      main_countries: 'Itália', main_regions: 'Campânia (Nápoles; Aversa)',
+      description: 'Em Nápoles dá um vinho levemente espumante (frizzante). O DNA mostrou que alguns plantios de "Greco" e Asprinio são geneticamente idênticos.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Sciascinoso', color: 'tinta', wiki: 'Sciascinoso', wf: '',
+      origin: 'Itália (Campânia).',
+      synonyms: ['Olivella', 'Avellinese', 'Strascinatolo', 'Uva di Avellino', 'Sanseverino'],
+      main_countries: 'Itália', main_regions: 'Campânia (cerca de 440 ha em 1999)',
+      ripening: 'Tardia: cerca de 30 a 35 dias depois da Chasselas.', bunch_size: 'Cachos grandes, de forma cônica ou cilíndrica; bagas ovais médias, de azul-escuro a violeta.',
+      description: 'Dá vinhos muito coloridos, para beber em até um ano. Costuma entrar em cortes com Piedirosso e Aglianico e é usada no Lacryma Christi tinto.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Nuragus', color: 'branca', wiki: 'Nuragus_(grape)', wf: '',
+      origin: 'Itália (Sardenha); provavelmente trazida pelos fenícios.',
+      synonyms: ['Abbondosa', 'Axina de Margiai', 'Granazza', 'Garnaccia', 'Meragus', 'Nuragus Trebbiana'],
+      main_countries: 'Itália', main_regions: 'Sardenha: planície de Campidano, entre Cagliari e Oristano (8.700 ha em 1990, após cair 50% nos anos 1980)',
+      description: 'Principal uva do Nuragus di Cagliari DOC (mínimo 85%; máximo de 20 t/ha, o rendimento mais alto da Itália; álcool mínimo 10,5%; pode ser frizzante). Vinhos leves e de sabor neutro; em boas safras lembram Vermentino, com amêndoa e maçã azeda, e a acidez evoca Vinho Verde e Albariño.',
+      profile: P('', 'leve', '', 'alta', ''), aromas_wf: [], aromas_wiki: ['Amêndoa', 'Maçã verde'] },
+
+    { name: 'Nasco', color: 'branca', wiki: 'Nasco_(grape)', wf: '',
+      origin: 'Itália (Sardenha); Jancis Robinson a chama de "antiga".',
+      synonyms: ['Nasco Bianco', 'Nasco di Sardegna', 'Nascu'],
+      main_countries: 'Itália', main_regions: 'Sardenha, em torno de Cagliari: menos de 40 ha hoje, depois da filoxera do século XIX',
+      description: 'Nasco di Cagliari DOC (95–100% Nasco): seco, doce e fortificado (liquoroso). Álcool mínimo: 13,5% (doce), 14,5% (seco) e 17,5% (liquoroso); Riserva com 2 anos, ao menos um em carvalho.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Girò', color: 'tinta', wiki: 'Girò', wf: '',
+      origin: 'Itália (Sardenha); talvez de origem espanhola, trazida quando a ilha era da Coroa de Aragão.',
+      synonyms: ['Girone', 'Giro di Spagna', 'Giro Sardo', 'Zirone'],
+      main_countries: 'Itália', main_regions: 'Sardenha (províncias de Cagliari e Oristano): 552 ha por volta de 2000',
+      description: 'Usada sobretudo em fortificados, doces ou secos (Giro di Cagliari DOC). Resiste ao calor e à seca, mas perde acidez; amadurece de média a tardia e acumula muito açúcar, às vezes secando na videira ou em esteiras. Jancis Robinson cita taninos firmes e aroma de cereja. Provavelmente é pai da Albaranzeuli Bianco; não é a Giró Blanc de Maiorca.',
+      profile: P('', '', 'medio+', 'baixa', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Espadeiro', color: 'tinta', wiki: 'Espadeiro', wf: '',
+      origin: 'Portugal (Minho). Mais que uma uva, é uma família (Espadeiro Tinto, Espadeiro Mole…) com sinônimos que se sobrepõem.',
+      synonyms: ['Espadeiro Tinto', 'Espadeiro Mole'],
+      main_countries: 'Portugal, Espanha', main_regions: 'Minho (Vinho Verde); Galícia (vinhos leves)',
+      description: 'Uva tinta do Vinho Verde; na Galícia dá vinhos de corpo leve.',
+      profile: P('', 'leve', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Borraçal', color: 'tinta', wiki: 'Caiño_tinto', wf: '',
+      origin: 'Galícia (Espanha) e Minho (Portugal): Caíño Tinto em espanhol, Borraçal em português.',
+      synonyms: ['Caíño Tinto', 'Olho de Sapo', 'Bagalhal', 'Espadeiro Redondo'],
+      main_countries: 'Portugal, Espanha', main_regions: 'Minho (Vinho Verde); DOs Rías Baixas e Ribeiro (Galícia)',
+      description: 'Vinhos muito perfumados, com acidez e tanino perceptíveis.',
+      profile: P('', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Amaral', color: 'tinta', wiki: 'Azal_tinto', wf: '',
+      origin: 'Portugal (Minho).',
+      synonyms: ['Azal Tinto', 'Amaral Preto', 'Cainho Miúdo'],
+      main_countries: 'Portugal', main_regions: 'Minho (Vinho Verde tinto; o Azal Branco faz o branco)',
+      description: 'Uva tinta do Vinho Verde. Atenção: "Azal Tinto" também aparece como sinônimo de Vinhão em algumas fontes.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Mourisco Tinto', color: 'tinta', wiki: 'Mourisco_tinto', wf: '',
+      origin: 'Portugal (Douro). Também chamada Marufo.',
+      synonyms: ['Marufo', 'Mourisco', 'Mourisco Preto', 'Tinta Grossa', 'Tinto Martinho'],
+      main_countries: 'Portugal', main_regions: 'Douro (DOC); uva recomendada para o vinho do Porto',
+      description: 'Uva tinta plantada sobretudo no Douro.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Rabigato', color: 'branca', wiki: 'Rabigato', wf: '',
+      origin: 'Portugal (Douro).',
+      synonyms: [],
+      main_countries: 'Portugal', main_regions: 'Douro, sobretudo Douro Superior',
+      description: 'Uva branca popular no Douro. O DNA mostrou que não é parente próxima de Donzelinho Branco, Terrantez ou Folgasão, apesar de sinônimos em comum.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Viosinho', color: 'branca', wiki: 'Viosinho', wf: '',
+      origin: 'Portugal (norte).',
+      synonyms: [],
+      main_countries: 'Portugal', main_regions: 'Trás-os-Montes e Douro',
+      description: 'Atinge acidez alta; usada principalmente em cortes, dando estrutura e sabor a brancos tranquilos e ao vinho do Porto.',
+      profile: P('', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Donzelinho Branco', color: 'branca', wiki: 'Donzelinho_branco', wf: '',
+      origin: 'Portugal (norte). Citada em 1531–1532 como Donzelyhno, na região de Lamego. O DNA (2010) mostrou que não é mutação de cor do Donzelinho Tinto.',
+      synonyms: ['Donzellinho Branco', 'Terrantes'],
+      main_countries: 'Portugal', main_regions: 'Douro (cortes brancos e Porto) e Trás-os-Montes; Vinhos Regionais Duriense e Transmontano',
+      ripening: 'Média.', vigor: 'Baixa fertilidade: costuma-se podar longo; brota cedo e sofre com geada.', skin_thickness: 'Grossa: boa resistência a míldio e fungos.', bunch_size: 'Cachos pequenos e compactos.',
+      description: 'Rara como varietal; entra em cortes de campo. Jancis Robinson descreve vinhos muito perfumados e leves, com nota de lavanda. Uma das variedades "Muito Boas" para o Porto.',
+      profile: P('', 'leve', '', '', ''), aromas_wf: [], aromas_wiki: ['Lavanda'] },
+
+    { name: 'Moreto', color: 'tinta', wiki: 'Moreto', wf: '',
+      origin: 'Portugal.',
+      synonyms: ['Moreto do Alentejo', 'Mureto do Alentejo', 'Tinta de Alter'],
+      main_countries: 'Portugal', main_regions: 'Alentejo',
+      description: 'Como varietal, faz vinhos neutros.',
+      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Terrantez', color: 'branca', wiki: 'Terrantez', wf: '',
+      origin: 'Portugal: uma das cinco uvas brancas nobres da Madeira (com Sercial, Verdelho, Bual e Malvasia); origem exata desconhecida, talvez do continente.',
+      synonyms: ['Cascal', 'Terrantes', 'Pé de Perdiz'],
+      main_countries: 'Portugal', main_regions: 'Madeira (5,64 ha em 2021; replantio incentivado desde 2016); Açores; Minho (como Cascal, no Vinho Verde)',
+      description: 'Quase extinta na Madeira após o oídio (1851) e a filoxera (1872). Dá vinhos meio-secos ou meio-doces, de corpo cheio e buquê muito perfumado; os velhos envelhecem bem. Pouca produção: costuma sair como vinho de safra única (Frasqueira). Não confundir com Folgasão nem Donzelinho Branco, que dividem sinônimos.',
+      profile: P('meio_seco', 'encorpado', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Tămâioasă Românească', color: 'branca', wiki: 'Tămâioasă_românească', wf: '',
+      origin: 'Romênia: "moscatel romeno". Na Moldávia chama-se Busuioacă Albă.',
+      synonyms: ['Busuioacă Albă', 'Romanian Muscatel'],
+      main_countries: 'Romênia, Moldávia', main_regions: 'Romênia',
+      description: 'Vinhos aromáticos, naturalmente doces ou meio-doces (12 a 12,5% de álcool), de cor dourada e buquê floral de mel; em geral, sobremesa.',
+      profile: P('doce', '', '', '', 'medio'), aromas_wf: [], aromas_wiki: ['Mel'] },
+
+    { name: 'Vitovska', color: 'branca', wiki: 'Vitovska', wf: '',
+      origin: 'Itália e Eslovênia. Cruzamento de Prosecco Tondo (Glera) com Malvasia Bianca Lunga.',
+      synonyms: ['Vitouska', 'Vitovska Grganja', 'Garganja'],
+      main_countries: 'Itália, Eslovênia', main_regions: 'Friuli-Venezia Giulia (baixo Isonzo e Carso) e Planalto do Carso (Litoral Esloveno)',
+      description: 'Dá vinho branco seco. O nome vem de Vitovlje (esloveno); "Grganja" vem do friulano.',
+      profile: P('seco', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+
+    { name: 'Concord', color: 'tinta', wiki: 'Concord_grape', wf: 'concord',
+      origin: 'EUA: criada em 1849 por Ephraim Wales Bull em Concord, Massachusetts, a partir de sementes de Vitis labrusca selvagem; Catawba é um dos pais; cerca de um terço é Vitis vinifera.',
+      synonyms: [],
+      main_countries: 'EUA', main_regions: 'Finger Lakes (NY), Lake Erie, lago Ontário, sudoeste de Michigan e Yakima Valley (Washington), onde é a maior produtora; é a uva mais plantada de Nova York',
+      description: 'Usada sobretudo em suco e saborizantes, mais que em vinho; o suco de Welch\'s (1869) foi feito com ela. Em 1923 foi a uva mais plantada da América do Norte. Wine Folly: sabor forte de uva, para comida de sabor forte (churrasco com molho doce, queijos curados).',
+      profile: P('meio_seco', 'medio+', 'medio', 'media', 'medio..alto'),
+      flavors: 'uva, molho de ameixa, almíscar, terra de vaso, cominho',
+      aromas_wf: ['Ameixa', 'Almiscarado'], aromas_wiki: [] },
+
+    { name: 'Vignoles', color: 'branca', wiki: 'Vignoles_(grape)', wf: '',
+      origin: 'França: híbrida complexa atribuída a J.F. Ravat ("Ravat 51", cruzamento de 1930). O DNA mostrou que a Vignoles dos EUA não tem a parentagem atribuída (Seibel 6905 e Pinot Noir): a parentagem é desconhecida.',
+      synonyms: ['Ravat 51'],
+      main_countries: 'EUA', main_regions: 'América do Norte (nome dado pela associação de produtores dos Finger Lakes, 1970)',
+      ripening: 'Brotação tardia; cerca de 105 dias da floração à colheita.', vigor: 'Moderadamente vigorosa, rendimento moderado.', bunch_size: 'Cachos pequenos e muito compactos: muito sensíveis à podridão cinzenta.', disease_sensitivity: 'Resistência média; tolera −23 a −26 °C no inverno.',
+      description: 'Muito valorizada em brancos doces frutados de colheita tardia, incluindo ice wine; faz também secos e meio-secos. Açúcar e acidez altos na maturação.',
+      profile: P('doce', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: [] },
+
+  ];
+
+  var RELATIONS_V10 = [
+    ['confused_with', 'Terrantez', 'Donzelinho Branco', 'Terrantez',
+      'Os dois dividem sinônimos (Terrantes/Terrantez), mas o DNA mostra que não têm parentesco próximo: a Terrantez é da Madeira, a Donzelinho Branco do Douro, de vinhos leves e perfumados com lavanda.'],
+    ['confused_with', 'Amaral', 'Vinhão', 'Azal_tinto',
+      '"Azal Tinto" aparece como nome tanto de Amaral quanto de Vinhão em algumas fontes; trate-as como uvas distintas do Minho, a Amaral usada no Vinho Verde tinto.']
+  ];
+
+
   grapes = grapes.concat(GRAPES_V2);
   relations = relations.concat(RELATIONS_V2);
   grapes = grapes.concat(GRAPES_V3);
@@ -3248,6 +3414,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
   relations = relations.concat(RELATIONS_V8);
   grapes = grapes.concat(GRAPES_V9);
   relations = relations.concat(RELATIONS_V9);
+  grapes = grapes.concat(GRAPES_V10);
+  relations = relations.concat(RELATIONS_V10);
 
-  return { version: 9, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
+  return { version: 10, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
 })();
