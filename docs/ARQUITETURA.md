@@ -260,6 +260,13 @@ GitHub Pages (index.html, jogo.html)  ──POST text/plain {method,args,token}�
   deu para confirmar fica `conferir`. Itens `conferir`/`corrigido` e cartões `status = revisar` ficam fora do quiz.
 - **Quiz:** `Quiz.generate({cards})` monta perguntas dos cartões (fato, denominação, época, número); no modo aleatório ~35%
   vêm dos cartões; páginas de seção e de país têm o botão "Quiz".
+- **Nível (v8):** cada cartão tem `level` (medio | avancado | expert) por notoriedade mundial, avaliado à mão no arquivo de
+  dados (mapa `LEVELS`); detalhes técnicos valem um nível acima no quiz. Uvas e regiões da enciclopédia usam uma aproximação
+  (quantas regiões cultivam a uva; quantas sub-regiões a região tem).
+- **Lotes:** HIS, IT, FR1–FR3, PT/ES, DE/AT/GR/LB/SI, BR/UY, CL/AR, US/AU/NZ/ZA, PRO (produção) e HAR (harmonizações gerais);
+  cozinha regional é `harmonizacao` com `group` = região/país. Produtores que o slide lista sem região foram atribuídos pelo
+  agente por conhecimento geral quando óbvio (ex.: Chivite em Navarra) — conferir se algo parecer estranho.
+- **Importação:** `SeedStudy.ensure(maxMs)` importa pacotes em etapas (orçamento por chamada); o app só marca `seeds_ok` quando todos entraram.
 - **API:** `study.topic`, `study.counts`; `regions.country` e `regions.get` já trazem `cards`. Leitura para todos os usuários;
   escrita só pela administradora (política `admin`).
 
