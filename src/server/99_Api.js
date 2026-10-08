@@ -231,7 +231,7 @@ function ensureSchema_() {
     // Em etapas curtas: a primeira abertura depois de uma versão nova não trava o app.
     var g = SeedEncyclopedia.ensure(8000);
     var r = SeedRegions.ensure(8000);
-    var st = SeedStudy.ensure();
+    var st = SeedStudy.ensure(10000);
     if (g === null && !r.length && !st.length) cache.put('seeds_ok', sig, 21600);
   } catch (e) {
     // Não bloqueia o app: registra e tenta de novo na próxima chamada.

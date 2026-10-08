@@ -37,6 +37,18 @@ var Study = (function () {
       if (idx[g] === undefined) { idx[g] = groups.length; groups.push({ name: g, cards: [] }); }
       groups[idx[g]].cards.push(c);
     });
+    // Ordem das subseções: Produção/História pelo menor "sort" dos cartões; Harmonizações: princípios e estilos primeiro, depois por região.
+    var GENERAL = ['Princípios', 'Brancos', 'Tintos', 'Espumantes', 'Fortificados e doces'];
+    groups.forEach(function (g) { g.min = Math.min.apply(null, g.cards.map(function (c) { return c.sort; })); });
+    groups.sort(function (a, b) {
+      if (name === 'harmonizacao') {
+        var ia = GENERAL.indexOf(a.name), ib = GENERAL.indexOf(b.name);
+        if (ia >= 0 || ib >= 0) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+        return String(a.name).localeCompare(String(b.name), 'pt');
+      }
+      return a.min - b.min;
+    });
+    groups.forEach(function (g) { delete g.min; });
     return { topic: name, title: TOPICS[name], count: cards.length, groups: groups };
   }
 
@@ -106,13 +118,14 @@ var SeedStudy = (function () {
   }
 
   /** Importa cada pacote uma vez por versão (pelo manifesto, sem carregar os dados quando nada mudou). */
-  function ensure() {
+  function ensure(maxMs) {
     var props = PropertiesService.getScriptProperties();
     var all = props.getProperties();
     var pending = SEED_MANIFEST.study.some(function (m) { return all['STUDY_PACK_' + m.code + '_VERSION'] !== String(m.version); });
     if (!pending) return [];
-    var done = [];
+    var done = [], t0 = Date.now(), limit = maxMs || 15000;
     packs().forEach(function (E) {
+      if (done.length && Date.now() - t0 > limit) return;   // o resto fica para as próximas chamadas
       var key = 'STUDY_PACK_' + E.code + '_VERSION';
       if (props.getProperty(key) === String(E.version)) return;
       var r = runPack(E);
