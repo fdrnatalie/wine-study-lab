@@ -54,6 +54,7 @@ var Wines = (function () {
     out.appellation = nameOf_(c.appellations, w.appellation_id);
     out.profile = Catalog.profileOf('wine', id);
     out.profile_trusted = out.profile ? Catalog.isTrusted(out.profile.source) : false;
+    out.ficha_score = out.profile && !Ficha.isEmpty(out.profile.ficha) ? Ficha.score(out.profile.ficha) : null;
     out.aromas = Catalog.aromasOf('wine', id);
     out.notes = Catalog.notesFor('wine', id);
     var bottles = (c.bottles[id] || []).slice().sort(function (a, b) { return a.number - b.number; });

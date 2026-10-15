@@ -189,6 +189,32 @@ test('perfil do vinho: equilíbrio, complexidade e conclusão', () => {
   assert.strictEqual(p.balance, 'harmonico'); assert.strictEqual(p.complexity, 'complexa'); assert.ok(/guarda/.test(p.conclusion_text));
   assert.strictEqual(post('profiles.save', { entity_type: 'wine', entity_id: w.id, profile: { source: 'usuario', balance: 'perfeito' } }, owner.token).ok, false);
 });
+test('ficha analítica Cordon Bleu: valida, pontua sobre 100 e não some ao salvar sem ela', () => {
+  const w = ok(post('wines.save', { wine: { name: 'Vinho da ficha' } }, owner.token));
+  const lk = ok(post('bootstrap', {}, owner.token)).lookups;
+  assert.deepStrictEqual(lk.ficha.filter((s) => s.max).map((s) => s.max), [18, 32, 50]);
+  assert.ok(lk.aromas.some((a) => a.name === 'Gerânio') && lk.aromas.some((a) => a.name === 'Pelica'));
+  assert.strictEqual(lk.aromas.filter((a) => a.name === 'Eucalipto').length, 1);   // já existia: não duplica
+  const ficha = { hue: 'vermelho_rubi', reflexes: ['violaceo', 'granada', 'violaceo'], clarity: 'muito_limpido', color: 'boa',
+    nose_general: ['franco'], nose_quality: 'fino', nose_intensity: 'intenso', nose_persistence: 'persistente',
+    tannin_quality: 'seda', bitterness: 'correto', balance: 'harmonico', palate_quality: 'fino', palate_intensity: 'intenso',
+    palate_persistence: 'persistente', mouth: 'boca_plena', evolution: 'pronto', final: ['fresca', 'com_fundo'], final_note: 'cacau', temp_service: '16' };
+  const p = ok(post('profiles.save', { entity_type: 'wine', entity_id: w.id, profile: { source: 'usuario', ficha } }, owner.token));
+  assert.deepStrictEqual(p.ficha.reflexes, ['violaceo', 'granada']);
+  // visual 9+7 · olfativa 8+9+3 · gustativa 12+6+7+7+4
+  assert.strictEqual(p.ficha_score, 16 + 20 + 36);
+  const g = ok(post('wines.get', { id: w.id }, owner.token));
+  assert.strictEqual(g.ficha_score.complete, true);
+  assert.deepStrictEqual(g.ficha_score.parts.map((x) => x.points), [16, 20, 36]);
+  // Salvar o perfil sem a ficha (ex.: aprovação de proposta da IA) mantém a ficha.
+  const p2 = ok(post('profiles.save', { entity_type: 'wine', entity_id: w.id, profile: { source: 'usuario', acidity: 'alta' } }, owner.token));
+  assert.strictEqual(p2.ficha.hue, 'vermelho_rubi'); assert.strictEqual(p2.ficha_score, 72);
+  // Ficha vazia limpa a nota.
+  assert.strictEqual(ok(post('profiles.save', { entity_type: 'wine', entity_id: w.id, profile: { source: 'usuario', ficha: {} } }, owner.token)).ficha_score, '');
+  assert.strictEqual(post('profiles.save', { entity_type: 'wine', entity_id: w.id, profile: { ficha: { clarity: 'cristalino' } } }, owner.token).ok, false);
+  assert.strictEqual(post('profiles.save', { entity_type: 'wine', entity_id: w.id, profile: { ficha: { clarity: ['limpido', 'turvo'] } } }, owner.token).ok, false);
+  assert.strictEqual(post('profiles.save', { entity_type: 'wine', entity_id: w.id, profile: { ficha: { inventado: 'x' } } }, owner.token).ok, false);
+});
 test('garrafinha só acaba quando você decide: em uso continua disponível', () => {
   const lk = ok(post('wines.list', {}, owner.token));
   const bottles = ok(post('bottles.list', {}, owner.token)).filter((b) => b.status === 'disponivel').slice(0, 2);

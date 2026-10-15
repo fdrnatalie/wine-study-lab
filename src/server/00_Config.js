@@ -11,7 +11,7 @@
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 8,
+  SCHEMA_VERSION: 9,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -79,7 +79,9 @@ var SCHEMA = {
     'entity_type', 'entity_id', 'acidity', 'tannin', 'body', 'alcohol', 'sweetness',
     'intensity', 'finish', 'color_hue', 'color_intensity', 'oak', 'texture', 'visual_text', 'nose_text', 'palate_text',
     // v6: conclusão da avaliação (vinho): equilíbrio, complexidade e notas livres (harmônico, evolução, guarda…).
-    'balance', 'complexity', 'conclusion_text'] },
+    'balance', 'complexity', 'conclusion_text',
+    // v9: ficha analítica descritiva (modelo Le Cordon Bleu, ver 38_Ficha.js) e a nota dela (0–100).
+    'ficha:json', 'ficha_score:number'] },
 
   grape_relationships: { sheet: 'db_grape_relationships', prefix: 'GRL', cols: [
     // kind: parent_of (grape_a é pai/mãe de grape_b) | confused_with | synonym_of

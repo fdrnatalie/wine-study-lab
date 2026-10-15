@@ -88,7 +88,7 @@ Pages.wine = {
         html += '<div class="callout warn" style="margin-bottom:16px">Este perfil veio de uma fonte <b>não verificada</b> (' + esc(Components.SOURCE_LABELS[pr.source] || pr.source) + '). ' +
           'Ele não é usado como gabarito. Revise os valores e salve com a origem correta (ficha técnica, pesquisa ou sua avaliação) para ativá-lo.</div>';
       }
-      html += Components.profileSections(pr, w.aromas) +
+      html += Components.profileSections(pr, w.aromas, w.ficha_score) +
         (pr ? '<div class="small muted" style="margin-top:12px">Origem: ' + Components.src(pr.source) + (pr.source_ref ? ' · ' + esc(pr.source_ref) : '') + '</div>' : '') +
         '</section>';
 
@@ -126,7 +126,7 @@ Pages.wine = {
     },
     'edit-profile': function () {
       var w = Pages.wine.data;
-      ProfileEditor.open('wine', w.id, w.profile, w.aromas, function () { Router.render(); });
+      ProfileEditor.open('wine', w.id, w.profile, w.aromas, function () { Router.render(); }, { color: w.color });
     },
     'add-bottles': function () {
       var w = Pages.wine.data;
@@ -157,8 +157,9 @@ function ruleLabel(criterion) {
 var ProfileEditor = {
   BALANCE: [{ v: 'desequilibrado', t: 'Desequilibrado' }, { v: 'pouco_equilibrado', t: 'Pouco equilibrado' }, { v: 'equilibrado', t: 'Equilibrado' }, { v: 'harmonico', t: 'Harmônico' }],
   COMPLEXITY: [{ v: 'simples', t: 'Simples' }, { v: 'media', t: 'Média' }, { v: 'complexa', t: 'Complexa' }],
-  open: function (entityType, entityId, profile, aromas, done) {
+  open: function (entityType, entityId, profile, aromas, done, opts) {
     profile = profile || {};
+    opts = opts || {};
     var isGrape = entityType === 'grape';
     var visual = [['color_intensity', 'Intensidade da cor'], ['color_hue', 'Tonalidade']];
     // Boca na ordem de degustação: dulçor, acidez, tanino, álcool, corpo, intensidade, persistência.
@@ -186,7 +187,8 @@ var ProfileEditor = {
         step(4, 'Conclusão', 'O conjunto: é harmônico, equilibrado, complexo? Pede guarda? Evolui no copo?') +
         '<div style="margin:12px 0"><label class="f">Equilíbrio</label>' + Components.seg('balance', '', profile.balance || '', { options: ProfileEditor.BALANCE }) + '</div>' +
         '<div style="margin:12px 0"><label class="f">Complexidade</label>' + Components.seg('complexity', '', profile.complexity || '', { options: ProfileEditor.COMPLEXITY }) + '</div>' +
-        '<div class="form-grid"><div class="wide"><label class="f">Conclusão — detalhes sobre o vinho</label><textarea class="in" name="conclusion_text" rows="3" placeholder="ex.: harmônico, madeira bem integrada, final longo; bom para guardar mais 3–5 anos">' + esc(profile.conclusion_text || '') + '</textarea></div></div>') +
+        '<div class="form-grid"><div class="wide"><label class="f">Conclusão — detalhes sobre o vinho</label><textarea class="in" name="conclusion_text" rows="3" placeholder="ex.: harmônico, madeira bem integrada, final longo; bom para guardar mais 3–5 anos">' + esc(profile.conclusion_text || '') + '</textarea></div></div>' +
+        FichaEditor.html(profile.ficha || {}, opts.color)) +
       '<div class="form-grid" style="margin-top:18px">' +
       '<div><label class="f">Origem destes dados</label><select class="in" name="source">' +
       Components.options([{ v: 'usuario', t: 'Minha avaliação' }, { v: 'rotulo', t: 'Rótulo / ficha técnica do produtor' }, { v: 'pesquisado', t: 'Pesquisado (fonte citada)' }, { v: 'ia_revisada', t: 'IA, revisado por mim' }, { v: 'ia_nao_verificada', t: 'Não verificado' }],
@@ -194,10 +196,11 @@ var ProfileEditor = {
       '<div><label class="f">Referência (link, livro, ficha…)</label><input class="in" name="source_ref" value="' + esc(profile.source_ref || '') + '"></div>' +
       '</div><div class="btn-row" style="justify-content:flex-end;margin-top:22px"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn primary">Salvar perfil</button></div></form>';
     var m = UI.modal(html, { sticky: true });
+    if (!isGrape) FichaEditor.refresh(m);
     // Nas uvas, no máximo 2 níveis por escala (faixa).
     m.addEventListener('segchange', function (e) {
       var seg = e.target;
-      if (!isGrape) return;
+      if (!isGrape) { FichaEditor.refresh(m); return; }
       var on = seg.querySelectorAll('button.on');
       if (on.length > 2) on[0].classList.remove('on');
     });
@@ -214,7 +217,11 @@ var ProfileEditor = {
         } else data[f[0]] = v;
       });
       data.aroma_ids = Components.readAromas(form);
-      if (!isGrape) { data.balance = Components.readSeg(form, 'balance') || ''; data.complexity = Components.readSeg(form, 'complexity') || ''; }
+      Object.keys(data).forEach(function (k) { if (k.indexOf('ficha_') === 0) delete data[k]; });
+      if (!isGrape) {
+        data.balance = Components.readSeg(form, 'balance') || ''; data.complexity = Components.readSeg(form, 'complexity') || '';
+        data.ficha = FichaEditor.read(form);
+      }
       var btn = form.querySelector('button.primary');
       UI.busy(btn, true);
       API.call('profiles.save', { entity_type: entityType, entity_id: entityId, profile: data }).then(function () {
@@ -223,6 +230,80 @@ var ProfileEditor = {
         done && done();
       }).catch(function (err) { UI.busy(btn, false); UI.error(err); });
     });
+  }
+};
+
+/**
+ * Ficha analítica descritiva no modelo Le Cordon Bleu (passo 5 do perfil do vinho). O vocabulário e os
+ * pontos vêm do servidor (lookups.ficha, 38_Ficha.js); a nota mostrada aqui é só prévia — quem grava é o servidor.
+ */
+var FichaEditor = {
+  spec: function () { return Store.lookups.ficha || []; },
+
+  html: function (ficha, color) {
+    var spec = FichaEditor.spec();
+    if (!spec.length) return '';
+    // Tonalidade: mostra só o grupo da cor do vinho (laranja usa a dos brancos), a não ser que já haja outro valor marcado.
+    var group = { branco: 'branco', laranja: 'branco', tinto: 'tinto', rose: 'rose' }[color] || '';
+    var filled = Object.keys(ficha).length > 0;
+    var body = spec.map(function (s) {
+      return '<h4>' + esc(s.title) + (s.max ? '<span class="ficha-pts" data-ficha-part="' + s.key + '"></span>' : '') + '</h4>' +
+        s.fields.map(function (f) {
+          var name = 'ficha_' + f.key, v = ficha[f.key];
+          if (f.text) {
+            return '<div style="margin:10px 0;max-width:340px"><label class="f">' + esc(f.label) + '</label><input class="in" name="' + name + '" maxlength="' + f.text + '" value="' + esc(v || '') + '"></div>';
+          }
+          var options = f.options;
+          if (f.key === 'hue' && group) {
+            var mine = options.filter(function (o) { return o.group === group; });
+            if (!v || mine.some(function (o) { return o.v === v; })) options = mine;
+          }
+          return '<div style="margin:10px 0"><label class="f">' + esc(f.label) + (f.multi ? ' <span class="muted small">(uma ou mais)</span>' : '') + '</label>' +
+            Components.seg(name, '', f.multi ? (v || []) : (v || ''), {
+              multi: f.multi,
+              options: options.map(function (o) { return { v: o.v, t: o.t + (o.points !== null ? ' · ' + o.points : '') }; })
+            }) + '</div>';
+        }).join('');
+    }).join('');
+    return '<details class="ficha-edit"' + (filled ? ' open' : '') + '><summary>5 · Ficha analítica Le Cordon Bleu ' +
+      '<span class="muted small" data-ficha-total></span></summary>' +
+      '<p class="muted small" style="margin:0 0 4px">A ficha descritiva da escola (visual 18 + olfativa 32 + gustativa 50 = 100 pontos). ' +
+      'Não muda a correção das degustações às cegas, que segue as escalas acima. Os traços aromáticos ficam no passo 2 (Nariz).</p>' +
+      body + '</details>';
+  },
+
+  read: function (form) {
+    var out = {};
+    FichaEditor.spec().forEach(function (s) {
+      s.fields.forEach(function (f) {
+        var v;
+        if (f.text) { var el = form.querySelector('[name="ficha_' + f.key + '"]'); v = el ? el.value.trim() : ''; }
+        else v = Components.readSeg(form, 'ficha_' + f.key);
+        if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) return;
+        out[f.key] = v;
+      });
+    });
+    return out;
+  },
+
+  /** Prévia da nota enquanto você marca. */
+  refresh: function (root) {
+    var ficha = FichaEditor.read(root), total = 0, filled = 0, items = 0;
+    FichaEditor.spec().forEach(function (s) {
+      if (!s.max) return;
+      var sum = 0;
+      s.fields.forEach(function (f) {
+        if (!f.scored) return;
+        items++;
+        var o = f.options.filter(function (x) { return x.v === ficha[f.key]; })[0];
+        if (o) { sum += o.points; filled++; }
+      });
+      total += sum;
+      var el = root.querySelector('[data-ficha-part="' + s.key + '"]');
+      if (el) el.textContent = sum + ' / ' + s.max;
+    });
+    var t = root.querySelector('[data-ficha-total]');
+    if (t) t.textContent = filled ? '— ' + total + ' / 100' + (filled < items ? ' (parcial)' : '') : '';
   }
 };
 

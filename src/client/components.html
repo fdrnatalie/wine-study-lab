@@ -78,7 +78,7 @@ var Components = {
   },
 
   /** Perfil de um vinho na ordem da degustação: visual → nariz → boca → conclusão. */
-  profileSections: function (pr, aromas) {
+  profileSections: function (pr, aromas, fichaScore) {
     var BAL = { desequilibrado: 'Desequilibrado', pouco_equilibrado: 'Pouco equilibrado', equilibrado: 'Equilibrado', harmonico: 'Harmônico' };
     var CPX = { simples: 'Simples', media: 'Complexidade média', complexa: 'Complexo' };
     function sec(n, title, body) { return '<div class="prof-sec"><h4 class="prof-step"><span>' + n + '</span> ' + title + '</h4>' + body + '</div>'; }
@@ -91,8 +91,36 @@ var Components = {
     var mouth = '<div class="scales">' + order.map(function (o) { return scaleRow(o[0], o[1]); }).join('') + '</div>' + (pr.palate_text ? '<p>' + esc(pr.palate_text) + '</p>' : '');
     var chips = [BAL[pr.balance], CPX[pr.complexity]].filter(Boolean).map(function (t) { return '<span class="chip">' + esc(t) + '</span>'; }).join('');
     var concl = (chips ? '<div class="chips" style="margin-bottom:8px">' + chips + '</div>' : '') + (pr.conclusion_text ? '<p>' + esc(pr.conclusion_text) + '</p>' : '');
+    var ficha = Components.fichaView(pr.ficha, fichaScore);
     return '<div class="prof-grid">' + sec(1, 'Visual', visual) + sec(2, 'Nariz', nose) + sec(3, 'Boca', mouth) +
-      sec(4, 'Conclusão', concl || '<p>' + Components.missing('Conclusão não cadastrada') + '</p>') + '</div>';
+      sec(4, 'Conclusão', concl || '<p>' + Components.missing('Conclusão não cadastrada') + '</p>') + '</div>' +
+      (ficha ? '<div class="prof-sec ficha"><h4 class="prof-step"><span>5</span> Ficha analítica · Le Cordon Bleu</h4>' + ficha + '</div>' : '');
+  },
+
+  /** Ficha analítica Le Cordon Bleu (somente leitura): o que foi marcado em cada parte + nota sobre 100. */
+  fichaView: function (ficha, score) {
+    var spec = Store.lookups.ficha || [];
+    if (!ficha || !Object.keys(ficha).length) return '';
+    var parts = {};
+    (score && score.parts || []).forEach(function (p) { parts[p.key] = p; });
+    var secs = spec.map(function (s) {
+      var rows = s.fields.map(function (f) {
+        var v = ficha[f.key];
+        if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) return '';
+        var txt = f.text ? esc(v) : [].concat(v).map(function (k) {
+          var o = f.options.filter(function (x) { return x.v === k; })[0];
+          return o ? '<span class="chip">' + esc(o.t) + (o.points !== null ? ' <b>' + o.points + '</b>' : '') + '</span>' : '';
+        }).join(' ');
+        return '<div><dt>' + esc(f.label) + '</dt><dd class="chips">' + txt + '</dd></div>';
+      }).join('');
+      if (!rows) return '';
+      var p = parts[s.key];
+      return '<div class="ficha-sec"><div class="ficha-h">' + esc(s.title) +
+        (p ? '<span class="ficha-pts">' + p.points + ' / ' + p.max + '</span>' : '') + '</div><dl class="ficha-dl">' + rows + '</dl></div>';
+    }).join('');
+    var total = score ? '<div class="ficha-total"><span class="n">' + score.total + '</span><span class="d">/ 100' +
+      (score.complete ? '' : ' · parcial: ' + score.filled + ' de ' + score.items + ' itens pontuados') + '</span></div>' : '';
+    return total + '<div class="ficha-grid">' + secs + '</div>';
   },
 
   /** Aromas agrupados por categoria (somente leitura). */

@@ -356,6 +356,25 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .prof-grid { display: grid; gap: 4px 28px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .prof-sec h4.prof-step { margin-top: 6px; }
 
+/* Ficha analítica (Le Cordon Bleu) */
+.prof-sec.ficha { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.ficha-total { display: flex; align-items: baseline; gap: 8px; margin: 4px 0 12px; }
+.ficha-total .n { font-family: var(--serif); font-size: 2rem; font-weight: 600; color: var(--wine); line-height: 1; }
+.ficha-total .d { font-size: .85rem; color: var(--muted); }
+.ficha-grid { display: grid; gap: 14px 28px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.ficha-h { display: flex; justify-content: space-between; align-items: baseline; font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink-2); margin-bottom: 6px; }
+.ficha-pts { color: var(--wine); letter-spacing: 0; font-size: .9rem; }
+.ficha-dl { margin: 0; display: grid; gap: 6px; }
+.ficha-dl div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; align-items: start; }
+.ficha-dl dt { font-size: .82rem; color: var(--muted); padding-top: 3px; }
+.ficha-dl dd { margin: 0; }
+.ficha-dl .chip b { color: var(--wine); font-weight: 700; }
+@media (max-width: 600px) { .ficha-dl div { grid-template-columns: 1fr; gap: 2px; } }
+details.ficha-edit { margin-top: 22px; border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 16px 12px; }
+details.ficha-edit > summary { cursor: pointer; padding: 10px 0; font-weight: 600; list-style-position: outside; }
+details.ficha-edit h4 { margin: 18px 0 2px; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); display: flex; justify-content: space-between; }
+details.ficha-edit h4 .ficha-pts { text-transform: none; }
+
 /* Cartões de estudo */
 .sc-sec { margin: 26px 0 10px; font-family: var(--serif); font-size: 1.35rem; font-weight: 600; }
 .sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; margin: 8px 0 4px; }

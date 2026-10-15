@@ -120,6 +120,25 @@ var Seeds = (function () {
     ['Outros', 'Outros', ['Resina', 'Borracha', 'Esmalte / acetona', 'Enxofre', 'Rolha (TCA)', 'Vinagre (volátil)']]
   ];
 
+  // v9: traços aromáticos da ficha analítica do Le Cordon Bleu que não estavam no vocabulário base.
+  // Entram nas categorias existentes; a subcategoria segue o grupo da ficha (dá crédito parcial entre vizinhos).
+  // Os que já existiam com outro nome (Champignon = Cogumelo, Sous-bois = Sub-bosque, Pederneira = Sílex…) não são repetidos.
+  var AROMAS_V9 = [
+    ['Madeira', 'Resinosos', ['Bálsamo', 'Breu', 'Cola de madeira', 'Pinho']],
+    ['Madeira', 'Torrefação', ['Amêndoa torrada', 'Bala de café']],
+    ['Flores', 'Flores vermelhas', ['Rosa vermelha', 'Cravo vermelho', 'Gerânio']],
+    ['Flores', 'Flores brancas', ['Rosa branca', 'Cravo branco', 'Angélica', 'Colônia (flor)', 'Lírio', 'Margarida', 'Flor de pessegueiro', 'Petúnia']],
+    ['Vegetais', 'Vegetais', ['Aipo']],
+    ['Herbáceos', 'Herbáceos', ['Capim-limão', 'Capim verde', 'Tabaco verde']],
+    ['Terrosos', 'Terrosos', ['Musgo']],
+    ['Evolução', 'Evolução', ['Alcatrão', 'Feno seco', 'Avelã', 'Castanha']],
+    ['Animais', 'Animais', ['Pelica', 'Pele de salame', 'Raposa']],
+    ['Frutas', 'Frutas secas e cozidas', ['Damasco seco', 'Fruta cristalizada', 'Goiabada']],
+    ['Frutas', 'Frutas vermelhas', ['Pitanga']],
+    ['Frutas', 'Frutas tropicais', ['Kiwi', 'Melancia']],
+    ['Especiarias', 'Especiarias', ['Pimenta verde']]
+  ];
+
   // Somente nomes de países (vocabulário para as hipóteses da degustação). Clima, história
   // etc. ficam vazios até serem cadastrados ou enriquecidos com fonte.
   var COUNTRIES = ['África do Sul', 'Alemanha', 'Argentina', 'Armênia', 'Austrália', 'Áustria', 'Brasil', 'Bulgária',
@@ -131,6 +150,25 @@ var Seeds = (function () {
     if (Repo.all(entity).length) return;
     Repo.insert(entity, records);
     report.push(entity + ': ' + records.length + ' registros iniciais');
+  }
+
+  /** Acrescenta ao vocabulário os aromas que ainda não existem (pelo nome normalizado). Nunca altera os existentes. */
+  function addMissingAromas_(groups, ref, report) {
+    var all = Repo.all('aromas');
+    var have = {}, order = 0;
+    all.forEach(function (a) { have[a.name_key || Util.normKey(a.name)] = true; order = Math.max(order, Number(a.order) || 0); });
+    var add = [];
+    groups.forEach(function (g) {
+      g[2].forEach(function (name) {
+        var key = Util.normKey(name);
+        if (have[key]) return;
+        have[key] = true;
+        add.push({ name: name, name_key: key, category: g[0], subcategory: g[1], order: ++order, source: 'sistema', source_ref: ref });
+      });
+    });
+    if (!add.length) return;
+    Repo.insert('aromas', add);
+    report.push('aromas: +' + add.length + ' (' + ref + ')');
   }
 
   function run() {
@@ -158,6 +196,7 @@ var Seeds = (function () {
       });
     });
     seedIfEmpty_('aromas', aromas, report);
+    addMissingAromas_(AROMAS_V9, 'Ficha analítica Le Cordon Bleu (traços aromáticos)', report);
 
     seedIfEmpty_('countries', COUNTRIES.map(function (n) {
       return { name: n, name_key: Util.normKey(n), source: 'sistema', source_ref: 'Lista base de países produtores' };

@@ -365,6 +365,25 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .prof-grid { display: grid; gap: 4px 28px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .prof-sec h4.prof-step { margin-top: 6px; }
 
+/* Ficha analítica (Le Cordon Bleu) */
+.prof-sec.ficha { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.ficha-total { display: flex; align-items: baseline; gap: 8px; margin: 4px 0 12px; }
+.ficha-total .n { font-family: var(--serif); font-size: 2rem; font-weight: 600; color: var(--wine); line-height: 1; }
+.ficha-total .d { font-size: .85rem; color: var(--muted); }
+.ficha-grid { display: grid; gap: 14px 28px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.ficha-h { display: flex; justify-content: space-between; align-items: baseline; font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--ink-2); margin-bottom: 6px; }
+.ficha-pts { color: var(--wine); letter-spacing: 0; font-size: .9rem; }
+.ficha-dl { margin: 0; display: grid; gap: 6px; }
+.ficha-dl div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; align-items: start; }
+.ficha-dl dt { font-size: .82rem; color: var(--muted); padding-top: 3px; }
+.ficha-dl dd { margin: 0; }
+.ficha-dl .chip b { color: var(--wine); font-weight: 700; }
+@media (max-width: 600px) { .ficha-dl div { grid-template-columns: 1fr; gap: 2px; } }
+details.ficha-edit { margin-top: 22px; border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 16px 12px; }
+details.ficha-edit > summary { cursor: pointer; padding: 10px 0; font-weight: 600; list-style-position: outside; }
+details.ficha-edit h4 { margin: 18px 0 2px; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); display: flex; justify-content: space-between; }
+details.ficha-edit h4 .ficha-pts { text-transform: none; }
+
 /* Cartões de estudo */
 .sc-sec { margin: 26px 0 10px; font-family: var(--serif); font-size: 1.35rem; font-weight: 600; }
 .sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; margin: 8px 0 4px; }
@@ -709,7 +728,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 8,
+  SCHEMA_VERSION: 9,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -777,7 +796,9 @@ var SCHEMA = {
     'entity_type', 'entity_id', 'acidity', 'tannin', 'body', 'alcohol', 'sweetness',
     'intensity', 'finish', 'color_hue', 'color_intensity', 'oak', 'texture', 'visual_text', 'nose_text', 'palate_text',
     // v6: conclusão da avaliação (vinho): equilíbrio, complexidade e notas livres (harmônico, evolução, guarda…).
-    'balance', 'complexity', 'conclusion_text'] },
+    'balance', 'complexity', 'conclusion_text',
+    // v9: ficha analítica descritiva (modelo Le Cordon Bleu, ver 38_Ficha.js) e a nota dela (0–100).
+    'ficha:json', 'ficha_score:number'] },
 
   grape_relationships: { sheet: 'db_grape_relationships', prefix: 'GRL', cols: [
     // kind: parent_of (grape_a é pai/mãe de grape_b) | confused_with | synonym_of
@@ -1912,6 +1933,25 @@ var Seeds = (function () {
     ['Outros', 'Outros', ['Resina', 'Borracha', 'Esmalte / acetona', 'Enxofre', 'Rolha (TCA)', 'Vinagre (volátil)']]
   ];
 
+  // v9: traços aromáticos da ficha analítica do Le Cordon Bleu que não estavam no vocabulário base.
+  // Entram nas categorias existentes; a subcategoria segue o grupo da ficha (dá crédito parcial entre vizinhos).
+  // Os que já existiam com outro nome (Champignon = Cogumelo, Sous-bois = Sub-bosque, Pederneira = Sílex…) não são repetidos.
+  var AROMAS_V9 = [
+    ['Madeira', 'Resinosos', ['Bálsamo', 'Breu', 'Cola de madeira', 'Pinho']],
+    ['Madeira', 'Torrefação', ['Amêndoa torrada', 'Bala de café']],
+    ['Flores', 'Flores vermelhas', ['Rosa vermelha', 'Cravo vermelho', 'Gerânio']],
+    ['Flores', 'Flores brancas', ['Rosa branca', 'Cravo branco', 'Angélica', 'Colônia (flor)', 'Lírio', 'Margarida', 'Flor de pessegueiro', 'Petúnia']],
+    ['Vegetais', 'Vegetais', ['Aipo']],
+    ['Herbáceos', 'Herbáceos', ['Capim-limão', 'Capim verde', 'Tabaco verde']],
+    ['Terrosos', 'Terrosos', ['Musgo']],
+    ['Evolução', 'Evolução', ['Alcatrão', 'Feno seco', 'Avelã', 'Castanha']],
+    ['Animais', 'Animais', ['Pelica', 'Pele de salame', 'Raposa']],
+    ['Frutas', 'Frutas secas e cozidas', ['Damasco seco', 'Fruta cristalizada', 'Goiabada']],
+    ['Frutas', 'Frutas vermelhas', ['Pitanga']],
+    ['Frutas', 'Frutas tropicais', ['Kiwi', 'Melancia']],
+    ['Especiarias', 'Especiarias', ['Pimenta verde']]
+  ];
+
   // Somente nomes de países (vocabulário para as hipóteses da degustação). Clima, história
   // etc. ficam vazios até serem cadastrados ou enriquecidos com fonte.
   var COUNTRIES = ['África do Sul', 'Alemanha', 'Argentina', 'Armênia', 'Austrália', 'Áustria', 'Brasil', 'Bulgária',
@@ -1923,6 +1963,25 @@ var Seeds = (function () {
     if (Repo.all(entity).length) return;
     Repo.insert(entity, records);
     report.push(entity + ': ' + records.length + ' registros iniciais');
+  }
+
+  /** Acrescenta ao vocabulário os aromas que ainda não existem (pelo nome normalizado). Nunca altera os existentes. */
+  function addMissingAromas_(groups, ref, report) {
+    var all = Repo.all('aromas');
+    var have = {}, order = 0;
+    all.forEach(function (a) { have[a.name_key || Util.normKey(a.name)] = true; order = Math.max(order, Number(a.order) || 0); });
+    var add = [];
+    groups.forEach(function (g) {
+      g[2].forEach(function (name) {
+        var key = Util.normKey(name);
+        if (have[key]) return;
+        have[key] = true;
+        add.push({ name: name, name_key: key, category: g[0], subcategory: g[1], order: ++order, source: 'sistema', source_ref: ref });
+      });
+    });
+    if (!add.length) return;
+    Repo.insert('aromas', add);
+    report.push('aromas: +' + add.length + ' (' + ref + ')');
   }
 
   function run() {
@@ -1950,6 +2009,7 @@ var Seeds = (function () {
       });
     });
     seedIfEmpty_('aromas', aromas, report);
+    addMissingAromas_(AROMAS_V9, 'Ficha analítica Le Cordon Bleu (traços aromáticos)', report);
 
     seedIfEmpty_('countries', COUNTRIES.map(function (n) {
       return { name: n, name_key: Util.normKey(n), source: 'sistema', source_ref: 'Lista base de países produtores' };
@@ -18198,6 +18258,7 @@ var Catalog = (function () {
       aromas: Repo.all('aromas').sort(function (a, b) { return a.order - b.order; }).map(pick_('id', 'name', 'category', 'subcategory')),
       scales: Settings.scales(),
       rules: Settings.rules(),
+      ficha: Ficha.spec(),
       ai_enabled: AiProvider.hasKey() && Ctx.isAdmin(),
       me: Auth.publicUser(Ctx.current()),
       is_admin: Ctx.isAdmin(),
@@ -18292,6 +18353,12 @@ var Catalog = (function () {
     ['visual_text', 'nose_text', 'palate_text', 'conclusion_text'].forEach(function (f) { rec[f] = Validate.str(data[f], 3000, f); });
     rec.balance = Validate.oneOf(Validate.str(data.balance, 40, 'equilíbrio'), CONFIG.BALANCE_LEVELS, 'equilíbrio');
     rec.complexity = Validate.oneOf(Validate.str(data.complexity, 40, 'complexidade'), CONFIG.COMPLEXITY_LEVELS, 'complexidade');
+    // Ficha analítica (só vinhos). Ausente nos dados = mantém a atual (ex.: aprovação de proposta da IA).
+    if (entityType === 'wine' && data.ficha !== undefined) {
+      rec.ficha = Ficha.clean(data.ficha);
+      var sc = Ficha.score(rec.ficha);
+      rec.ficha_score = sc.filled ? sc.total : '';
+    }
     var existing = profileOf(entityType, entityId);
     if (existing) Repo.update('profiles', [Object.assign({ id: existing.id }, rec)]);
     else Repo.insert('profiles', [rec]);
@@ -18369,6 +18436,7 @@ var Wines = (function () {
     out.appellation = nameOf_(c.appellations, w.appellation_id);
     out.profile = Catalog.profileOf('wine', id);
     out.profile_trusted = out.profile ? Catalog.isTrusted(out.profile.source) : false;
+    out.ficha_score = out.profile && !Ficha.isEmpty(out.profile.ficha) ? Ficha.score(out.profile.ficha) : null;
     out.aromas = Catalog.aromasOf('wine', id);
     out.notes = Catalog.notesFor('wine', id);
     var bottles = (c.bottles[id] || []).slice().sort(function (a, b) { return a.number - b.number; });
@@ -19474,6 +19542,186 @@ var Barcode = (function () {
   }
 
   return { lookup: lookup, clean: clean };
+})();
+
+// ---- 38_Ficha.js
+/**
+ * Ficha analítica descritiva (modelo Le Cordon Bleu — Wine & Spirits).
+ *
+ * Camada descritiva extra do perfil do vinho, ao lado das escalas WSET que corrigem as degustações:
+ * não entra no placar das degustações às cegas. Fica em db_profiles.ficha (json) e a nota em
+ * db_profiles.ficha_score (0–100: visual 18 + olfativa 32 + gustativa 50, como na ficha impressa).
+ *
+ * Vocabulário fixo do sistema (não é conhecimento sobre vinhos): opção = [chave, rótulo, pontos?, grupo?].
+ * Campos com pontos somam na nota; os demais só descrevem.
+ */
+var Ficha = (function () {
+
+  var SECTIONS = [
+    { key: 'servico', title: 'Serviço', fields: [
+      { key: 'temp_room', label: 'Temperatura ambiente (°C)', text: 10 },
+      { key: 'temp_service', label: 'Temperatura de serviço (°C)', text: 10 }
+    ] },
+    { key: 'visual', title: 'Análise visual', max: 18, fields: [
+      { key: 'hue', label: 'Tonalidade', options: [
+        ['branco_papel', 'Branco papel', null, 'branco'], ['verdeal', 'Verdeal', null, 'branco'],
+        ['amarelo_palha', 'Amarelo palha', null, 'branco'], ['amarelo_ouro', 'Amarelo ouro', null, 'branco'],
+        ['amarelo_ambar', 'Amarelo âmbar', null, 'branco'],
+        ['vermelho_purpura', 'Vermelho púrpura', null, 'tinto'], ['vermelho_rubi', 'Vermelho rubi', null, 'tinto'],
+        ['vermelho_granada', 'Vermelho granada', null, 'tinto'], ['vermelho_alaranjado', 'Vermelho alaranjado', null, 'tinto'],
+        ['vermelho_acastanhado', 'Vermelho acastanhado', null, 'tinto'],
+        ['rosado', 'Rosado', null, 'rose'], ['cereja', 'Cereja', null, 'rose'], ['clarete', 'Clarete', null, 'rose']] },
+      { key: 'reflexes', label: 'Reflexos', multi: true, options: [
+        ['esverdeado', 'Esverdeado'], ['dourado', 'Dourado'], ['ambar', 'Âmbar'], ['violaceo', 'Violáceo'],
+        ['granada', 'Granada'], ['amarelado', 'Amarelado']] },
+      { key: 'depth', label: 'Intensidade', options: [['claro', 'Claro'], ['medio', 'Médio'], ['escuro', 'Escuro']] },
+      { key: 'transparency', label: 'Transparência', options: [
+        ['muito_transparente', 'Muito transparente'], ['transparente', 'Transparente'], ['regular', 'Regular'],
+        ['leve_opacidade', 'Leve opacidade'], ['opaco', 'Opaco']] },
+      { key: 'clarity', label: 'Limpidez', options: [
+        ['muito_limpido', 'Muito límpido', 9], ['limpido', 'Límpido', 7], ['leve_turbidez', 'Leve turbidez', 5],
+        ['velado', 'Velado', 3], ['turvo', 'Turvo', 1]] },
+      { key: 'color', label: 'Cor', options: [
+        ['otima', 'Ótima', 9], ['boa', 'Boa', 7], ['aceitavel', 'Aceitável', 5], ['pouco_tipica', 'Pouco típica', 3],
+        ['atipica', 'Atípica', 1]] }
+    ] },
+    { key: 'olfativa', title: 'Análise olfativa', max: 32, fields: [
+      { key: 'nose_general', label: 'Caracteres gerais', multi: true, options: [
+        ['franco', 'Franco'], ['amplo', 'Amplo'], ['fragrante', 'Fragrante'], ['defeituoso', 'Defeituoso'],
+        ['nitido', 'Nítido'], ['etereo', 'Etéreo']] },
+      { key: 'nose_specific', label: 'Caracteres específicos', multi: true, options: [
+        ['floral', 'Floral'], ['frutado', 'Frutado'], ['animal', 'Animal'], ['vegetal', 'Vegetal'],
+        ['vinoso', 'Vinoso'], ['especiaria', 'Especiaria']] },
+      { key: 'nose_quality', label: 'Qualidade', options: [
+        ['finissimo', 'Finíssimo', 16], ['bastante_fino', 'Bastante fino', 12], ['fino', 'Fino', 8],
+        ['comum', 'Comum', 4], ['grosseiro', 'Grosseiro', 0]] },
+      { key: 'nose_intensity', label: 'Intensidade', options: [
+        ['muito_intenso', 'Muito intenso', 12], ['intenso', 'Intenso', 9], ['ligeiro', 'Ligeiro', 6],
+        ['sutil', 'Sutil', 3], ['tenue', 'Tênue', 0]] },
+      { key: 'nose_persistence', label: 'Persistência', options: [
+        ['muito_persistente', 'Muito persistente', 4], ['persistente', 'Persistente', 3],
+        ['meio_persistente', 'Meio persistente', 2], ['pouco_persistente', 'Pouco persistente', 1], ['fugidio', 'Fugidio', 0]] }
+    ] },
+    { key: 'gustativa', title: 'Análise gustativa', max: 50, fields: [
+      { key: 'sugar', label: 'Açúcares', options: [
+        ['seco', 'Seco'], ['meio_seco', 'Meio seco'], ['meio_doce', 'Meio doce'], ['doce', 'Doce'], ['licoroso', 'Licoroso']] },
+      { key: 'acidity', label: 'Acidez', options: [
+        ['mole', 'Mole'], ['chato', 'Chato'], ['sapido', 'Sápido'], ['fresco', 'Fresco, vivo'], ['acidulo', 'Acídulo']] },
+      { key: 'alcohol', label: 'Álcool', options: [
+        ['fraco', 'Fraco'], ['pouco_alcoolico', 'Pouco alcoólico'], ['equilibrado', 'Equilibrado'], ['quente', 'Quente'],
+        ['muito_quente', 'Muito quente']] },
+      { key: 'softness', label: 'Maciez', options: [
+        ['carente', 'Carente'], ['meio_carente', 'Meio carente'], ['macio', 'Macio'], ['redondo', 'Redondo'],
+        ['muito_redondo', 'Muito redondo']] },
+      { key: 'body', label: 'Corpo', options: [
+        ['magro', 'Magro'], ['pouco_encorpado', 'Pouco encorpado'], ['bom_corpo', 'Bom corpo'], ['encorpado', 'Encorpado'],
+        ['muito_encorpado', 'Muito encorpado']] },
+      { key: 'tannin_intensity', label: 'Tanicidade — intensidade', options: [
+        ['carente', 'Carente'], ['pouco_taninoso', 'Pouco taninoso'], ['equilibrado', 'Equilibrado'], ['taninoso', 'Taninoso'],
+        ['muito_taninoso', 'Muito taninoso']] },
+      { key: 'tannin_quality', label: 'Tanicidade — qualidade', options: [
+        ['veludo', 'Veludo'], ['seda', 'Seda'], ['algodao', 'Algodão'], ['linho', 'Linho'], ['juta', 'Juta']] },
+      { key: 'bitterness', label: 'Amargor', options: [
+        ['carente', 'Carente'], ['correto', 'Correto'], ['amarguinho', 'Amarguinho'], ['amargo', 'Amargo'],
+        ['muito_amargo', 'Muito amargo']] },
+      { key: 'balance', label: 'Equilíbrio', options: [
+        ['harmonico', 'Harmônico', 12], ['bastante_equilibrado', 'Bastante equilibrado', 9],
+        ['suficientemente_equilibrado', 'Suficientemente equilibrado', 6],
+        ['ligeiramente_desequilibrado', 'Ligeiramente desequilibrado', 3], ['desarmonico', 'Desarmônico', 0]] },
+      { key: 'palate_quality', label: 'Qualidade', options: [
+        ['finissimo', 'Finíssimo', 12], ['bastante_fino', 'Bastante fino', 9], ['fino', 'Fino', 6], ['comum', 'Comum', 3],
+        ['grosseiro', 'Grosseiro', 0]] },
+      { key: 'palate_intensity', label: 'Intensidade', options: [
+        ['muito_intenso', 'Muito intenso', 10], ['intenso', 'Intenso', 7], ['ligeiro', 'Ligeiro', 4], ['sutil', 'Sutil', 1],
+        ['tenue', 'Tênue', 0]] },
+      { key: 'palate_persistence', label: 'Persistência', options: [
+        ['muito_persistente', 'Muito persistente', 10], ['persistente', 'Persistente', 7],
+        ['meio_persistente', 'Meio persistente', 4], ['pouco_persistente', 'Pouco persistente', 1], ['fugidio', 'Fugidio', 0]] },
+      { key: 'mouth', label: 'Boca', options: [
+        ['boca_otima', 'Boca ótima', 6], ['boca_plena', 'Boca plena', 4], ['termina_bem', 'Termina bem', 2],
+        ['termina_mal', 'Termina mal', 0]] }
+    ] },
+    { key: 'conclusao', title: 'Evolução e final de boca', fields: [
+      { key: 'evolution', label: 'Evolução', options: [
+        ['jovem', 'Jovem'], ['pronto', 'Pronto'], ['maduro', 'Maduro'], ['envelhecido', 'Envelhecido'], ['velho', 'Velho']] },
+      { key: 'final', label: 'Final de boca', multi: true, options: [
+        ['fresca', 'Fresca'], ['enxuta', 'Enxuta'], ['arida', 'Árida'], ['com_fundo', 'Com fundo']] },
+      { key: 'final_note', label: 'Com fundo de…', text: 120 }
+    ] }
+  ];
+
+  var FIELDS = {};
+  SECTIONS.forEach(function (s) { s.fields.forEach(function (f) { FIELDS[f.key] = Object.assign({ section: s.key }, f); }); });
+
+  function option_(f, key) {
+    return (f.options || []).filter(function (o) { return o[0] === key; })[0] || null;
+  }
+  function scored_(f) { return (f.options || []).some(function (o) { return typeof o[2] === 'number'; }); }
+
+  /** Vocabulário para a interface (vai junto dos lookups). */
+  function spec() {
+    return SECTIONS.map(function (s) {
+      return { key: s.key, title: s.title, max: s.max || 0, fields: s.fields.map(function (f) {
+        var out = { key: f.key, label: f.label, multi: !!f.multi, scored: scored_(f) };
+        if (f.text) out.text = f.text;
+        else out.options = f.options.map(function (o) { return { v: o[0], t: o[1], points: o[2] === undefined ? null : o[2], group: o[3] || '' }; });
+        return out;
+      }) };
+    });
+  }
+
+  /** Valida e normaliza a ficha recebida da interface. Campos vazios são descartados. */
+  function clean(input) {
+    if (Util.isBlank(input)) return {};
+    if (typeof input !== 'object' || Array.isArray(input)) throw new Error('Ficha analítica inválida.');
+    var out = {};
+    Object.keys(input).forEach(function (k) {
+      var f = FIELDS[k];
+      if (!f) throw new Error('Campo desconhecido na ficha analítica: ' + k);
+      var v = input[k];
+      if (f.text) {
+        v = Validate.str(v, f.text, f.label);
+        if (v) out[k] = v;
+        return;
+      }
+      var list = f.multi ? (Array.isArray(v) ? v : (Util.isBlank(v) ? [] : [v])) : [v];
+      list = list.filter(function (x) { return !Util.isBlank(x); }).map(String);
+      if (!f.multi && Array.isArray(v)) throw new Error('Escolha só uma opção em ' + f.label + '.');
+      list.forEach(function (x) { if (!option_(f, x)) throw new Error('Valor inválido para ' + f.label + ': ' + x); });
+      if (!list.length) return;
+      if (f.multi) {
+        // Mantém a ordem da ficha impressa e remove repetidos.
+        out[k] = f.options.map(function (o) { return o[0]; }).filter(function (o) { return list.indexOf(o) >= 0; });
+      } else out[k] = list[0];
+    });
+    return out;
+  }
+
+  /**
+   * Nota da ficha: subtotal de cada parte (visual 18, olfativa 32, gustativa 50) e total sobre 100.
+   * complete = todos os itens pontuados preenchidos; parcial mostra quanto já foi avaliado.
+   */
+  function score(ficha) {
+    ficha = ficha || {};
+    var parts = [], total = 0, filled = 0, count = 0;
+    SECTIONS.forEach(function (s) {
+      if (!s.max) return;
+      var sum = 0, n = 0, items = 0;
+      s.fields.forEach(function (f) {
+        if (!scored_(f)) return;
+        items++;
+        var o = option_(f, ficha[f.key]);
+        if (o) { sum += o[2]; n++; }
+      });
+      parts.push({ key: s.key, title: s.title, points: sum, max: s.max, filled: n, items: items });
+      total += sum; filled += n; count += items;
+    });
+    return { parts: parts, total: total, max: 100, filled: filled, items: count, complete: filled === count };
+  }
+
+  function isEmpty(ficha) { return !ficha || !Object.keys(ficha).length; }
+
+  return { SECTIONS: SECTIONS, FIELDS: FIELDS, spec: spec, clean: clean, score: score, isEmpty: isEmpty };
 })();
 
 // ---- 40_Bottles.js
@@ -22812,7 +23060,7 @@ var Components = {
   },
 
   /** Perfil de um vinho na ordem da degustação: visual → nariz → boca → conclusão. */
-  profileSections: function (pr, aromas) {
+  profileSections: function (pr, aromas, fichaScore) {
     var BAL = { desequilibrado: 'Desequilibrado', pouco_equilibrado: 'Pouco equilibrado', equilibrado: 'Equilibrado', harmonico: 'Harmônico' };
     var CPX = { simples: 'Simples', media: 'Complexidade média', complexa: 'Complexo' };
     function sec(n, title, body) { return '<div class="prof-sec"><h4 class="prof-step"><span>' + n + '</span> ' + title + '</h4>' + body + '</div>'; }
@@ -22825,8 +23073,36 @@ var Components = {
     var mouth = '<div class="scales">' + order.map(function (o) { return scaleRow(o[0], o[1]); }).join('') + '</div>' + (pr.palate_text ? '<p>' + esc(pr.palate_text) + '</p>' : '');
     var chips = [BAL[pr.balance], CPX[pr.complexity]].filter(Boolean).map(function (t) { return '<span class="chip">' + esc(t) + '</span>'; }).join('');
     var concl = (chips ? '<div class="chips" style="margin-bottom:8px">' + chips + '</div>' : '') + (pr.conclusion_text ? '<p>' + esc(pr.conclusion_text) + '</p>' : '');
+    var ficha = Components.fichaView(pr.ficha, fichaScore);
     return '<div class="prof-grid">' + sec(1, 'Visual', visual) + sec(2, 'Nariz', nose) + sec(3, 'Boca', mouth) +
-      sec(4, 'Conclusão', concl || '<p>' + Components.missing('Conclusão não cadastrada') + '</p>') + '</div>';
+      sec(4, 'Conclusão', concl || '<p>' + Components.missing('Conclusão não cadastrada') + '</p>') + '</div>' +
+      (ficha ? '<div class="prof-sec ficha"><h4 class="prof-step"><span>5</span> Ficha analítica · Le Cordon Bleu</h4>' + ficha + '</div>' : '');
+  },
+
+  /** Ficha analítica Le Cordon Bleu (somente leitura): o que foi marcado em cada parte + nota sobre 100. */
+  fichaView: function (ficha, score) {
+    var spec = Store.lookups.ficha || [];
+    if (!ficha || !Object.keys(ficha).length) return '';
+    var parts = {};
+    (score && score.parts || []).forEach(function (p) { parts[p.key] = p; });
+    var secs = spec.map(function (s) {
+      var rows = s.fields.map(function (f) {
+        var v = ficha[f.key];
+        if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) return '';
+        var txt = f.text ? esc(v) : [].concat(v).map(function (k) {
+          var o = f.options.filter(function (x) { return x.v === k; })[0];
+          return o ? '<span class="chip">' + esc(o.t) + (o.points !== null ? ' <b>' + o.points + '</b>' : '') + '</span>' : '';
+        }).join(' ');
+        return '<div><dt>' + esc(f.label) + '</dt><dd class="chips">' + txt + '</dd></div>';
+      }).join('');
+      if (!rows) return '';
+      var p = parts[s.key];
+      return '<div class="ficha-sec"><div class="ficha-h">' + esc(s.title) +
+        (p ? '<span class="ficha-pts">' + p.points + ' / ' + p.max + '</span>' : '') + '</div><dl class="ficha-dl">' + rows + '</dl></div>';
+    }).join('');
+    var total = score ? '<div class="ficha-total"><span class="n">' + score.total + '</span><span class="d">/ 100' +
+      (score.complete ? '' : ' · parcial: ' + score.filled + ' de ' + score.items + ' itens pontuados') + '</span></div>' : '';
+    return total + '<div class="ficha-grid">' + secs + '</div>';
   },
 
   /** Aromas agrupados por categoria (somente leitura). */
@@ -23374,7 +23650,7 @@ Pages.wine = {
         html += '<div class="callout warn" style="margin-bottom:16px">Este perfil veio de uma fonte <b>não verificada</b> (' + esc(Components.SOURCE_LABELS[pr.source] || pr.source) + '). ' +
           'Ele não é usado como gabarito. Revise os valores e salve com a origem correta (ficha técnica, pesquisa ou sua avaliação) para ativá-lo.</div>';
       }
-      html += Components.profileSections(pr, w.aromas) +
+      html += Components.profileSections(pr, w.aromas, w.ficha_score) +
         (pr ? '<div class="small muted" style="margin-top:12px">Origem: ' + Components.src(pr.source) + (pr.source_ref ? ' · ' + esc(pr.source_ref) : '') + '</div>' : '') +
         '</section>';
 
@@ -23412,7 +23688,7 @@ Pages.wine = {
     },
     'edit-profile': function () {
       var w = Pages.wine.data;
-      ProfileEditor.open('wine', w.id, w.profile, w.aromas, function () { Router.render(); });
+      ProfileEditor.open('wine', w.id, w.profile, w.aromas, function () { Router.render(); }, { color: w.color });
     },
     'add-bottles': function () {
       var w = Pages.wine.data;
@@ -23443,8 +23719,9 @@ function ruleLabel(criterion) {
 var ProfileEditor = {
   BALANCE: [{ v: 'desequilibrado', t: 'Desequilibrado' }, { v: 'pouco_equilibrado', t: 'Pouco equilibrado' }, { v: 'equilibrado', t: 'Equilibrado' }, { v: 'harmonico', t: 'Harmônico' }],
   COMPLEXITY: [{ v: 'simples', t: 'Simples' }, { v: 'media', t: 'Média' }, { v: 'complexa', t: 'Complexa' }],
-  open: function (entityType, entityId, profile, aromas, done) {
+  open: function (entityType, entityId, profile, aromas, done, opts) {
     profile = profile || {};
+    opts = opts || {};
     var isGrape = entityType === 'grape';
     var visual = [['color_intensity', 'Intensidade da cor'], ['color_hue', 'Tonalidade']];
     // Boca na ordem de degustação: dulçor, acidez, tanino, álcool, corpo, intensidade, persistência.
@@ -23472,7 +23749,8 @@ var ProfileEditor = {
         step(4, 'Conclusão', 'O conjunto: é harmônico, equilibrado, complexo? Pede guarda? Evolui no copo?') +
         '<div style="margin:12px 0"><label class="f">Equilíbrio</label>' + Components.seg('balance', '', profile.balance || '', { options: ProfileEditor.BALANCE }) + '</div>' +
         '<div style="margin:12px 0"><label class="f">Complexidade</label>' + Components.seg('complexity', '', profile.complexity || '', { options: ProfileEditor.COMPLEXITY }) + '</div>' +
-        '<div class="form-grid"><div class="wide"><label class="f">Conclusão — detalhes sobre o vinho</label><textarea class="in" name="conclusion_text" rows="3" placeholder="ex.: harmônico, madeira bem integrada, final longo; bom para guardar mais 3–5 anos">' + esc(profile.conclusion_text || '') + '</textarea></div></div>') +
+        '<div class="form-grid"><div class="wide"><label class="f">Conclusão — detalhes sobre o vinho</label><textarea class="in" name="conclusion_text" rows="3" placeholder="ex.: harmônico, madeira bem integrada, final longo; bom para guardar mais 3–5 anos">' + esc(profile.conclusion_text || '') + '</textarea></div></div>' +
+        FichaEditor.html(profile.ficha || {}, opts.color)) +
       '<div class="form-grid" style="margin-top:18px">' +
       '<div><label class="f">Origem destes dados</label><select class="in" name="source">' +
       Components.options([{ v: 'usuario', t: 'Minha avaliação' }, { v: 'rotulo', t: 'Rótulo / ficha técnica do produtor' }, { v: 'pesquisado', t: 'Pesquisado (fonte citada)' }, { v: 'ia_revisada', t: 'IA, revisado por mim' }, { v: 'ia_nao_verificada', t: 'Não verificado' }],
@@ -23480,10 +23758,11 @@ var ProfileEditor = {
       '<div><label class="f">Referência (link, livro, ficha…)</label><input class="in" name="source_ref" value="' + esc(profile.source_ref || '') + '"></div>' +
       '</div><div class="btn-row" style="justify-content:flex-end;margin-top:22px"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn primary">Salvar perfil</button></div></form>';
     var m = UI.modal(html, { sticky: true });
+    if (!isGrape) FichaEditor.refresh(m);
     // Nas uvas, no máximo 2 níveis por escala (faixa).
     m.addEventListener('segchange', function (e) {
       var seg = e.target;
-      if (!isGrape) return;
+      if (!isGrape) { FichaEditor.refresh(m); return; }
       var on = seg.querySelectorAll('button.on');
       if (on.length > 2) on[0].classList.remove('on');
     });
@@ -23500,7 +23779,11 @@ var ProfileEditor = {
         } else data[f[0]] = v;
       });
       data.aroma_ids = Components.readAromas(form);
-      if (!isGrape) { data.balance = Components.readSeg(form, 'balance') || ''; data.complexity = Components.readSeg(form, 'complexity') || ''; }
+      Object.keys(data).forEach(function (k) { if (k.indexOf('ficha_') === 0) delete data[k]; });
+      if (!isGrape) {
+        data.balance = Components.readSeg(form, 'balance') || ''; data.complexity = Components.readSeg(form, 'complexity') || '';
+        data.ficha = FichaEditor.read(form);
+      }
       var btn = form.querySelector('button.primary');
       UI.busy(btn, true);
       API.call('profiles.save', { entity_type: entityType, entity_id: entityId, profile: data }).then(function () {
@@ -23509,6 +23792,80 @@ var ProfileEditor = {
         done && done();
       }).catch(function (err) { UI.busy(btn, false); UI.error(err); });
     });
+  }
+};
+
+/**
+ * Ficha analítica descritiva no modelo Le Cordon Bleu (passo 5 do perfil do vinho). O vocabulário e os
+ * pontos vêm do servidor (lookups.ficha, 38_Ficha.js); a nota mostrada aqui é só prévia — quem grava é o servidor.
+ */
+var FichaEditor = {
+  spec: function () { return Store.lookups.ficha || []; },
+
+  html: function (ficha, color) {
+    var spec = FichaEditor.spec();
+    if (!spec.length) return '';
+    // Tonalidade: mostra só o grupo da cor do vinho (laranja usa a dos brancos), a não ser que já haja outro valor marcado.
+    var group = { branco: 'branco', laranja: 'branco', tinto: 'tinto', rose: 'rose' }[color] || '';
+    var filled = Object.keys(ficha).length > 0;
+    var body = spec.map(function (s) {
+      return '<h4>' + esc(s.title) + (s.max ? '<span class="ficha-pts" data-ficha-part="' + s.key + '"></span>' : '') + '</h4>' +
+        s.fields.map(function (f) {
+          var name = 'ficha_' + f.key, v = ficha[f.key];
+          if (f.text) {
+            return '<div style="margin:10px 0;max-width:340px"><label class="f">' + esc(f.label) + '</label><input class="in" name="' + name + '" maxlength="' + f.text + '" value="' + esc(v || '') + '"></div>';
+          }
+          var options = f.options;
+          if (f.key === 'hue' && group) {
+            var mine = options.filter(function (o) { return o.group === group; });
+            if (!v || mine.some(function (o) { return o.v === v; })) options = mine;
+          }
+          return '<div style="margin:10px 0"><label class="f">' + esc(f.label) + (f.multi ? ' <span class="muted small">(uma ou mais)</span>' : '') + '</label>' +
+            Components.seg(name, '', f.multi ? (v || []) : (v || ''), {
+              multi: f.multi,
+              options: options.map(function (o) { return { v: o.v, t: o.t + (o.points !== null ? ' · ' + o.points : '') }; })
+            }) + '</div>';
+        }).join('');
+    }).join('');
+    return '<details class="ficha-edit"' + (filled ? ' open' : '') + '><summary>5 · Ficha analítica Le Cordon Bleu ' +
+      '<span class="muted small" data-ficha-total></span></summary>' +
+      '<p class="muted small" style="margin:0 0 4px">A ficha descritiva da escola (visual 18 + olfativa 32 + gustativa 50 = 100 pontos). ' +
+      'Não muda a correção das degustações às cegas, que segue as escalas acima. Os traços aromáticos ficam no passo 2 (Nariz).</p>' +
+      body + '</details>';
+  },
+
+  read: function (form) {
+    var out = {};
+    FichaEditor.spec().forEach(function (s) {
+      s.fields.forEach(function (f) {
+        var v;
+        if (f.text) { var el = form.querySelector('[name="ficha_' + f.key + '"]'); v = el ? el.value.trim() : ''; }
+        else v = Components.readSeg(form, 'ficha_' + f.key);
+        if (v === undefined || v === '' || (Array.isArray(v) && !v.length)) return;
+        out[f.key] = v;
+      });
+    });
+    return out;
+  },
+
+  /** Prévia da nota enquanto você marca. */
+  refresh: function (root) {
+    var ficha = FichaEditor.read(root), total = 0, filled = 0, items = 0;
+    FichaEditor.spec().forEach(function (s) {
+      if (!s.max) return;
+      var sum = 0;
+      s.fields.forEach(function (f) {
+        if (!f.scored) return;
+        items++;
+        var o = f.options.filter(function (x) { return x.v === ficha[f.key]; })[0];
+        if (o) { sum += o.points; filled++; }
+      });
+      total += sum;
+      var el = root.querySelector('[data-ficha-part="' + s.key + '"]');
+      if (el) el.textContent = sum + ' / ' + s.max;
+    });
+    var t = root.querySelector('[data-ficha-total]');
+    if (t) t.textContent = filled ? '— ' + total + ' / 100' + (filled < items ? ' (parcial)' : '') : '';
   }
 };
 

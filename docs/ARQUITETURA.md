@@ -270,6 +270,20 @@ GitHub Pages (index.html, jogo.html)  ──POST text/plain {method,args,token}�
 - **API:** `study.topic`, `study.counts`; `regions.country` e `regions.get` já trazem `cards`. Leitura para todos os usuários;
   escrita só pela administradora (política `admin`).
 
+### D13. Ficha analítica descritiva (modelo Le Cordon Bleu) — ✅ implementado (v9)
+- **O quê:** a ficha impressa da escola (Wine & Spirits) vira o passo 5 do perfil do vinho, ao lado das escalas WSET.
+  Visual (tonalidade, reflexos, intensidade, transparência, limpidez*, cor*), olfativa (caracteres gerais e específicos,
+  qualidade*, intensidade*, persistência*), gustativa (açúcares, acidez, álcool, maciez, corpo, tanicidade intensidade e
+  qualidade, amargor, equilíbrio*, qualidade*, intensidade*, persistência*, boca*), evolução, final de boca e temperaturas.
+  Itens com * pontuam como na ficha: visual 18 + olfativa 32 + gustativa 50 = 100.
+- **Não entra no placar das degustações às cegas:** a correção continua pelas escalas WSET (`db_scales`). A ficha é descrição.
+- **Dados:** `db_profiles.ficha` (json, só chaves de opção) e `db_profiles.ficha_score` (vazio se nenhum item pontuado).
+  Vocabulário e pontos em `38_Ficha.js` (vai para a interface em `lookups.ficha`). Salvar um perfil sem `ficha`
+  (ex.: aprovar proposta da IA) mantém a ficha atual.
+- **Traços aromáticos:** os da ficha que faltavam no vocabulário (gerânio, pelica, breu, alcatrão, goiabada, pitanga…)
+  entram em `db_aromas` na v9, por nome normalizado, sem alterar os existentes. Sinônimos já cobertos não foram repetidos
+  (Champignon = Cogumelo, Sous-bois = Sub-bosque, Pederneira = Sílex). "Colônica" da ficha foi cadastrada como "Colônia (flor)".
+
 ## 4. Modelo de dados (abas `db_*`)
 
 Definido em `src/server/00_Config.js` (objeto `SCHEMA`). Toda aba tem as colunas comuns

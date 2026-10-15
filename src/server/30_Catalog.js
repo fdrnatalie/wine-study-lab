@@ -55,6 +55,7 @@ var Catalog = (function () {
       aromas: Repo.all('aromas').sort(function (a, b) { return a.order - b.order; }).map(pick_('id', 'name', 'category', 'subcategory')),
       scales: Settings.scales(),
       rules: Settings.rules(),
+      ficha: Ficha.spec(),
       ai_enabled: AiProvider.hasKey() && Ctx.isAdmin(),
       me: Auth.publicUser(Ctx.current()),
       is_admin: Ctx.isAdmin(),
@@ -149,6 +150,12 @@ var Catalog = (function () {
     ['visual_text', 'nose_text', 'palate_text', 'conclusion_text'].forEach(function (f) { rec[f] = Validate.str(data[f], 3000, f); });
     rec.balance = Validate.oneOf(Validate.str(data.balance, 40, 'equilíbrio'), CONFIG.BALANCE_LEVELS, 'equilíbrio');
     rec.complexity = Validate.oneOf(Validate.str(data.complexity, 40, 'complexidade'), CONFIG.COMPLEXITY_LEVELS, 'complexidade');
+    // Ficha analítica (só vinhos). Ausente nos dados = mantém a atual (ex.: aprovação de proposta da IA).
+    if (entityType === 'wine' && data.ficha !== undefined) {
+      rec.ficha = Ficha.clean(data.ficha);
+      var sc = Ficha.score(rec.ficha);
+      rec.ficha_score = sc.filled ? sc.total : '';
+    }
     var existing = profileOf(entityType, entityId);
     if (existing) Repo.update('profiles', [Object.assign({ id: existing.id }, rec)]);
     else Repo.insert('profiles', [rec]);
