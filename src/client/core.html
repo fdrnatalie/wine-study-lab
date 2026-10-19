@@ -189,6 +189,10 @@ var Router = {
     [/^\/caderno$/, 'notes'],
     [/^\/usuarios$/, 'users'],
     [/^\/quiz$/, 'quiz'],
+    [/^\/curso$/, 'course'],
+    [/^\/curso\/licao\/([a-z0-9-]+)$/, 'courseLesson', ['id']],
+    [/^\/curso\/desafio\/([a-z0-9-]+)$/, 'courseChallenge', ['id']],
+    [/^\/curso\/revisao$/, 'courseReview'],
     [/^\/estudar\/(historia|producao|harmonizacao)$/, 'estudo', ['tema']],
     [/^\/config$/, 'settings'],
     [/^\/revisao$/, 'review']
@@ -262,7 +266,7 @@ var Router = {
       if (token !== Router.token) return;           // o usuário navegou antes de terminar
       if (page.fullscreen) { UI.openLayer(html); }
       else {
-        view.innerHTML = (trail.length > 1 && route.page !== 'dashboard' ? '<a href="#" class="back-link" data-back="1">← Voltar</a>' : '') + html;
+        view.innerHTML = (trail.length > 1 && route.page !== 'dashboard' && !/^course(Lesson|Review|Challenge)$/.test(route.page) ? '<a href="#" class="back-link" data-back="1">← Voltar</a>' : '') + html;
         window.scrollTo(0, 0);
       }
       if (page.mount) page.mount(page.fullscreen ? document.getElementById('layer') : view, route.params);
@@ -385,7 +389,7 @@ var Nav = {
   },
   groups: [
     [null, [['#/', 'home', 'Dashboard', /^\/?$|^\/dashboard/]]],
-    ['Estudar', [['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/estudar/historia', 'history', 'História do vinho', /^\/estudar\/historia/], ['#/estudar/producao', 'grape', 'Produção de vinho', /^\/estudar\/producao/], ['#/estudar/harmonizacao', 'note', 'Harmonizações', /^\/estudar\/harmonizacao/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/quiz', 'quiz', 'Quiz', /^\/quiz/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
+    ['Estudar', [['#/curso', 'target', 'Curso', /^\/curso/], ['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/estudar/historia', 'history', 'História do vinho', /^\/estudar\/historia/], ['#/estudar/producao', 'grape', 'Produção de vinho', /^\/estudar\/producao/], ['#/estudar/harmonizacao', 'note', 'Harmonizações', /^\/estudar\/harmonizacao/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/quiz', 'quiz', 'Quiz', /^\/quiz/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
     ['Minha Adega', [['#/adega', 'bottle', 'Garrafinhas', /^\/adega$/], ['#/adega/fracionar', 'split', 'Fracionar garrafa', /^\/adega\/fracionar/]]],
     ['Degustação', [['#/degustacao/nova', 'target', 'Nova degustação', /^\/degustacao\/nova/], ['#/degustacao/historico', 'history', 'Histórico', /^\/degustacao\/(historico|[A-Z])/],
       // Jogo em outra aba (mantém o formato próprio dele); o endereço vem do servidor.

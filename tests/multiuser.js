@@ -250,6 +250,40 @@ test('fotos das uvas: só a administradora envia; imagem inválida é recusada',
   assert.ok(/imagem/i.test(bad.error));
   assert.strictEqual(post('grapes.photoRemove', { id: 'GPH_X' }, ana.token).ok, false);
 });
+test('curso: trilha, lição, pontos, sequência e revisão — progresso pessoal', () => {
+  const g0 = ok(post('course.get', {}, ana.token));
+  assert.strictEqual(g0.units[0].id, 'bordeaux');
+  assert.deepStrictEqual(g0.units[0].lessons.map((l) => l.status), ['open', 'locked', 'locked', 'locked', 'locked', 'locked']);
+  assert.strictEqual(g0.stats.xp, 0);
+  // lição bloqueada não abre nem registra
+  assert.strictEqual(post('course.lesson', { id: 'bdx-2' }, ana.token).ok, false);
+  assert.strictEqual(post('course.finish', { lesson_id: 'bdx-2', results: [{ id: 'bdx-2-1', ok: true }] }, ana.token).ok, false);
+  const l1 = ok(post('course.lesson', { id: 'bdx-1' }, ana.token));
+  assert.strictEqual(l1.questions.length, 6);
+  // erra 1 de 6 (83%): conclui, 5 acertos = 15 XP + 6 de bônus, e a errada vai para a revisão
+  const res = l1.questions.map((q, i) => ({ id: q.id, ok: i !== 0 }));
+  const r = ok(post('course.finish', { lesson_id: 'bdx-1', results: res }, ana.token));
+  assert.ok(r.passed && r.score === 83 && r.xp === 21 && r.streak === 1 && r.to_review === 1 && r.next.id === 'bdx-2');
+  const g1 = ok(post('course.get', {}, ana.token));
+  assert.deepStrictEqual(g1.units[0].lessons.slice(0, 2).map((l) => l.status), ['done', 'open']);
+  assert.strictEqual(g1.stats.xp, 21);
+  assert.strictEqual(g1.review_due, 0);   // volta só amanhã
+  // respostas de outra lição ou ids inventados são recusados
+  assert.strictEqual(post('course.finish', { lesson_id: 'bdx-2', results: [{ id: 'bdx-1-1', ok: true }] }, ana.token).ok, false);
+  assert.strictEqual(post('course.finish', { lesson_id: 'bdx-2', results: [{ id: 'xx', ok: true }] }, ana.token).ok, false);
+  // nota baixa não conclui
+  const l2 = ok(post('course.lesson', { id: 'bdx-2' }, ana.token));
+  const low = ok(post('course.finish', { lesson_id: 'bdx-2', results: l2.questions.map((q, i) => ({ id: q.id, ok: i < 2 })) }, ana.token));
+  assert.ok(!low.passed && low.next === null);
+  assert.strictEqual(ok(post('course.get', {}, ana.token)).units[0].lessons[1].status, 'open');
+  // desafio só depois de concluir tudo
+  assert.strictEqual(post('course.challenge', { unit: 'bordeaux' }, ana.token).ok, false);
+  // isolamento: outro usuário não vê nada do progresso da Ana
+  const gb = ok(post('course.get', {}, owner.token));
+  assert.strictEqual(gb.stats.xp, 0);
+  assert.strictEqual(gb.units[0].lessons[0].status, 'open');
+  assert.strictEqual(ok(post('course.review', {}, ana.token)).questions.length, 0);
+});
 test('IA, sincronização e usuários: só a administradora', () => {
   ['ai.status', 'sync.run', 'users.list', 'seed.grapes'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));
   assert.ok(ok(post('users.list', {}, owner.token)).length >= 3);

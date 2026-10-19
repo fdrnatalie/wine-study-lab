@@ -270,6 +270,20 @@ GitHub Pages (index.html, jogo.html)  ──POST text/plain {method,args,token}�
 - **API:** `study.topic`, `study.counts`; `regions.country` e `regions.get` já trazem `cards`. Leitura para todos os usuários;
   escrita só pela administradora (política `admin`).
 
+### D13. Curso em trilha (estilo Duolingo) — ✅ piloto Bordeaux (v10)
+
+- **Conteúdo:** `57_CourseData.js` (`COURSE_UNITS`): unidade → lições (6 perguntas, uma dica antes) → perguntas dos tipos `mc`, `match`
+  e `order`, escritas a partir dos cartões de estudo (itens "conferir" ficam de fora). Nova unidade = novo objeto no arquivo.
+- **Progresso pessoal** (escopo `personal`, cada usuário só vê o seu): `course_progress` (melhor nota, tentativas, dia de conclusão),
+  `course_stats` (pontos, sequência de dias, melhor sequência) e `course_reviews` (perguntas erradas e quando voltam).
+- **Regras:** lição libera a seguinte ao fechar ≥ 70%; pontos = 3 por acerto + 6 ao concluir; sequência conta dias seguidos (fuso de
+  Brasília); pergunta errada volta em 1, 3, 7 e 14 dias (revisão espaçada); desafio da unidade (10 perguntas, as mais erradas primeiro)
+  abre ao concluir todas as lições.
+- **API:** `course.get`, `course.lesson`, `course.challenge`, `course.review`, `course.finish`. O servidor valida que as respostas
+  enviadas pertencem à lição pedida e que a lição anterior foi concluída. As respostas certas viajam com a lição (correção imediata);
+  o curso é de estudo pessoal, sem ranking.
+- **Cliente:** `pages_course.html` (`#/curso`, `#/curso/licao/ID`, `#/curso/revisao`, `#/curso/desafio/UNIDADE`).
+
 ## 4. Modelo de dados (abas `db_*`)
 
 Definido em `src/server/00_Config.js` (objeto `SCHEMA`). Toda aba tem as colunas comuns

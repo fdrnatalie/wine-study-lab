@@ -11,7 +11,7 @@
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 9,
+  SCHEMA_VERSION: 10,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -65,6 +65,14 @@ var SCHEMA = {
   // v9: fotos das uvas (arquivos numa pasta do Drive da dona, compartilhados por link). Escrita só da administradora.
   grape_photos: { sheet: 'db_grape_photos', prefix: 'GPH', cols: [
     'grape_id', 'file_id', 'caption', 'sort:number'] },
+
+  // v10: curso (progresso pessoal de cada usuário). day = data no formato AAAA-MM-DD (fuso do Brasil).
+  course_progress: { sheet: 'db_course_progress', prefix: 'CPR', cols: [
+    'user_id', 'unit_id', 'lesson_id', 'best_score:number', 'attempts:number', 'completed_day', 'xp:number'] },
+  course_stats: { sheet: 'db_course_stats', prefix: 'CST', cols: [
+    'user_id', 'xp_total:number', 'streak:number', 'best_streak:number', 'last_day'] },
+  course_reviews: { sheet: 'db_course_reviews', prefix: 'CRV', cols: [
+    'user_id', 'question_id', 'step:number', 'due_day', 'wrong_count:number'] },
 
   appellations: { sheet: 'db_appellations', prefix: 'APL', cols: [
     'name', 'name_key', 'region_id', 'classification', 'rules', 'notes'] },
@@ -202,7 +210,7 @@ var SCHEMA = {
  */
 var SCOPES = {
   personal: ['bottling_batches', 'bottles', 'tastings', 'tasting_samples', 'tasting_answers', 'tasting_results',
-    'notes', 'note_links', 'wine_notes'],
+    'notes', 'note_links', 'wine_notes', 'course_progress', 'course_stats', 'course_reviews'],
   catalog: ['wines', 'wine_grapes', 'producers', 'appellations', 'profiles', 'entity_aromas'],
   system: ['users', 'sessions']
   // as demais: admin
