@@ -366,6 +366,14 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .prof-sec h4.prof-step { margin-top: 6px; }
 
 /* Cartões de estudo */
+.gp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.gp { margin: 0; position: relative; }
+.gp img { width: 100%; height: 190px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); display: block; background: var(--paper-2); }
+.gp-del { position: absolute; right: 6px; bottom: 6px; background: var(--paper); }
+.gp-thumb { width: 100%; height: 110px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; display: block; background: var(--paper-2); }
+.gp-panel { margin-bottom: 16px; }
+.back-link { display: inline-block; margin: 0 0 12px; padding: 6px 12px; border: 1px solid var(--line-2); border-radius: 999px; font-size: .85rem; color: var(--ink-2); text-decoration: none; background: var(--paper); }
+.back-link:hover { border-color: var(--wine); color: var(--wine); }
 .sc-sec { margin: 26px 0 10px; font-family: var(--serif); font-size: 1.35rem; font-weight: 600; }
 .sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; margin: 8px 0 4px; }
 .sc { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
@@ -709,7 +717,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 8,
+  SCHEMA_VERSION: 9,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -759,6 +767,10 @@ var SCHEMA = {
     'key', 'pack', 'topic', 'country_id', 'region_id', 'group', 'title', 'kind', 'items:json', 'sort:number', 'status',
     // v8: nível de dificuldade no quiz, por notoriedade: medio (conhecido no mundo todo) | avancado | expert (quase ninguém sabe).
     'level'] },
+
+  // v9: fotos das uvas (arquivos numa pasta do Drive da dona, compartilhados por link). Escrita só da administradora.
+  grape_photos: { sheet: 'db_grape_photos', prefix: 'GPH', cols: [
+    'grape_id', 'file_id', 'caption', 'sort:number'] },
 
   appellations: { sheet: 'db_appellations', prefix: 'APL', cols: [
     'name', 'name_key', 'region_id', 'classification', 'rules', 'notes'] },
@@ -18513,12 +18525,13 @@ var Grapes = (function () {
   };
 
   function list() {
+    var covers = GrapePhotos.covers();
     var wg = Util.groupBy(Repo.all('wine_grapes'), 'grape_id');
     var profiles = Util.indexBy(Repo.all('profiles').filter(function (p) { return p.entity_type === 'grape'; }), 'entity_id');
     return Repo.all('grapes').map(function (g) {
       var filled = Object.keys(TEXT_FIELDS).filter(function (f) { return !Util.isBlank(g[f]); }).length;
       return {
-        id: g.id, name: g.name, color: g.color, origin: g.origin, source: g.source,
+        id: g.id, name: g.name, color: g.color, origin: g.origin, source: g.source, photo: covers[g.id] || '',
         wines: (wg[g.id] || []).length, has_profile: !!profiles[g.id],
         completeness: Math.round(filled / Object.keys(TEXT_FIELDS).length * 100),
         unverified: Object.keys(g.field_sources || {}).some(function (k) { return g.field_sources[k] === 'ia_nao_verificada'; })
@@ -18545,6 +18558,7 @@ var Grapes = (function () {
     var wines = Util.indexBy(Repo.all('wines'), 'id');
     out.wines = wineIds.map(function (wid) { return wines[wid]; }).filter(Boolean)
       .map(function (w) { return { id: w.id, name: w.name, vintage: w.vintage }; });
+    out.photos = GrapePhotos.listFor(id);
     out.notes = Catalog.notesFor('grape', id);
     out.regions = Regions.forGrape(id);
     // Meu desempenho com esta uva (critério "uva" das degustações em que ela era a resposta).
@@ -19476,6 +19490,73 @@ var Barcode = (function () {
   return { lookup: lookup, clean: clean };
 })();
 
+// ---- 38_GrapePhotos.js
+/**
+ * Fotos das uvas: a administradora envia a foto (já reduzida no navegador); o arquivo vai para uma pasta do Drive dela
+ * ("Wine Study Lab · Fotos das uvas", criada na primeira foto), compartilhada por link, e a ficha guarda só o ID do arquivo.
+ * Usa o Drive avançado v3 com o escopo drive.file (só enxerga arquivos criados pelo próprio app).
+ */
+var GrapePhotos = (function () {
+  var MAX_BYTES = 1800 * 1024;       // depois de reduzida, a foto fica em ~200–500 KB
+  var MAX_PER_GRAPE = 8;
+  var FOLDER_NAME = 'Wine Study Lab · Fotos das uvas';
+
+  function url_(fileId) { return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w1400'; }
+
+  function listFor(grapeId) {
+    return Repo.where('grape_photos', { grape_id: grapeId })
+      .sort(function (a, b) { return (a.sort || 0) - (b.sort || 0); })
+      .map(function (p) { return { id: p.id, url: url_(p.file_id), caption: p.caption || '' }; });
+  }
+
+  /** Primeira foto de cada uva (para os cartões da lista). */
+  function covers() {
+    var out = {};
+    Repo.all('grape_photos').sort(function (a, b) { return (a.sort || 0) - (b.sort || 0); }).forEach(function (p) { if (!out[p.grape_id]) out[p.grape_id] = url_(p.file_id); });
+    return out;
+  }
+
+  function folderId_() {
+    var id = Settings.get('grape_photo_folder', '');
+    if (id) return id;
+    var f = Drive.Files.create({ name: FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' }, null, { fields: 'id' });
+    Settings.set('grape_photo_folder', f.id);
+    return f.id;
+  }
+
+  function slug_(s) { return Util.normKey(s).replace(/[^a-z0-9]+/g, '-').slice(0, 40) || 'uva'; }
+
+  function add(a) {
+    Ctx.requireAdmin();
+    var grape = Repo.get('grapes', Validate.id(a.grape_id, 'grapes'));
+    if (!grape) throw new Error('Uva não encontrada.');
+    var m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=]+)$/.exec(String(a.image || ''));
+    if (!m) throw new Error('Envie uma imagem JPEG, PNG ou WebP.');
+    var existing = Repo.where('grape_photos', { grape_id: grape.id });
+    if (existing.length >= MAX_PER_GRAPE) throw new Error('Esta uva já tem ' + MAX_PER_GRAPE + ' fotos. Remova alguma antes.');
+    var bytes = Utilities.base64Decode(m[2]);
+    if (bytes.length > MAX_BYTES) throw new Error('A foto ficou grande demais (máx. ' + Math.round(MAX_BYTES / 1024) + ' KB).');
+    var ext = m[1] === 'jpeg' ? 'jpg' : m[1];
+    var blob = Utilities.newBlob(bytes, 'image/' + m[1], 'uva-' + slug_(grape.name) + '-' + Date.now() + '.' + ext);
+    var file = Drive.Files.create({ name: blob.getName(), parents: [folderId_()] }, blob, { fields: 'id' });
+    Drive.Permissions.create({ type: 'anyone', role: 'reader' }, file.id);
+    var sort = existing.reduce(function (mx, p) { return Math.max(mx, p.sort || 0); }, 0) + 1;
+    Repo.insert('grape_photos', [{ grape_id: grape.id, file_id: file.id, caption: String(a.caption || '').slice(0, 120), sort: sort, source: 'usuario' }]);
+    return listFor(grape.id);
+  }
+
+  function remove(a) {
+    Ctx.requireAdmin();
+    var p = Repo.get('grape_photos', Validate.id(a.id, 'grape_photos'));
+    if (!p) throw new Error('Foto não encontrada.');
+    try { Drive.Files.remove(p.file_id); } catch (e) { console.error('foto uva: remover do Drive', e); }   // se já sumiu do Drive, segue
+    Repo.remove('grape_photos', [p.id]);
+    return listFor(p.grape_id);
+  }
+
+  return { listFor: listFor, covers: covers, add: add, remove: remove };
+})();
+
 // ---- 40_Bottles.js
 /**
  * Minha Adega de Degustação: fracionamentos e garrafinhas.
@@ -19840,57 +19921,93 @@ var Tastings = (function () {
   }
 
   // ---------- Revelação ----------
+  /** Calcula as linhas de resultado e as notas de uma degustação com os dados ATUAIS dos vinhos. */
+  function computeResults_(t) {
+    var rules = Settings.rules();
+    var scales = Settings.scales();
+    var th = String(Settings.get('alcohol_thresholds', '11,14')).split(',').map(Util.parseNumber);
+    var settings = {
+      near_credit: Settings.getNumber('near_credit', 0.5),
+      aroma_subcategory_credit: Settings.getNumber('aroma_subcategory_credit', 0.5),
+      alcohol_thresholds: th.length === 2 && th[0] !== null && th[1] !== null ? th : [11, 14]
+    };
+    var regions = {};
+    Repo.all('regions').forEach(function (r) { regions[r.id] = { parent_id: r.parent_id, country_id: r.country_id, name_key: r.name_key }; });
+    var aromas = {};
+    Repo.all('aromas').forEach(function (a) { aromas[a.id] = { subcategory: a.subcategory }; });
+    var bottles = Util.indexBy(Repo.all('bottles'), 'id');
+    var answers = Util.groupBy(Repo.where('tasting_answers', { tasting_id: t.id }), 'sample_id');
+    var resultRows = [], samplePatches = [], scores = [];
+
+    samples_(t.id).forEach(function (s) {
+      var b = bottles[s.bottle_id];
+      var truth = truthFor_(b.wine_id);
+      var ans = {};
+      (answers[s.id] || []).forEach(function (a) { ans[a.criterion] = { value: a.value, value_json: a.value_json }; });
+      var r = Scoring.scoreSample({ rules: rules, scales: scales, settings: settings, answers: ans, truth: truth, regions: regions, aromas: aromas });
+      r.results.forEach(function (x) {
+        resultRows.push({
+          tasting_id: t.id, sample_id: s.id, wine_id: b.wine_id, criterion: x.criterion,
+          given: stringify_(x.given), expected: stringify_(x.expected), state: x.state,
+          points: x.points, max_points: x.max_points, grape_ids: truth.grape_ids,
+          country_id: truth.country_id, region_id: truth.region_id, date: t.date, source: 'sistema'
+        });
+      });
+      samplePatches.push({ id: s.id, score: r.score === null ? '' : r.score });
+      if (r.score !== null) scores.push(r.score);
+    });
+    var score = scores.length ? Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length * 10) / 10 : '';
+    return { resultRows: resultRows, samplePatches: samplePatches, score: score,
+      snapshot: { rules: rules.map(function (r) { return { criterion: r.criterion, weight: r.weight, compare: r.compare, params: r.params, active: r.active }; }), settings: settings } };
+  }
+
   function reveal(id) {
     return Repo.withLock(function () {
       var t = Repo.get('tastings', Validate.id(id));
       if (!t) throw new Error('Degustação não encontrada.');
       if (t.status === 'revelada') return getReport(id);
       if (t.status === 'cancelada') throw new Error('Degustação cancelada.');
-
-      var rules = Settings.rules();
-      var scales = Settings.scales();
-      var th = String(Settings.get('alcohol_thresholds', '11,14')).split(',').map(Util.parseNumber);
-      var settings = {
-        near_credit: Settings.getNumber('near_credit', 0.5),
-        aroma_subcategory_credit: Settings.getNumber('aroma_subcategory_credit', 0.5),
-        alcohol_thresholds: th.length === 2 && th[0] !== null && th[1] !== null ? th : [11, 14]
-      };
-      var regions = {};
-      Repo.all('regions').forEach(function (r) { regions[r.id] = { parent_id: r.parent_id, country_id: r.country_id }; });
-      var aromas = {};
-      Repo.all('aromas').forEach(function (a) { aromas[a.id] = { subcategory: a.subcategory }; });
-      var bottles = Util.indexBy(Repo.all('bottles'), 'id');
-      var answers = Util.groupBy(Repo.where('tasting_answers', { tasting_id: t.id }), 'sample_id');
-      var now = Util.nowIso();
-      var resultRows = [], samplePatches = [], scores = [];
-
-      samples_(t.id).forEach(function (s) {
-        var b = bottles[s.bottle_id];
-        var truth = truthFor_(b.wine_id);
-        var ans = {};
-        (answers[s.id] || []).forEach(function (a) { ans[a.criterion] = { value: a.value, value_json: a.value_json }; });
-        var r = Scoring.scoreSample({ rules: rules, scales: scales, settings: settings, answers: ans, truth: truth, regions: regions, aromas: aromas });
-        r.results.forEach(function (x) {
-          resultRows.push({
-            tasting_id: t.id, sample_id: s.id, wine_id: b.wine_id, criterion: x.criterion,
-            given: stringify_(x.given), expected: stringify_(x.expected), state: x.state,
-            points: x.points, max_points: x.max_points, grape_ids: truth.grape_ids,
-            country_id: truth.country_id, region_id: truth.region_id, date: t.date, source: 'sistema'
-          });
-        });
-        samplePatches.push({ id: s.id, score: r.score === null ? '' : r.score });
-        if (r.score !== null) scores.push(r.score);
-      });
-
-      Repo.insert('tasting_results', resultRows);
-      Repo.update('tasting_samples', samplePatches);
-      var score = scores.length ? Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length * 10) / 10 : '';
-      Repo.update('tastings', [{ id: t.id, status: 'revelada', revealed_at: now, score: score,
-        scoring_snapshot: { rules: rules.map(function (r) { return { criterion: r.criterion, weight: r.weight, compare: r.compare, params: r.params, active: r.active }; }), settings: settings } }]);
+      var c = computeResults_(t);
+      Repo.insert('tasting_results', c.resultRows);
+      Repo.update('tasting_samples', c.samplePatches);
+      Repo.update('tastings', [{ id: t.id, status: 'revelada', revealed_at: Util.nowIso(), score: c.score, scoring_snapshot: c.snapshot }]);
       // As garrafinhas continuam "reservadas" até você dizer, no resultado, se acabaram ou ainda têm vinho
       // (nem toda garrafinha termina numa degustação).
       return getReport(id);
     });
+  }
+
+  /**
+   * Recalcula uma degustação já revelada com os dados atuais dos vinhos (útil depois de completar a ficha:
+   * safra, perfil, aromas…). Suas respostas não mudam; só o gabarito e a nota.
+   */
+  function rescore(id) {
+    return Repo.withLock(function () {
+      var t = Repo.get('tastings', Validate.id(id));
+      if (!t) throw new Error('Degustação não encontrada.');
+      if (t.status !== 'revelada') throw new Error('Esta degustação ainda não foi revelada.');
+      var c = computeResults_(t);
+      var old = Repo.where('tasting_results', { tasting_id: t.id }).map(function (r) { return r.id; });
+      if (old.length) Repo.remove('tasting_results', old);
+      Repo.insert('tasting_results', c.resultRows);
+      Repo.update('tasting_samples', c.samplePatches);
+      Repo.update('tastings', [{ id: t.id, score: c.score, scoring_snapshot: c.snapshot }]);
+      return getReport(id);
+    });
+  }
+
+  /** O que falta na ficha do vinho para haver gabarito (com os dados de agora). */
+  function gapsFor_(wineId) {
+    var tr = truthFor_(wineId), gaps = [];
+    if (tr.vintage === '' || tr.vintage === undefined || tr.vintage === null) gaps.push('safra');
+    if (tr.abv === '' || tr.abv === undefined || tr.abv === null) gaps.push('teor alcoólico');
+    if (!tr.grape_ids.length) gaps.push('uvas');
+    if (!tr.country_id) gaps.push('país');
+    if (!tr.region_id) gaps.push('região');
+    if (!tr.profile) gaps.push('perfil (acidez, tanino, corpo, intensidade…)');
+    else if (!tr.profile_trusted) gaps.push('perfil verificado (o atual é de IA ainda não revisada)');
+    if (!tr.aroma_ids.length) gaps.push('aromas');
+    return gaps;
   }
 
   function stringify_(v) {
@@ -19948,6 +20065,7 @@ var Tastings = (function () {
           abv: w.abv, grapes: w.grapes, profile: w.profile, profile_trusted: w.profile_trusted,
           aromas: w.aromas.map(function (a) { return a.name; })
         },
+        gaps: gapsFor_(b.wine_id),
         results: rs.map(function (r) {
           return {
             criterion: r.criterion, label: rules[r.criterion] ? rules[r.criterion].label : r.criterion,
@@ -20006,7 +20124,7 @@ var Tastings = (function () {
     }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
   }
 
-  return { create: create, getPlay: getPlay, saveAnswers: saveAnswers, reveal: reveal, getReport: getReport, cancel: cancel, list: list };
+  return { create: create, getPlay: getPlay, saveAnswers: saveAnswers, reveal: reveal, rescore: rescore, getReport: getReport, cancel: cancel, list: list };
 })();
 
 /** Converte ids/chaves em rótulos legíveis para relatórios. */
@@ -20108,7 +20226,7 @@ var Scoring = (function () {
         var g = ans.value || '';
         if (!t.region_id) return { state: 'no_ref', given: g, expected: '' };
         if (!g) return { state: 'miss', given: '', expected: t.region_id };
-        if (g === t.region_id || isAncestor_(ctx.regions, g, t.region_id) || isAncestor_(ctx.regions, t.region_id, g)) {
+        if (g === t.region_id || sameRegion_(ctx.regions, g, t.region_id) || isAncestor_(ctx.regions, g, t.region_id) || isAncestor_(ctx.regions, t.region_id, g)) {
           return { state: 'hit', given: g, expected: t.region_id };
         }
         var gc = ctx.regions[g] && ctx.regions[g].country_id;
@@ -20182,6 +20300,15 @@ var Scoring = (function () {
         if (!t.profile_trusted || !t.profile) return '';
         return t.profile[criterion] || '';
     }
+  }
+
+  /**
+   * Mesmo nome e mesmo país = mesma região, mesmo que sejam registros diferentes (ex.: "Beaujolais" como região
+   * e "Beaujolais" como sub-região da Borgonha cadastrada antes): não pode contar como erro.
+   */
+  function sameRegion_(regions, a, b) {
+    var x = regions[a], y = regions[b];
+    return !!(x && y && x.name_key && x.name_key === y.name_key && (!x.country_id || !y.country_id || x.country_id === y.country_id));
   }
 
   function isAncestor_(regions, ancestorId, id) {
@@ -21984,6 +22111,8 @@ var API_METHODS = {
   'grapes.list': function () { return Grapes.list(); },
   'grapes.get': function (a) { return Grapes.get(a.id); },
   'grapes.save': function (a) { return Grapes.save(a.grape); },
+  'grapes.photoAdd': function (a) { return GrapePhotos.add(a); },
+  'grapes.photoRemove': function (a) { return GrapePhotos.remove(a); },
   'grapes.verify': function (a) { return Grapes.verifyFields(a.id, a.fields); },
   'grapes.compare': function (a) { return Grapes.compare(a.ids); },
   'grapes.genealogy': function () { return Grapes.genealogy(); },
@@ -22001,6 +22130,7 @@ var API_METHODS = {
   'tastings.saveAnswers': function (a) { return Tastings.saveAnswers(a.sample_id, a.answers, a.completed); },
   'tastings.reveal': function (a) { return Tastings.reveal(a.id); },
   'tastings.report': function (a) { return Tastings.getReport(a.id); },
+  'tastings.rescore': function (a) { return Tastings.rescore(a.id); },
   'tastings.cancel': function (a) { return Tastings.cancel(a.id); },
 
   'notes.list': function () { return Notes.list(); },
@@ -22068,7 +22198,7 @@ var API_METHODS = {
 // Sem login.
 var PUBLIC_METHODS = { 'auth.config': 1, 'auth.login': 1, 'debug.last': 1 };
 // Só a administradora (enciclopédia, sincronização, IA, configurações, usuários).
-var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
+var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify|photoAdd|photoRemove)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
 
 /**
  * Executa um método da API. resolveUser() identifica quem chama (sessão ou conta Google).
@@ -22495,6 +22625,10 @@ var Router = {
     var route = Router.parse();
     var page = Pages[route.page];
     Router.current = { name: route.page, page: page, params: route.params };
+    // Trilha de páginas visitadas, para o botão "Voltar" (volta para onde você estava, não para a lista).
+    var trail = Router.trail = Router.trail || [], here = Router.hash || '/';
+    if (trail.length >= 2 && trail[trail.length - 2] === here) trail.pop();
+    else if (trail[trail.length - 1] !== here) { trail.push(here); if (trail.length > 60) trail.shift(); }
     UI.closeLayer();
     UI.closeModal();
     Nav.highlight(route.path);
@@ -22505,7 +22639,10 @@ var Router = {
     Promise.resolve(page.render(route.params)).then(function (html) {
       if (token !== Router.token) return;           // o usuário navegou antes de terminar
       if (page.fullscreen) { UI.openLayer(html); }
-      else { view.innerHTML = html; window.scrollTo(0, 0); }
+      else {
+        view.innerHTML = (trail.length > 1 && route.page !== 'dashboard' ? '<a href="#" class="back-link" data-back="1">← Voltar</a>' : '') + html;
+        window.scrollTo(0, 0);
+      }
       if (page.mount) page.mount(page.fullscreen ? document.getElementById('layer') : view, route.params);
     }).catch(function (e) {
       if (token !== Router.token) return;
@@ -22513,6 +22650,15 @@ var Router = {
     });
   }
 };
+
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('[data-back]');
+  if (!a) return;
+  e.preventDefault();
+  var trail = Router.trail || [];
+  if (Router.gas) { var prev = trail[trail.length - 2]; if (prev) Router.go(prev); }
+  else history.back();
+});
 
 /* ---------- Utilidades ---------- */
 function esc(s) {
@@ -23577,6 +23723,27 @@ Pages.wineEdit = {
       form.addEventListener('labelapplied', refresh);
       refresh();
     }
+    // Rascunho do vinho novo: se você sair para consultar uma uva (ou qualquer outra página) e voltar, o que já digitou continua aqui.
+    if (form && !form.elements.id.value) {
+      var DKEY = 'wsl_wine_draft';
+      var read = function () { try { var x = JSON.parse(sessionStorage.getItem(DKEY) || 'null'); return x && Date.now() - x.at < 3 * 3600 * 1000 ? x : null; } catch (e) { return null; } };
+      var saved = read();
+      if (saved) {
+        Object.keys(saved.d || {}).forEach(function (k) { if (k !== 'id' && !/^g_/.test(k) && form.elements[k]) form.elements[k].value = saved.d[k]; });
+        if (saved.grapes && saved.grapes.some(function (g) { return g.name; })) document.getElementById('grape-rows').innerHTML = saved.grapes.map(grapeRow).join('');
+        form.insertAdjacentHTML('afterbegin', '<div class="callout" style="margin-bottom:14px">Rascunho recuperado: o que você já tinha digitado voltou. <a href="#" data-action="draft-clear">Descartar rascunho</a></div>');
+        if (form.elements.country) form.elements.country.dispatchEvent(new Event('input'));
+      }
+      var persist = function () {
+        try {
+          var d = formData(form), grapes = [];
+          form.querySelectorAll('.grape-row').forEach(function (r) { grapes.push({ name: r.querySelector('[data-g=name]').value, percent: r.querySelector('[data-g=percent]').value }); });
+          sessionStorage.setItem(DKEY, JSON.stringify({ d: d, grapes: grapes, at: Date.now() }));
+        } catch (e) { /* sem armazenamento: segue sem rascunho */ }
+      };
+      form.addEventListener('input', persist);
+      form.addEventListener('change', persist);
+    }
     // Campo preenchido pela foto e depois editado à mão volta a ser "informado por você".
     if (form) form.addEventListener('input', function (e) { LabelScan.touched(form, e.target); });
     // Enter no campo do código busca a ficha (em vez de salvar o formulário).
@@ -23592,6 +23759,7 @@ Pages.wineEdit = {
     'ean-open': function () { LabelScan.eanOpen(); },
     'ean-search': function (btn) { return LabelScan.eanSearch(btn); },
     'ean-photo': function (input) { return LabelScan.eanPhoto(input); },
+    'draft-clear': function () { try { sessionStorage.removeItem('wsl_wine_draft'); } catch (e) { /* ok */ } Router.render(); },
     'add-grape': function () { document.getElementById('grape-rows').insertAdjacentHTML('beforeend', grapeRow({})); },
     'remove-grape': function (btn) { btn.closest('.grape-row').remove(); },
     'save': function (form) {
@@ -23610,6 +23778,7 @@ Pages.wineEdit = {
       UI.busy(btn, true);
       return API.call('wines.save', { wine: d }).then(function (w) {
         UI.toast('Vinho salvo.');
+        try { sessionStorage.removeItem('wsl_wine_draft'); } catch (e) { /* ok */ }
         // A resposta já traz o vinho completo: abre direto, e as listas atualizam em segundo plano.
         API.prime('wines.get', { id: w.id }, w);
         Store.refreshLookups().catch(function () {});
@@ -23651,6 +23820,7 @@ Pages.grapes = {
       if (!list.length) return html + Components.empty('Nenhuma uva ainda.', 'Elas são criadas pela sincronização ou pelo cadastro.');
       html += '<div class="grid auto">' + list.map(function (g) {
         return '<a class="panel" href="#/uvas/' + g.id + '" style="text-decoration:none;color:inherit;display:block">' +
+          (g.photo ? '<img class="gp-thumb" loading="lazy" alt="" src="' + esc(g.photo) + '">' : '') +
           '<div class="eyebrow">' + esc(g.color ? (g.color === 'tinta' ? 'Tinta' : g.color === 'branca' ? 'Branca' : g.color) : 'Uva') + '</div>' +
           '<div class="serif" style="font-size:1.7rem;line-height:1.1;margin:4px 0 8px">' + esc(g.name) + '</div>' +
           '<div class="small muted" style="margin-bottom:10px">' + esc(g.origin || '') + (g.wines ? (g.origin ? ' · ' : '') + plural(g.wines, 'vinho', 'vinhos') + ' no estudo' : '') + '</div>' +
@@ -23671,6 +23841,33 @@ function grapeFieldLabel(k) { return GRAPE_FIELD_LABELS[k] || k; }
 var GRAPE_COLOR = { tinta: 'Tinta', branca: 'Branca', rosada: 'Rosada / cinza' };
 
 Pages.grape = {
+  /** Fotos da uva ("como ela é"). Só a administradora envia e remove. */
+  photosPanel: function (g) {
+    var admin = Store.lookups && Store.lookups.is_admin, list = g.photos || [];
+    var imgs = list.map(function (p) {
+      return '<figure class="gp"><a href="' + esc(p.url) + '" target="_blank" rel="noopener"><img loading="lazy" alt="' + esc(g.name) + '" src="' + esc(p.url) + '"></a>' +
+        (admin ? '<button class="btn small gp-del" data-action="photo-del" data-id="' + esc(p.id) + '">Remover</button>' : '') + '</figure>';
+    }).join('');
+    return '<section class="panel gp-panel"><div class="page-head" style="margin-bottom:8px"><h3 style="margin:0">Como ela é</h3>' +
+      (admin ? '<label class="btn small">+ Adicionar foto<input type="file" accept="image/*" data-change="photo-add" hidden></label>' : '') + '</div>' +
+      (imgs ? '<div class="gp-grid">' + imgs + '</div>' :
+        '<p class="muted small" style="margin:0">' + (admin ? 'Ainda sem foto. Toque em "+ Adicionar foto" (galeria ou câmera).' : 'Ainda sem foto desta uva.') + '</p>') + '</section>';
+  },
+  /** Reduz a foto no navegador (lado maior 1400 px, JPEG) antes de enviar. */
+  shrink: function (file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Não consegui abrir essa imagem.')); };
+      img.src = url;
+    });
+  },
   mount: function () {
     var g = Pages.grape.data;
     var conf = (g.relationships || []).filter(function (r) { return r.kind === 'confused_with'; });
@@ -23698,6 +23895,8 @@ Pages.grape = {
           esc(unverified.map(grapeFieldLabel).join(', ')) + '. Revise o texto e marque como revisado — ou edite. ' +
           '<button class="btn small" style="margin-left:6px" data-action="verify-all">Marcar todos como revisados</button></div>';
       }
+
+      html += Pages.grape.photosPanel(g);
 
       html += '<div class="grid two"><section class="panel"><h3 style="margin-top:0">Identidade</h3><div class="fields">' +
         F('Origem', 'origin') + F('Ciclo de maturação', 'ripening') +
@@ -23753,6 +23952,20 @@ Pages.grape = {
     });
   },
   actions: {
+    'photo-add': function (input) {
+      var file = input.files && input.files[0], g = Pages.grape.data;
+      input.value = '';
+      if (!file) return;
+      if (!/^image\//.test(file.type || 'image/')) return Promise.reject(new Error('Escolha um arquivo de imagem.'));
+      UI.toast('Enviando a foto…');
+      return Pages.grape.shrink(file).then(function (dataUrl) {
+        return API.call('grapes.photoAdd', { grape_id: g.id, image: dataUrl });
+      }).then(function () { UI.toast('Foto adicionada.'); Router.render(); });
+    },
+    'photo-del': function (btn) {
+      if (!confirm('Remover esta foto?')) return;
+      return API.call('grapes.photoRemove', { id: btn.getAttribute('data-id') }).then(function () { UI.toast('Foto removida.'); Router.render(); });
+    },
     'edit-profile': function () {
       var g = Pages.grape.data;
       ProfileEditor.open('grape', g.id, g.profile, g.aromas, function () { Router.render(); });
@@ -24861,7 +25074,7 @@ Pages.tastingReport = {
         return '<div>' + icon + ' ' + esc(label) + ': <b>' + a.hit + '/' + a.total + '</b>' + (a.near ? ' <span class="muted small">(+' + a.near + ' próx.)</span>' : '') + '</div>';
       }
       var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/degustacao/historico">Histórico</a> · ' + fmtDate(r.date) + ' · ' + esc(DIFFICULTY[r.difficulty] ? DIFFICULTY[r.difficulty][0] : '') + '</div>' +
-        '<h1>Resultado da degustação</h1><p class="sub">' + esc(r.title) + '</p></div><div class="btn-row"><a class="btn" href="#/quiz?degustacao=' + esc(r.id) + '">Fazer o quiz destes vinhos</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>' +
+        '<h1>Resultado da degustação</h1><p class="sub">' + esc(r.title) + '</p></div><div class="btn-row"><button class="btn" data-action="rescore" title="Recalcula o gabarito e a nota com os dados atuais dos vinhos">Recalcular resultado</button><a class="btn" href="#/quiz?degustacao=' + esc(r.id) + '">Fazer o quiz destes vinhos</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>' +
         '<div class="callout" style="margin-bottom:16px">Para fixar o que você provou: <a href="#/quiz?degustacao=' + esc(r.id) + '"><b>faça o quiz</b></a> com perguntas sobre estas uvas, regiões e as diferenças entre elas.</div>';
 
       html += '<section class="panel score-hero"><div class="eyebrow">' + plural(r.samples.length, 'vinho analisado', 'vinhos analisados') + '</div>' +
@@ -24885,7 +25098,8 @@ Pages.tastingReport = {
           '<div><div class="eyebrow">Garrafa #' + s.number + '</div><div class="serif" style="font-size:1.6rem;line-height:1.1"><a href="#/vinhos/' + w.id + '">' + esc(w.name) + '</a> <span class="muted">' + esc(w.vintage || '') + '</span></div>' +
           '<div class="small muted">' + esc([w.producer, w.region, w.country].filter(Boolean).join(' · ')) + (w.grapes.length ? ' — ' + esc(w.grapes.map(function (g) { return g.name; }).join(', ')) : '') + (w.abv ? ' · ' + fmtNum(w.abv) + '%' : '') + '</div></div>' +
           '<div class="serif" style="font-size:2.2rem">' + (s.score === '' || s.score === null ? '—' : fmtNum(s.score, 0)) + '</div></div>' +
-          '<div class="bd"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Critério</th><th>Seu palpite</th><th>Resposta</th><th></th><th style="text-align:right">Pontos</th></tr></thead><tbody>' +
+          '<div class="bd">' + (s.gaps && s.gaps.length ? '<div class="callout" style="margin-bottom:12px">Faltam na ficha deste vinho: <b>' + esc(s.gaps.join(', ')) + '</b>. ' +
+            '<a href="#/vinhos/' + w.id + '/editar">Completar a ficha</a>, depois toque em <b>Recalcular resultado</b> (no topo) para os critérios "sem gabarito" passarem a contar.</div>' : '') + '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Critério</th><th>Seu palpite</th><th>Resposta</th><th></th><th style="text-align:right">Pontos</th></tr></thead><tbody>' +
           s.results.filter(function (x) { return !(x.state === 'no_ref' && !x.given); }).map(function (x) {
             return '<tr' + (x.state === 'no_ref' ? ' class="muted"' : '') + '><td>' + esc(x.label) + '</td><td>' + (esc(x.given) || '<span class="missing">sem resposta</span>') + '</td>' +
               '<td>' + (x.state === 'no_ref' ? '<span class="missing">sem gabarito</span>' : esc(x.expected)) + '</td><td>' + Components.state(x.state) + '</td>' +
@@ -24919,6 +25133,10 @@ Pages.tastingReport = {
     });
   },
   actions: {
+    rescore: function () {
+      var r = Pages.tastingReport.data;
+      return API.call('tastings.rescore', { id: r.id }).then(function () { UI.toast('Resultado recalculado com os dados atuais.'); Router.render(); });
+    },
     'bottle-set': function (btn) {
       var id = btn.getAttribute('data-id'), st = btn.getAttribute('data-s');
       return Pages.tastingReport.setBottles([id], st);

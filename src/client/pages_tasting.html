@@ -340,7 +340,7 @@ Pages.tastingReport = {
         return '<div>' + icon + ' ' + esc(label) + ': <b>' + a.hit + '/' + a.total + '</b>' + (a.near ? ' <span class="muted small">(+' + a.near + ' próx.)</span>' : '') + '</div>';
       }
       var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/degustacao/historico">Histórico</a> · ' + fmtDate(r.date) + ' · ' + esc(DIFFICULTY[r.difficulty] ? DIFFICULTY[r.difficulty][0] : '') + '</div>' +
-        '<h1>Resultado da degustação</h1><p class="sub">' + esc(r.title) + '</p></div><div class="btn-row"><a class="btn" href="#/quiz?degustacao=' + esc(r.id) + '">Fazer o quiz destes vinhos</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>' +
+        '<h1>Resultado da degustação</h1><p class="sub">' + esc(r.title) + '</p></div><div class="btn-row"><button class="btn" data-action="rescore" title="Recalcula o gabarito e a nota com os dados atuais dos vinhos">Recalcular resultado</button><a class="btn" href="#/quiz?degustacao=' + esc(r.id) + '">Fazer o quiz destes vinhos</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>' +
         '<div class="callout" style="margin-bottom:16px">Para fixar o que você provou: <a href="#/quiz?degustacao=' + esc(r.id) + '"><b>faça o quiz</b></a> com perguntas sobre estas uvas, regiões e as diferenças entre elas.</div>';
 
       html += '<section class="panel score-hero"><div class="eyebrow">' + plural(r.samples.length, 'vinho analisado', 'vinhos analisados') + '</div>' +
@@ -364,7 +364,8 @@ Pages.tastingReport = {
           '<div><div class="eyebrow">Garrafa #' + s.number + '</div><div class="serif" style="font-size:1.6rem;line-height:1.1"><a href="#/vinhos/' + w.id + '">' + esc(w.name) + '</a> <span class="muted">' + esc(w.vintage || '') + '</span></div>' +
           '<div class="small muted">' + esc([w.producer, w.region, w.country].filter(Boolean).join(' · ')) + (w.grapes.length ? ' — ' + esc(w.grapes.map(function (g) { return g.name; }).join(', ')) : '') + (w.abv ? ' · ' + fmtNum(w.abv) + '%' : '') + '</div></div>' +
           '<div class="serif" style="font-size:2.2rem">' + (s.score === '' || s.score === null ? '—' : fmtNum(s.score, 0)) + '</div></div>' +
-          '<div class="bd"><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Critério</th><th>Seu palpite</th><th>Resposta</th><th></th><th style="text-align:right">Pontos</th></tr></thead><tbody>' +
+          '<div class="bd">' + (s.gaps && s.gaps.length ? '<div class="callout" style="margin-bottom:12px">Faltam na ficha deste vinho: <b>' + esc(s.gaps.join(', ')) + '</b>. ' +
+            '<a href="#/vinhos/' + w.id + '/editar">Completar a ficha</a>, depois toque em <b>Recalcular resultado</b> (no topo) para os critérios "sem gabarito" passarem a contar.</div>' : '') + '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Critério</th><th>Seu palpite</th><th>Resposta</th><th></th><th style="text-align:right">Pontos</th></tr></thead><tbody>' +
           s.results.filter(function (x) { return !(x.state === 'no_ref' && !x.given); }).map(function (x) {
             return '<tr' + (x.state === 'no_ref' ? ' class="muted"' : '') + '><td>' + esc(x.label) + '</td><td>' + (esc(x.given) || '<span class="missing">sem resposta</span>') + '</td>' +
               '<td>' + (x.state === 'no_ref' ? '<span class="missing">sem gabarito</span>' : esc(x.expected)) + '</td><td>' + Components.state(x.state) + '</td>' +
@@ -398,6 +399,10 @@ Pages.tastingReport = {
     });
   },
   actions: {
+    rescore: function () {
+      var r = Pages.tastingReport.data;
+      return API.call('tastings.rescore', { id: r.id }).then(function () { UI.toast('Resultado recalculado com os dados atuais.'); Router.render(); });
+    },
     'bottle-set': function (btn) {
       var id = btn.getAttribute('data-id'), st = btn.getAttribute('data-s');
       return Pages.tastingReport.setBottles([id], st);

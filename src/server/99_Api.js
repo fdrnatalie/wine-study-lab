@@ -66,6 +66,8 @@ var API_METHODS = {
   'grapes.list': function () { return Grapes.list(); },
   'grapes.get': function (a) { return Grapes.get(a.id); },
   'grapes.save': function (a) { return Grapes.save(a.grape); },
+  'grapes.photoAdd': function (a) { return GrapePhotos.add(a); },
+  'grapes.photoRemove': function (a) { return GrapePhotos.remove(a); },
   'grapes.verify': function (a) { return Grapes.verifyFields(a.id, a.fields); },
   'grapes.compare': function (a) { return Grapes.compare(a.ids); },
   'grapes.genealogy': function () { return Grapes.genealogy(); },
@@ -83,6 +85,7 @@ var API_METHODS = {
   'tastings.saveAnswers': function (a) { return Tastings.saveAnswers(a.sample_id, a.answers, a.completed); },
   'tastings.reveal': function (a) { return Tastings.reveal(a.id); },
   'tastings.report': function (a) { return Tastings.getReport(a.id); },
+  'tastings.rescore': function (a) { return Tastings.rescore(a.id); },
   'tastings.cancel': function (a) { return Tastings.cancel(a.id); },
 
   'notes.list': function () { return Notes.list(); },
@@ -150,7 +153,7 @@ var API_METHODS = {
 // Sem login.
 var PUBLIC_METHODS = { 'auth.config': 1, 'auth.login': 1, 'debug.last': 1 };
 // Só a administradora (enciclopédia, sincronização, IA, configurações, usuários).
-var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
+var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify|photoAdd|photoRemove)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
 
 /**
  * Executa um método da API. resolveUser() identifica quem chama (sessão ou conta Google).

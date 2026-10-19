@@ -291,6 +291,27 @@ Pages.wineEdit = {
       form.addEventListener('labelapplied', refresh);
       refresh();
     }
+    // Rascunho do vinho novo: se você sair para consultar uma uva (ou qualquer outra página) e voltar, o que já digitou continua aqui.
+    if (form && !form.elements.id.value) {
+      var DKEY = 'wsl_wine_draft';
+      var read = function () { try { var x = JSON.parse(sessionStorage.getItem(DKEY) || 'null'); return x && Date.now() - x.at < 3 * 3600 * 1000 ? x : null; } catch (e) { return null; } };
+      var saved = read();
+      if (saved) {
+        Object.keys(saved.d || {}).forEach(function (k) { if (k !== 'id' && !/^g_/.test(k) && form.elements[k]) form.elements[k].value = saved.d[k]; });
+        if (saved.grapes && saved.grapes.some(function (g) { return g.name; })) document.getElementById('grape-rows').innerHTML = saved.grapes.map(grapeRow).join('');
+        form.insertAdjacentHTML('afterbegin', '<div class="callout" style="margin-bottom:14px">Rascunho recuperado: o que você já tinha digitado voltou. <a href="#" data-action="draft-clear">Descartar rascunho</a></div>');
+        if (form.elements.country) form.elements.country.dispatchEvent(new Event('input'));
+      }
+      var persist = function () {
+        try {
+          var d = formData(form), grapes = [];
+          form.querySelectorAll('.grape-row').forEach(function (r) { grapes.push({ name: r.querySelector('[data-g=name]').value, percent: r.querySelector('[data-g=percent]').value }); });
+          sessionStorage.setItem(DKEY, JSON.stringify({ d: d, grapes: grapes, at: Date.now() }));
+        } catch (e) { /* sem armazenamento: segue sem rascunho */ }
+      };
+      form.addEventListener('input', persist);
+      form.addEventListener('change', persist);
+    }
     // Campo preenchido pela foto e depois editado à mão volta a ser "informado por você".
     if (form) form.addEventListener('input', function (e) { LabelScan.touched(form, e.target); });
     // Enter no campo do código busca a ficha (em vez de salvar o formulário).
@@ -306,6 +327,7 @@ Pages.wineEdit = {
     'ean-open': function () { LabelScan.eanOpen(); },
     'ean-search': function (btn) { return LabelScan.eanSearch(btn); },
     'ean-photo': function (input) { return LabelScan.eanPhoto(input); },
+    'draft-clear': function () { try { sessionStorage.removeItem('wsl_wine_draft'); } catch (e) { /* ok */ } Router.render(); },
     'add-grape': function () { document.getElementById('grape-rows').insertAdjacentHTML('beforeend', grapeRow({})); },
     'remove-grape': function (btn) { btn.closest('.grape-row').remove(); },
     'save': function (form) {
@@ -324,6 +346,7 @@ Pages.wineEdit = {
       UI.busy(btn, true);
       return API.call('wines.save', { wine: d }).then(function (w) {
         UI.toast('Vinho salvo.');
+        try { sessionStorage.removeItem('wsl_wine_draft'); } catch (e) { /* ok */ }
         // A resposta já traz o vinho completo: abre direto, e as listas atualizam em segundo plano.
         API.prime('wines.get', { id: w.id }, w);
         Store.refreshLookups().catch(function () {});
@@ -365,6 +388,7 @@ Pages.grapes = {
       if (!list.length) return html + Components.empty('Nenhuma uva ainda.', 'Elas são criadas pela sincronização ou pelo cadastro.');
       html += '<div class="grid auto">' + list.map(function (g) {
         return '<a class="panel" href="#/uvas/' + g.id + '" style="text-decoration:none;color:inherit;display:block">' +
+          (g.photo ? '<img class="gp-thumb" loading="lazy" alt="" src="' + esc(g.photo) + '">' : '') +
           '<div class="eyebrow">' + esc(g.color ? (g.color === 'tinta' ? 'Tinta' : g.color === 'branca' ? 'Branca' : g.color) : 'Uva') + '</div>' +
           '<div class="serif" style="font-size:1.7rem;line-height:1.1;margin:4px 0 8px">' + esc(g.name) + '</div>' +
           '<div class="small muted" style="margin-bottom:10px">' + esc(g.origin || '') + (g.wines ? (g.origin ? ' · ' : '') + plural(g.wines, 'vinho', 'vinhos') + ' no estudo' : '') + '</div>' +
@@ -385,6 +409,33 @@ function grapeFieldLabel(k) { return GRAPE_FIELD_LABELS[k] || k; }
 var GRAPE_COLOR = { tinta: 'Tinta', branca: 'Branca', rosada: 'Rosada / cinza' };
 
 Pages.grape = {
+  /** Fotos da uva ("como ela é"). Só a administradora envia e remove. */
+  photosPanel: function (g) {
+    var admin = Store.lookups && Store.lookups.is_admin, list = g.photos || [];
+    var imgs = list.map(function (p) {
+      return '<figure class="gp"><a href="' + esc(p.url) + '" target="_blank" rel="noopener"><img loading="lazy" alt="' + esc(g.name) + '" src="' + esc(p.url) + '"></a>' +
+        (admin ? '<button class="btn small gp-del" data-action="photo-del" data-id="' + esc(p.id) + '">Remover</button>' : '') + '</figure>';
+    }).join('');
+    return '<section class="panel gp-panel"><div class="page-head" style="margin-bottom:8px"><h3 style="margin:0">Como ela é</h3>' +
+      (admin ? '<label class="btn small">+ Adicionar foto<input type="file" accept="image/*" data-change="photo-add" hidden></label>' : '') + '</div>' +
+      (imgs ? '<div class="gp-grid">' + imgs + '</div>' :
+        '<p class="muted small" style="margin:0">' + (admin ? 'Ainda sem foto. Toque em "+ Adicionar foto" (galeria ou câmera).' : 'Ainda sem foto desta uva.') + '</p>') + '</section>';
+  },
+  /** Reduz a foto no navegador (lado maior 1400 px, JPEG) antes de enviar. */
+  shrink: function (file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('Não consegui abrir essa imagem.')); };
+      img.src = url;
+    });
+  },
   mount: function () {
     var g = Pages.grape.data;
     var conf = (g.relationships || []).filter(function (r) { return r.kind === 'confused_with'; });
@@ -412,6 +463,8 @@ Pages.grape = {
           esc(unverified.map(grapeFieldLabel).join(', ')) + '. Revise o texto e marque como revisado — ou edite. ' +
           '<button class="btn small" style="margin-left:6px" data-action="verify-all">Marcar todos como revisados</button></div>';
       }
+
+      html += Pages.grape.photosPanel(g);
 
       html += '<div class="grid two"><section class="panel"><h3 style="margin-top:0">Identidade</h3><div class="fields">' +
         F('Origem', 'origin') + F('Ciclo de maturação', 'ripening') +
@@ -467,6 +520,20 @@ Pages.grape = {
     });
   },
   actions: {
+    'photo-add': function (input) {
+      var file = input.files && input.files[0], g = Pages.grape.data;
+      input.value = '';
+      if (!file) return;
+      if (!/^image\//.test(file.type || 'image/')) return Promise.reject(new Error('Escolha um arquivo de imagem.'));
+      UI.toast('Enviando a foto…');
+      return Pages.grape.shrink(file).then(function (dataUrl) {
+        return API.call('grapes.photoAdd', { grape_id: g.id, image: dataUrl });
+      }).then(function () { UI.toast('Foto adicionada.'); Router.render(); });
+    },
+    'photo-del': function (btn) {
+      if (!confirm('Remover esta foto?')) return;
+      return API.call('grapes.photoRemove', { id: btn.getAttribute('data-id') }).then(function () { UI.toast('Foto removida.'); Router.render(); });
+    },
     'edit-profile': function () {
       var g = Pages.grape.data;
       ProfileEditor.open('grape', g.id, g.profile, g.aromas, function () { Router.render(); });

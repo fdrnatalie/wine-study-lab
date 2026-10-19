@@ -247,6 +247,10 @@ var Router = {
     var route = Router.parse();
     var page = Pages[route.page];
     Router.current = { name: route.page, page: page, params: route.params };
+    // Trilha de páginas visitadas, para o botão "Voltar" (volta para onde você estava, não para a lista).
+    var trail = Router.trail = Router.trail || [], here = Router.hash || '/';
+    if (trail.length >= 2 && trail[trail.length - 2] === here) trail.pop();
+    else if (trail[trail.length - 1] !== here) { trail.push(here); if (trail.length > 60) trail.shift(); }
     UI.closeLayer();
     UI.closeModal();
     Nav.highlight(route.path);
@@ -257,7 +261,10 @@ var Router = {
     Promise.resolve(page.render(route.params)).then(function (html) {
       if (token !== Router.token) return;           // o usuário navegou antes de terminar
       if (page.fullscreen) { UI.openLayer(html); }
-      else { view.innerHTML = html; window.scrollTo(0, 0); }
+      else {
+        view.innerHTML = (trail.length > 1 && route.page !== 'dashboard' ? '<a href="#" class="back-link" data-back="1">← Voltar</a>' : '') + html;
+        window.scrollTo(0, 0);
+      }
       if (page.mount) page.mount(page.fullscreen ? document.getElementById('layer') : view, route.params);
     }).catch(function (e) {
       if (token !== Router.token) return;
@@ -265,6 +272,15 @@ var Router = {
     });
   }
 };
+
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('[data-back]');
+  if (!a) return;
+  e.preventDefault();
+  var trail = Router.trail || [];
+  if (Router.gas) { var prev = trail[trail.length - 2]; if (prev) Router.go(prev); }
+  else history.back();
+});
 
 /* ---------- Utilidades ---------- */
 function esc(s) {

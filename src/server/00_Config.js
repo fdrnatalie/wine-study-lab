@@ -11,7 +11,7 @@
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 8,
+  SCHEMA_VERSION: 9,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -61,6 +61,10 @@ var SCHEMA = {
     'key', 'pack', 'topic', 'country_id', 'region_id', 'group', 'title', 'kind', 'items:json', 'sort:number', 'status',
     // v8: nível de dificuldade no quiz, por notoriedade: medio (conhecido no mundo todo) | avancado | expert (quase ninguém sabe).
     'level'] },
+
+  // v9: fotos das uvas (arquivos numa pasta do Drive da dona, compartilhados por link). Escrita só da administradora.
+  grape_photos: { sheet: 'db_grape_photos', prefix: 'GPH', cols: [
+    'grape_id', 'file_id', 'caption', 'sort:number'] },
 
   appellations: { sheet: 'db_appellations', prefix: 'APL', cols: [
     'name', 'name_key', 'region_id', 'classification', 'rules', 'notes'] },

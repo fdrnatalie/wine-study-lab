@@ -10,12 +10,13 @@ var Grapes = (function () {
   };
 
   function list() {
+    var covers = GrapePhotos.covers();
     var wg = Util.groupBy(Repo.all('wine_grapes'), 'grape_id');
     var profiles = Util.indexBy(Repo.all('profiles').filter(function (p) { return p.entity_type === 'grape'; }), 'entity_id');
     return Repo.all('grapes').map(function (g) {
       var filled = Object.keys(TEXT_FIELDS).filter(function (f) { return !Util.isBlank(g[f]); }).length;
       return {
-        id: g.id, name: g.name, color: g.color, origin: g.origin, source: g.source,
+        id: g.id, name: g.name, color: g.color, origin: g.origin, source: g.source, photo: covers[g.id] || '',
         wines: (wg[g.id] || []).length, has_profile: !!profiles[g.id],
         completeness: Math.round(filled / Object.keys(TEXT_FIELDS).length * 100),
         unverified: Object.keys(g.field_sources || {}).some(function (k) { return g.field_sources[k] === 'ia_nao_verificada'; })
@@ -42,6 +43,7 @@ var Grapes = (function () {
     var wines = Util.indexBy(Repo.all('wines'), 'id');
     out.wines = wineIds.map(function (wid) { return wines[wid]; }).filter(Boolean)
       .map(function (w) { return { id: w.id, name: w.name, vintage: w.vintage }; });
+    out.photos = GrapePhotos.listFor(id);
     out.notes = Catalog.notesFor('grape', id);
     out.regions = Regions.forGrape(id);
     // Meu desempenho com esta uva (critério "uva" das degustações em que ela era a resposta).

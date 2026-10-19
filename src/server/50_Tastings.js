@@ -222,57 +222,93 @@ var Tastings = (function () {
   }
 
   // ---------- Revelação ----------
+  /** Calcula as linhas de resultado e as notas de uma degustação com os dados ATUAIS dos vinhos. */
+  function computeResults_(t) {
+    var rules = Settings.rules();
+    var scales = Settings.scales();
+    var th = String(Settings.get('alcohol_thresholds', '11,14')).split(',').map(Util.parseNumber);
+    var settings = {
+      near_credit: Settings.getNumber('near_credit', 0.5),
+      aroma_subcategory_credit: Settings.getNumber('aroma_subcategory_credit', 0.5),
+      alcohol_thresholds: th.length === 2 && th[0] !== null && th[1] !== null ? th : [11, 14]
+    };
+    var regions = {};
+    Repo.all('regions').forEach(function (r) { regions[r.id] = { parent_id: r.parent_id, country_id: r.country_id, name_key: r.name_key }; });
+    var aromas = {};
+    Repo.all('aromas').forEach(function (a) { aromas[a.id] = { subcategory: a.subcategory }; });
+    var bottles = Util.indexBy(Repo.all('bottles'), 'id');
+    var answers = Util.groupBy(Repo.where('tasting_answers', { tasting_id: t.id }), 'sample_id');
+    var resultRows = [], samplePatches = [], scores = [];
+
+    samples_(t.id).forEach(function (s) {
+      var b = bottles[s.bottle_id];
+      var truth = truthFor_(b.wine_id);
+      var ans = {};
+      (answers[s.id] || []).forEach(function (a) { ans[a.criterion] = { value: a.value, value_json: a.value_json }; });
+      var r = Scoring.scoreSample({ rules: rules, scales: scales, settings: settings, answers: ans, truth: truth, regions: regions, aromas: aromas });
+      r.results.forEach(function (x) {
+        resultRows.push({
+          tasting_id: t.id, sample_id: s.id, wine_id: b.wine_id, criterion: x.criterion,
+          given: stringify_(x.given), expected: stringify_(x.expected), state: x.state,
+          points: x.points, max_points: x.max_points, grape_ids: truth.grape_ids,
+          country_id: truth.country_id, region_id: truth.region_id, date: t.date, source: 'sistema'
+        });
+      });
+      samplePatches.push({ id: s.id, score: r.score === null ? '' : r.score });
+      if (r.score !== null) scores.push(r.score);
+    });
+    var score = scores.length ? Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length * 10) / 10 : '';
+    return { resultRows: resultRows, samplePatches: samplePatches, score: score,
+      snapshot: { rules: rules.map(function (r) { return { criterion: r.criterion, weight: r.weight, compare: r.compare, params: r.params, active: r.active }; }), settings: settings } };
+  }
+
   function reveal(id) {
     return Repo.withLock(function () {
       var t = Repo.get('tastings', Validate.id(id));
       if (!t) throw new Error('Degustação não encontrada.');
       if (t.status === 'revelada') return getReport(id);
       if (t.status === 'cancelada') throw new Error('Degustação cancelada.');
-
-      var rules = Settings.rules();
-      var scales = Settings.scales();
-      var th = String(Settings.get('alcohol_thresholds', '11,14')).split(',').map(Util.parseNumber);
-      var settings = {
-        near_credit: Settings.getNumber('near_credit', 0.5),
-        aroma_subcategory_credit: Settings.getNumber('aroma_subcategory_credit', 0.5),
-        alcohol_thresholds: th.length === 2 && th[0] !== null && th[1] !== null ? th : [11, 14]
-      };
-      var regions = {};
-      Repo.all('regions').forEach(function (r) { regions[r.id] = { parent_id: r.parent_id, country_id: r.country_id }; });
-      var aromas = {};
-      Repo.all('aromas').forEach(function (a) { aromas[a.id] = { subcategory: a.subcategory }; });
-      var bottles = Util.indexBy(Repo.all('bottles'), 'id');
-      var answers = Util.groupBy(Repo.where('tasting_answers', { tasting_id: t.id }), 'sample_id');
-      var now = Util.nowIso();
-      var resultRows = [], samplePatches = [], scores = [];
-
-      samples_(t.id).forEach(function (s) {
-        var b = bottles[s.bottle_id];
-        var truth = truthFor_(b.wine_id);
-        var ans = {};
-        (answers[s.id] || []).forEach(function (a) { ans[a.criterion] = { value: a.value, value_json: a.value_json }; });
-        var r = Scoring.scoreSample({ rules: rules, scales: scales, settings: settings, answers: ans, truth: truth, regions: regions, aromas: aromas });
-        r.results.forEach(function (x) {
-          resultRows.push({
-            tasting_id: t.id, sample_id: s.id, wine_id: b.wine_id, criterion: x.criterion,
-            given: stringify_(x.given), expected: stringify_(x.expected), state: x.state,
-            points: x.points, max_points: x.max_points, grape_ids: truth.grape_ids,
-            country_id: truth.country_id, region_id: truth.region_id, date: t.date, source: 'sistema'
-          });
-        });
-        samplePatches.push({ id: s.id, score: r.score === null ? '' : r.score });
-        if (r.score !== null) scores.push(r.score);
-      });
-
-      Repo.insert('tasting_results', resultRows);
-      Repo.update('tasting_samples', samplePatches);
-      var score = scores.length ? Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length * 10) / 10 : '';
-      Repo.update('tastings', [{ id: t.id, status: 'revelada', revealed_at: now, score: score,
-        scoring_snapshot: { rules: rules.map(function (r) { return { criterion: r.criterion, weight: r.weight, compare: r.compare, params: r.params, active: r.active }; }), settings: settings } }]);
+      var c = computeResults_(t);
+      Repo.insert('tasting_results', c.resultRows);
+      Repo.update('tasting_samples', c.samplePatches);
+      Repo.update('tastings', [{ id: t.id, status: 'revelada', revealed_at: Util.nowIso(), score: c.score, scoring_snapshot: c.snapshot }]);
       // As garrafinhas continuam "reservadas" até você dizer, no resultado, se acabaram ou ainda têm vinho
       // (nem toda garrafinha termina numa degustação).
       return getReport(id);
     });
+  }
+
+  /**
+   * Recalcula uma degustação já revelada com os dados atuais dos vinhos (útil depois de completar a ficha:
+   * safra, perfil, aromas…). Suas respostas não mudam; só o gabarito e a nota.
+   */
+  function rescore(id) {
+    return Repo.withLock(function () {
+      var t = Repo.get('tastings', Validate.id(id));
+      if (!t) throw new Error('Degustação não encontrada.');
+      if (t.status !== 'revelada') throw new Error('Esta degustação ainda não foi revelada.');
+      var c = computeResults_(t);
+      var old = Repo.where('tasting_results', { tasting_id: t.id }).map(function (r) { return r.id; });
+      if (old.length) Repo.remove('tasting_results', old);
+      Repo.insert('tasting_results', c.resultRows);
+      Repo.update('tasting_samples', c.samplePatches);
+      Repo.update('tastings', [{ id: t.id, score: c.score, scoring_snapshot: c.snapshot }]);
+      return getReport(id);
+    });
+  }
+
+  /** O que falta na ficha do vinho para haver gabarito (com os dados de agora). */
+  function gapsFor_(wineId) {
+    var tr = truthFor_(wineId), gaps = [];
+    if (tr.vintage === '' || tr.vintage === undefined || tr.vintage === null) gaps.push('safra');
+    if (tr.abv === '' || tr.abv === undefined || tr.abv === null) gaps.push('teor alcoólico');
+    if (!tr.grape_ids.length) gaps.push('uvas');
+    if (!tr.country_id) gaps.push('país');
+    if (!tr.region_id) gaps.push('região');
+    if (!tr.profile) gaps.push('perfil (acidez, tanino, corpo, intensidade…)');
+    else if (!tr.profile_trusted) gaps.push('perfil verificado (o atual é de IA ainda não revisada)');
+    if (!tr.aroma_ids.length) gaps.push('aromas');
+    return gaps;
   }
 
   function stringify_(v) {
@@ -330,6 +366,7 @@ var Tastings = (function () {
           abv: w.abv, grapes: w.grapes, profile: w.profile, profile_trusted: w.profile_trusted,
           aromas: w.aromas.map(function (a) { return a.name; })
         },
+        gaps: gapsFor_(b.wine_id),
         results: rs.map(function (r) {
           return {
             criterion: r.criterion, label: rules[r.criterion] ? rules[r.criterion].label : r.criterion,
@@ -388,7 +425,7 @@ var Tastings = (function () {
     }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
   }
 
-  return { create: create, getPlay: getPlay, saveAnswers: saveAnswers, reveal: reveal, getReport: getReport, cancel: cancel, list: list };
+  return { create: create, getPlay: getPlay, saveAnswers: saveAnswers, reveal: reveal, rescore: rescore, getReport: getReport, cancel: cancel, list: list };
 })();
 
 /** Converte ids/chaves em rótulos legíveis para relatórios. */

@@ -97,6 +97,10 @@ test('degustação completa de um membro, invisível para os outros', () => {
   ok(post('tastings.reveal', { id: t.id }, ana2.token));
   const rep = ok(post('tastings.report', { id: t.id }, ana2.token));
   assert.ok(rep.samples.length === 2);
+  assert.ok(rep.samples.every((x) => Array.isArray(x.gaps)));
+  const again = ok(post('tastings.rescore', { id: t.id }, ana2.token));
+  assert.strictEqual(again.samples.length, 2);
+  assert.strictEqual(post('tastings.rescore', { id: t.id }, owner.token).ok, false);
   assert.strictEqual(post('tastings.report', { id: t.id }, owner.token).ok, false);
   assert.ok(!ok(post('tastings.list', {}, owner.token)).some((x) => x.id === t.id));
   assert.ok(ok(post('dashboard', {}, ana2.token)));
@@ -231,6 +235,15 @@ test('cartões de estudo: membro lê, aparecem em país/região e no quiz', () =
   assert.ok(q.questions.length > 0 && q.questions.every((x) => x.type === 'cartao' && x.options.length >= 3 && x.answer >= 0));
   const qi = ok(post('quiz.generate', { cards: 'todos', country_id: it.id, n: 4 }, ana.token));
   assert.ok(qi.questions.length > 0);
+});
+test('fotos das uvas: só a administradora envia; imagem inválida é recusada', () => {
+  const g = ok(post('grapes.list', {}, owner.token))[0];
+  assert.ok(Array.isArray(ok(post('grapes.get', { id: g.id }, ana.token)).photos));
+  assert.strictEqual(post('grapes.photoAdd', { grape_id: g.id, image: 'data:image/jpeg;base64,AAAA' }, ana.token).ok, false);
+  const bad = post('grapes.photoAdd', { grape_id: g.id, image: 'não é imagem' }, owner.token);
+  assert.strictEqual(bad.ok, false);
+  assert.ok(/imagem/i.test(bad.error));
+  assert.strictEqual(post('grapes.photoRemove', { id: 'GPH_X' }, ana.token).ok, false);
 });
 test('IA, sincronização e usuários: só a administradora', () => {
   ['ai.status', 'sync.run', 'users.list', 'seed.grapes'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));

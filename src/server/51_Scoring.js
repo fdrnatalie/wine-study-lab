@@ -66,7 +66,7 @@ var Scoring = (function () {
         var g = ans.value || '';
         if (!t.region_id) return { state: 'no_ref', given: g, expected: '' };
         if (!g) return { state: 'miss', given: '', expected: t.region_id };
-        if (g === t.region_id || isAncestor_(ctx.regions, g, t.region_id) || isAncestor_(ctx.regions, t.region_id, g)) {
+        if (g === t.region_id || sameRegion_(ctx.regions, g, t.region_id) || isAncestor_(ctx.regions, g, t.region_id) || isAncestor_(ctx.regions, t.region_id, g)) {
           return { state: 'hit', given: g, expected: t.region_id };
         }
         var gc = ctx.regions[g] && ctx.regions[g].country_id;
@@ -140,6 +140,15 @@ var Scoring = (function () {
         if (!t.profile_trusted || !t.profile) return '';
         return t.profile[criterion] || '';
     }
+  }
+
+  /**
+   * Mesmo nome e mesmo país = mesma região, mesmo que sejam registros diferentes (ex.: "Beaujolais" como região
+   * e "Beaujolais" como sub-região da Borgonha cadastrada antes): não pode contar como erro.
+   */
+  function sameRegion_(regions, a, b) {
+    var x = regions[a], y = regions[b];
+    return !!(x && y && x.name_key && x.name_key === y.name_key && (!x.country_id || !y.country_id || x.country_id === y.country_id));
   }
 
   function isAncestor_(regions, ancestorId, id) {
