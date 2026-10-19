@@ -38,7 +38,7 @@ STUDY_PACKS.push((function () {
     ['1905', 'Universidade da Califórnia começa programas de viticultura e enologia, segundo o slide', 'conferir'],
     ['1920', 'Lei Seca proíbe produção, venda e transporte de álcool e trava o vinho no país'],
     ['1933', 'Fim da Lei Seca: a indústria volta a crescer em produção e qualidade'],
-    ['1976', 'Julgamento de Paris (24 de maio): degustação às cegas de vinhos franceses e americanos'],
+    ['1976', 'Julgamento de Paris (24 de maio): degustação às cegas de vinhos franceses e americanos por um painel de especialistas europeus'],
     ['1980', 'Vinhos da Califórnia ganham reconhecimento internacional', 'conferir'],
     ['1990', 'Filoxera atinge a Califórnia e exige replantio com porta-enxertos resistentes']
   ]);
@@ -46,7 +46,8 @@ STUDY_PACKS.push((function () {
     ['Origem', 'Dalmácia, Croácia, onde se chama Crljenak Kaštelanski; na Itália é o Primitivo'],
     ['Perfil', 'Tinto encorpado e frutado: frutas vermelhas maduras, especiarias, pimenta-preta e tabaco'],
     ['Estilo', 'De mais leve a mais encorpado, conforme terroir e vinificação'],
-    ['Terroirs', 'Lodi, Sierra Foothills e Paso Robles']
+    ['Terroirs', 'Lodi, Sierra Foothills e Paso Robles'],
+    ['Nos EUA', 'Na Califórnia, uma das uvas tintas mais cultivadas e proeminentes']
   ]);
   P('Castas brancas dos EUA', 'fatos', [
     ['Sauvignon Blanc', 'Califórnia, Washington e Oregon: brancos frescos e aromáticos, com cítricos e ervas'],
@@ -66,6 +67,11 @@ STUDY_PACKS.push((function () {
     ['Syrah', 'Em várias regiões: tinto rico, frutas escuras, especiarias e toques defumados'],
     ['Petite Sirah', 'Comum na Califórnia: tinto potente e robusto, notas picantes']
   ]);
+  P('Estados produtores de vinho dos EUA (mapa)', 'lista', [
+    ['', 'Costa oeste: Washington, Oregon, Califórnia e Idaho'],
+    ['', 'Sudoeste e centro: Arizona, Novo México, Texas, Colorado, Oklahoma e Missouri'],
+    ['', 'Leste: Wisconsin, Ohio, Pensilvânia, Nova York, Virgínia Ocidental, Geórgia e Alabama']
+  ]);
   P('Sistema americano: AVA', 'fatos', [
     ['O que é', 'Área de Viticultura Americana: região geográfica delimitada com solo, clima e topografia próprios'],
     ['Origem', 'Regulamento do ATF de 1978 (o slide cita uma lei de 1980)', 'corrigido'],
@@ -80,6 +86,13 @@ STUDY_PACKS.push((function () {
     ['Maturação', 'Temporada longa, com amadurecimento lento e completo'],
     ['Solos', 'De argilosos a arenosos e calcários, com excelente drenagem e boa retenção de água']
   ]);
+  R('Califórnia', '', 'Regiões vinícolas da Califórnia (mapa)', 'fatos', [
+    ['Northern California', 'Napa Valley, Sonoma, Santa Rosa, Alexander Valley, Carneros, Mendocino e Lake County'],
+    ['Sierra Foothills', 'El Dorado County e Amador County'],
+    ['Central Coast', 'Monterey, Paso Robles, Livermore Valley, Santa Cruz, Santa Barbara e Santa Ynez Valley'],
+    ['Southern California', 'Temecula'],
+    ['Central Valley', 'Lodi']
+  ]);
   R('Califórnia', '', 'Áreas vinícolas da Califórnia', 'lista', [
     ['', 'North Coast AVA'], ['', 'Central Coast AVA'], ['', 'Central Valley AVA'], ['', 'South Coast AVA']
   ]);
@@ -88,6 +101,7 @@ STUDY_PACKS.push((function () {
     ['Clima', 'Mediterrâneo; de fresco e nebuloso perto do oceano a quente e ensolarado no interior'],
     ['Solos', 'Argilosos, calcários e vulcânicos'],
     ['Importância', 'Segundo o slide, a melhor e mais importante AVA dos EUA'],
+    ['Estilo', 'Complexidade, elegância e expressão do terroir; alta qualidade'],
     ['Castas', 'Cabernet Sauvignon, Zinfandel, Merlot e Chardonnay']
   ]);
   R('Califórnia', '', 'Central Coast AVA', 'fatos', [
@@ -114,7 +128,15 @@ STUDY_PACKS.push((function () {
     ['Clima', 'Mediterrâneo; as cadeias de montanhas protegem e criam microclima ideal'],
     ['Solos', 'Argilosos, calcários e vulcânicos'],
     ['Castas', 'Cabernet Sauvignon, Merlot, Chardonnay e Sauvignon Blanc'],
-    ['Sub-regiões', 'Stags Leap District, Rutherford, Oakville e Howell Mountain']
+    ['Paisagem', 'Beleza cênica'],
+    ['Sub-regiões', 'Stags Leap District, Rutherford, Oakville e Howell Mountain'],
+    ['Estilo', 'Riqueza, complexidade e elegância; reconhecimento internacional']
+  ]);
+  R('Califórnia', 'Napa Valley', 'AVAs do Napa Valley (mapa)', 'lista', [
+    ['', 'Calistoga, Diamond Mountain District, Spring Mountain, St. Helena, Rutherford'],
+    ['', 'Oakville, Yountville, Mount Veeder, Oak Knoll District, Los Carneros'],
+    ['', 'Howell Mountain, Chiles Valley District, Stags Leap District, Atlas Peak'],
+    ['', 'Coombsville e Wild Horse Valley']
   ]);
 
   R('Oregon', '', 'Oregon em resumo', 'fatos', [
@@ -176,6 +198,9 @@ STUDY_PACKS.push((function () {
     'Central Valley AVA': 'expert',
     'South Coast AVA': 'expert',
     'Napa Valley': 'medio',
+    'AVAs do Napa Valley (mapa)': 'expert',
+    'Regiões vinícolas da Califórnia (mapa)': 'avancado',
+    'Estados produtores de vinho dos EUA (mapa)': 'expert',
     'Oregon em resumo': 'avancado',
     'Willamette Valley': 'avancado',
     'Washington em resumo': 'avancado',
@@ -185,7 +210,7 @@ STUDY_PACKS.push((function () {
     'Cozinha dos Estados Unidos': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'US', version: 1, cards: cards };
+  return { code: 'US', version: 2, cards: cards };
 })());
 
 // =====================  AUSTRÁLIA (aula 40)  =====================
@@ -223,7 +248,8 @@ STUDY_PACKS.push((function () {
     ['Origem', 'Rhône, na França; chegou à Austrália no século XIX'],
     ['Regiões', 'Barossa Valley, McLaren Vale e Hunter Valley, de climas quentes'],
     ['Importância', 'A casta tinta mais importante do país'],
-    ['Perfil', 'Cor profunda, frutas escuras, especiarias e taninos sedosos']
+    ['Perfil', 'Cor profunda, frutas escuras, especiarias e taninos sedosos'],
+    ['Área', 'Cobre porcentagem significativa dos vinhedos do país']
   ]);
   P('Castas brancas da Austrália', 'fatos', [
     ['Semillon', 'Envelhece com graça; usada em cortes; em Hunter Valley dá vinhos secos e frescos'],
@@ -253,6 +279,12 @@ STUDY_PACKS.push((function () {
     ['', '5. Coonawarra (Austrália do Sul)']
   ]);
 
+  P('Áreas vinícolas da Austrália (mapa)', 'lista', [
+    ['', 'Austrália Ocidental e Austrália do Sul'],
+    ['', 'Vitória e Nova Gales do Sul'],
+    ['', 'Queensland: South Burnett e Granite Belt (legenda "South Eastern Australia")'],
+    ['', 'Tasmânia']
+  ]);
   R('Austrália do Sul', 'Barossa Valley', 'Barossa Valley', 'fatos', [
     ['Onde', 'Austrália do Sul: Tanunda, Nuriootpa, Lyndoch e Angaston'],
     ['Produção', 'Volume substancial; vinhos tendem a ser mais acessíveis'],
@@ -266,6 +298,7 @@ STUDY_PACKS.push((function () {
     ['Produção', 'Substancial, com vinhos de qualidade acessível'],
     ['Condução', 'Muitas vinhas na "latada", com movimento de modernização, segundo o slide', 'conferir'],
     ['Solo e clima', 'Solos predominantemente arenosos; clima geralmente quente'],
+    ['Terroir', 'Excepcional; atrai investimento nacional e internacional'],
     ['Produtores', 'd\'Arenberg, Wirra Wirra, Yangarra Estate, Kay Brothers e Coriole']
   ]);
   R('Nova Gales do Sul', 'Hunter Valley', 'Hunter Valley', 'fatos', [
@@ -282,6 +315,7 @@ STUDY_PACKS.push((function () {
   R('Austrália do Sul', 'Coonawarra', 'Coonawarra', 'fatos', [
     ['Onde', 'Sul da Austrália; uma das regiões mais icônicas do país'],
     ['Solo', 'Terra vermelha'],
+    ['Estilo', 'Área de prestígio, de vinhos excepcionais e distintos'],
     ['Clima', 'Fresco e moderado: amadurecimento gradual e equilibrado'],
     ['Casta de destaque', 'Cabernet Sauvignon'],
     ['Produtores', 'Wynns Coonawarra Estate, Penley Estate, Katnook Estate, Yalumba The Menzies e Balnaves of Coonawarra']
@@ -293,7 +327,7 @@ STUDY_PACKS.push((function () {
   ]);
 
   H('Austrália', 'Cozinha da Austrália', [
-    ['Panorama', 'Mistura de influências culturais e ingredientes locais frescos; frutos do mar, cordeiro e canguru'],
+    ['Panorama', 'Mistura de influências culturais e ingredientes locais frescos; frutos do mar (camarões e ostras), cordeiro e canguru'],
     ['Meat pie', 'Torta de carne moída com temperos e molho, coberta de massa folhada'],
     ['BBQ prawns', 'Camarões grelhados com temperos e marinadas; popular no verão australiano'],
     ['Barramundi', 'Peixe nativo, grelhado ou assado, com legumes e molhos cítricos']
@@ -305,6 +339,7 @@ STUDY_PACKS.push((function () {
     'Castas brancas da Austrália': 'medio',
     'Castas tintas da Austrália': 'medio',
     'Austrália: clima e solo': 'avancado',
+    'Áreas vinícolas da Austrália (mapa)': 'expert',
     'Regiões vinícolas da Austrália': 'medio',
     'Barossa Valley': 'medio',
     'McLaren Vale': 'avancado',
@@ -315,7 +350,7 @@ STUDY_PACKS.push((function () {
     'Cozinha da Austrália': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'AU', version: 1, cards: cards };
+  return { code: 'AU', version: 2, cards: cards };
 })());
 
 // =====================  NOVA ZELÂNDIA (aula 41)  =====================
@@ -381,10 +416,15 @@ STUDY_PACKS.push((function () {
     ['', '4. Hawke\'s Bay (Ilha Norte)']
   ]);
 
+  P('Regiões vinícolas da Nova Zelândia (mapa)', 'lista', [
+    ['', 'Ilha Norte: Auckland, Waikato, Gisborne, Hawke\'s Bay e Wairarapa'],
+    ['', 'Ilha Sul: Nelson, Marlborough, Canterbury e Waipara, Central Otago']
+  ]);
   R('Marlborough', '', 'Marlborough', 'fatos', [
     ['Importância', 'A região mais importante do país, famosa mundialmente pelo Sauvignon Blanc'],
     ['Onde', 'Ilha Sul: Blenheim e Renwick'],
     ['Solo', 'Aluviais, mistura de argila e pedras'],
+    ['Estilo', 'Produção substancial; vinhos frutados e vibrantes'],
     ['Clima', 'Fresco, ideal para brancos aromáticos'],
     ['Produtores', 'Cloudy Bay, Villa Maria, Brancott Estate, Nautilus Estate e Saint Clair']
   ]);
@@ -393,6 +433,7 @@ STUDY_PACKS.push((function () {
     ['Onde', 'Ilha Sul: Cromwell, Alexandra e Bannockburn'],
     ['Clima e solo', 'Continental extremo; solos predominantemente de xisto'],
     ['Estilo', 'Elegância, fruta vibrante e estrutura bem definida'],
+    ['Viticultura', 'Muitas vinícolas com métodos tradicionais; cresce o interesse por práticas modernas; atrai investimento'],
     ['Produtores', 'Felton Road, Rippon, Quartz Reef, Mount Difficulty e Wooing Tree']
   ]);
   R('Wairarapa (Martinborough)', 'Martinborough', 'Martinborough', 'fatos', [
@@ -400,6 +441,7 @@ STUDY_PACKS.push((function () {
     ['Fama', 'Pinot Noir elegante e Sauvignon Blanc aromático'],
     ['Clima', 'Temperado, com verões quentes e secos e invernos frescos'],
     ['Solos', 'Depósitos aluviais, calcário e argila'],
+    ['Estilo', 'Complexidade, equilíbrio e terroir nítido; muitas vinícolas adotam práticas sustentáveis'],
     ['Produtores', 'Ata Rangi, Palliser Estate, Craggy Range, Escarpment e Te Kairanga']
   ]);
   R('Hawke\'s Bay', '', 'Hawke\'s Bay', 'fatos', [
@@ -407,6 +449,7 @@ STUDY_PACKS.push((function () {
     ['Clima', 'Quente e seco, com solos variados'],
     ['Tintas', 'Merlot, Cabernet Sauvignon e Syrah'],
     ['Brancas', 'Chardonnay e Sauvignon Blanc'],
+    ['Estilo', 'Riqueza, complexidade e elegância'],
     ['Produtores', 'Craggy Range, Te Mata Estate, Elephant Hill, Trinity Hill e Church Road']
   ]);
 
@@ -418,7 +461,7 @@ STUDY_PACKS.push((function () {
   cards[cards.length - 1].items[4].v = 'Grafado "Ataawaha" no slide';
 
   H('Nova Zelândia', 'Cozinha da Nova Zelândia', [
-    ['Panorama', 'Fusão de influências culturais e ingredientes frescos; frutos do mar, cordeiro e carneiro'],
+    ['Panorama', 'Fusão de influências culturais e ingredientes frescos; frutos do mar (lagostas e ostras), cordeiro e carneiro'],
     ['Hangi', 'Técnica maori, não um prato: comida cozida em buraco no chão (carne, cebola, alho e batata-doce)'],
     ['Whitebait fritters', 'Peixinhos brancos fritos em massa leve: iguaria crocante'],
     ['Lamb roasted', 'Cordeiro assado, com legumes assados e molho de hortelã']
@@ -431,6 +474,7 @@ STUDY_PACKS.push((function () {
     'Castas brancas da Nova Zelândia': 'avancado',
     'Castas tintas da Nova Zelândia': 'medio',
     'Nova Zelândia: clima e solo': 'avancado',
+    'Regiões vinícolas da Nova Zelândia (mapa)': 'avancado',
     'Regiões vinícolas da Nova Zelândia': 'medio',
     'Marlborough': 'medio',
     'Central Otago': 'medio',
@@ -440,7 +484,7 @@ STUDY_PACKS.push((function () {
     'Cozinha da Nova Zelândia': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'NZ', version: 1, cards: cards };
+  return { code: 'NZ', version: 2, cards: cards };
 })());
 
 // =====================  ÁFRICA DO SUL (aula 42)  =====================
@@ -513,6 +557,16 @@ STUDY_PACKS.push((function () {
     ['Doctor Cape', 'Vento forte e seco do sudoeste que limpa os vinhedos de fungos e parasitas'],
     ['Chuvas', 'Entre 800 e 1.000 mm por ano, segundo o slide', 'conferir']
   ]);
+  P('Mercados do vinho sul-africano', 'fatos', [
+    ['Apartheid', 'Com o fim do apartheid, a indústria do vinho ganhou força e conquistou o mundo'],
+    ['Embargos', 'O fim dos embargos da União Europeia foi marco decisivo na virada do setor']
+  ]);
+  P('Mapa das regiões do Cabo Ocidental (KWV)', 'fatos', [
+    ['Região Costeira', 'Distritos Swartland, Tulbagh, Paarl e Stellenbosch (Tulbagh e Paarl formam a zona Boberg)'],
+    ['Breede River', 'Distritos Worcester, Robertson e Swellendam'],
+    ['Outras regiões', 'Olifants River e Klein Karoo'],
+    ['Distritos fora de regiões', 'Overberg, Piquetberg e Douglas']
+  ]);
   P('Wine of Origin (W.O.)', 'fatos', [
     ['O que é', 'Sistema sul-africano de denominação controlada, criado em 1973'],
     ['Níveis', 'Unidade geográfica, região, distrito e ward (área delimitada)'],
@@ -534,6 +588,7 @@ STUDY_PACKS.push((function () {
   ]);
   R(WC, 'Stellenbosch', 'Stellenbosch', 'fatos', [
     ['Importância', 'O distrito mais importante do país, com as melhores vinícolas'],
+    ['Destaque', 'Abriga as melhores vinícolas e cultiva as uvas mais emblemáticas do país'],
     ['Castas', 'Chenin Blanc, Chardonnay, Sauvignon Blanc, Pinotage e Cabernet Franc'],
     ['Universidade', 'Universidade do Cabo: importante centro de pesquisa enológica (segundo o slide)', 'conferir']
   ]);
@@ -559,7 +614,7 @@ STUDY_PACKS.push((function () {
   cards[cards.length - 1].items[7].v = 'Grafado "Delair" no slide';
 
   H('África do Sul', 'Cozinha da África do Sul', [
-    ['Panorama', 'Fusão de influências e ingredientes locais; frutos do mar, cordeiro e carneiro; Chenin Blanc e Pinotage acompanham'],
+    ['Panorama', 'Fusão de influências e ingredientes locais; frutos do mar (lagostas e ostras), cordeiro e carneiro; Chenin Blanc e Pinotage acompanham; de snoek braais a biltongs'],
     ['Cape Malay seafood curry', 'Técnicas e ingredientes malaios com frutos do mar do Cabo; servido com arroz branco ou pão naan'],
     ['Bobotie', 'Carne moída temperada com ovos e especiarias, coberta com leite e ovos e assada; doce e picante, de influência malaia'],
     ['Braai', 'Churrasco sul-africano: boerewors, costelas e espetinhos; com saladas e pão de milho'],
@@ -577,6 +632,8 @@ STUDY_PACKS.push((function () {
     'Pinotage': 'medio',
     'Clima da África do Sul': 'avancado',
     'Wine of Origin (W.O.)': 'avancado',
+    'Mercados do vinho sul-africano': 'avancado',
+    'Mapa das regiões do Cabo Ocidental (KWV)': 'expert',
     'Escopo do Wine of Origin': 'expert',
     'Região Costeira': 'avancado',
     'Stellenbosch': 'medio',
@@ -587,5 +644,5 @@ STUDY_PACKS.push((function () {
     'Cozinha da África do Sul': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'ZA', version: 1, cards: cards };
+  return { code: 'ZA', version: 2, cards: cards };
 })());

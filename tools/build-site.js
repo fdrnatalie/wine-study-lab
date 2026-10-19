@@ -48,9 +48,16 @@ game = expand(game).replace('<head>', '<head><meta name="viewport" content="widt
 fs.mkdirSync(path.join(out, 'demo'), { recursive: true });
 fs.writeFileSync(path.join(out, 'index.html'), app);
 fs.writeFileSync(path.join(out, 'jogo.html'), game);
-fs.copyFileSync(path.join(root, 'build', 'preview.html'), path.join(out, 'demo', 'index.html'));
+// A demonstração fica numa subpasta: as fotos das uvas ficam um nível acima.
+fs.writeFileSync(path.join(out, 'demo', 'index.html'), fs.readFileSync(path.join(root, 'build', 'preview.html'), 'utf8').replace('<head>', '<head><script>window.WSL_ASSETS = "../";</script>'));
 fs.copyFileSync(path.join(root, 'build', 'jogo.html'), path.join(out, 'demo', 'jogo.html'));
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
 // Contornos dos mapas (gerado por tools/build-seeds.js), servido como arquivo estático e guardado em cache pelo navegador.
 fs.copyFileSync(path.join(root, 'build', 'geo.js'), path.join(out, 'geo.js'));
+// Fotos das uvas (fontes abertas, com crédito em 38_GrapePhotoSeed.js).
+const photosDir = path.join(src, 'photos', 'uvas');
+if (fs.existsSync(photosDir)) {
+  fs.mkdirSync(path.join(out, 'uvas'), { recursive: true });
+  fs.readdirSync(photosDir).filter((f) => /\.(jpe?g|png)$/i.test(f)).forEach((f) => fs.copyFileSync(path.join(photosDir, f), path.join(out, 'uvas', f)));
+}
 console.log('build/site: index.html (' + Math.round(app.length / 1024) + ' KB), jogo.html, demo/');

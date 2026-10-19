@@ -43,18 +43,27 @@ STUDY_PACKS.push((function () {
   ]);
   P('Castas tintas do Chile', 'fatos', [
     ['Cabernet Sauvignon', 'Cerca de 37 mil ha; 29% do vinho fino; chegou em meados do séc. XIX'],
+    ['Cabernet: origem e papel', 'Casta bordalesa, uma das mais importantes do mundo e a grande joia da vitivinicultura chilena'],
+    ['Cabernet: por que dá certo', 'Adapta-se fácil e é rica em polifenóis, acidez e taninos, base de grandes vinhos'],
     ['Merlot', '2ª tinta em área, mais de 10 mil ha: vinhos elegantes e aromáticos'],
     ['Carménère', 'Redescoberta em meados dos anos 1990; quase 10 mil ha; robustez e notas vegetais'],
-    ['Syrah', 'Pouco mais de 6 mil ha; equilíbrio e notas de especiarias']
+    ['Syrah', 'Pouco mais de 6 mil ha; equilíbrio e notas de especiarias'],
+    ['Syrah: origem', 'Côtes du Rhône, sul da França, segundo o slide']
   ]);
   P('Castas brancas do Chile', 'fatos', [
     ['Sauvignon Blanc', 'Pouco mais de 11 mil ha, segundo o slide; é a branca mais plantada (cerca de 14 mil ha em 2022)', 'corrigido'],
+    ['Sauvignon Blanc: presença', 'Destaca-se em diversas regiões chilenas'],
     ['Chardonnay', 'O slide a dá como a mais plantada (13 mil ha); em 2022 eram cerca de 10 mil ha', 'corrigido'],
+    ['Chardonnay: estilo', 'Vinhos de enorme intensidade aromática'],
     ['Moscatel de Alexandria', '3ª branca, 6 mil ha: vinhos simples em grande quantidade, não de destaque em qualidade']
   ]);
   P('Cozinha do Chile', 'fatos', [
     ['Origem', 'Fusão de imigrantes árabes, britânicos, italianos, indianos e espanhóis'],
     ['Pratos citados', 'Empanadas, ceviche, curanto, choripán e charquicán']
+  ]);
+  P('Outras regiões do Chile', 'fatos', [
+    ['Quais', 'Coquimbo, Aconcágua, Bío-Bío e Itata: entre as mais importantes áreas produtoras do país'],
+    ['Onde', 'Concentradas nas partes norte e sul do Chile, fora do Vale Central']
   ]);
   P('Grandes produtores do Chile', 'produtores', [
     ['De Martino', ''], ['Concha y Toro', ''], ['Anakena', ''], ['Ventisquero', ''], ['Casa Lapostolle', ''],
@@ -141,16 +150,16 @@ STUDY_PACKS.push((function () {
 
   // ---------- Harmonização ----------
   H('Cozinha do Chile', [
-    ['Empanadas', 'Pastéis de massa recheados com carne, azeitonas, cebola e temperos como páprica e cominho'],
-    ['Ceviche', 'Peixe cru marinado em limão ou lima, com cebola roxa, pimentão, coentro e pimenta'],
+    ['Empanadas', 'Pastéis de massa recheados com carne, azeitonas, cebola e temperos como páprica e cominho; populares no Chile e em outros países da América Latina'],
+    ['Ceviche', 'Peixe cru marinado em limão ou lima, que "cozinha" a carne e a deixa macia; leva cebola roxa, pimentão, coentro e pimenta'],
     ['Curanto', 'Evento comunitário: frutos do mar, batatas, legumes e pães cozidos em buraco, com pedras vulcânicas e folhas de nalca'],
-    ['Choripán', 'Chorizo no pão, muito popular também no Chile'],
-    ['Charquicán', 'Ensopado de carne e legumes com coentro, orégano, cominho, batata, abóbora e cebola']
+    ['Choripán', 'Chorizo no pão; mais popular na Argentina, mas tradicional e muito apreciado também no Chile'],
+    ['Charquicán', 'Ensopado de carne e legumes com coentro, orégano, cominho, batata, abóbora e cebola; as versões variam pelo país conforme a sazonalidade']
   ]);
 
   var LEVELS = {
     'Marcos do vinho chileno': 'avancado', 'O Chile em números': 'medio', 'Clima e solo do Chile': 'avancado',
-    'Castas tintas do Chile': 'medio', 'Castas brancas do Chile': 'medio', 'Cozinha do Chile': 'avancado',
+    'Castas tintas do Chile': 'medio', 'Castas brancas do Chile': 'medio', 'Cozinha do Chile': 'avancado', 'Outras regiões do Chile': 'avancado',
     'Grandes produtores do Chile': 'avancado', 'Vale Central em resumo': 'medio', 'Vale do Maipo': 'medio',
     'Produtores do Maipo': 'avancado', 'Vale do Rapel (Cachapoal)': 'avancado', 'Produtores do Rapel': 'expert',
     'Vale do Curicó': 'avancado', 'Produtores do Curicó': 'expert', 'Vale do Maule': 'avancado', 'Produtores do Maule': 'expert',
@@ -158,7 +167,7 @@ STUDY_PACKS.push((function () {
     'Vale do Itata': 'expert', 'Produtores do Itata': 'expert', 'Vale do Bío-Bío': 'expert', 'Produtores do Bío-Bío': 'expert' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'CL', version: 1, cards: cards };
+  return { code: 'CL', version: 2, cards: cards };
 })());
 
 // ======================= ARGENTINA =======================
@@ -205,11 +214,13 @@ STUDY_PACKS.push((function () {
     ['Origem', 'Cahors, sudoeste da França; levada à Argentina em 1852'],
     ['Área', '45.657 ha: o maior produtor mundial; 23% dos vinhedos do país'],
     ['Entre as tintas', 'Representa 39% do total produzido, segundo o slide', 'conferir'],
-    ['Estilo', 'Cor profunda, aromas frutados e taninos suaves']
+    ['Estilo', 'Cor profunda, aromas frutados e taninos suaves'],
+    ['Perfil', 'Conhecida por vinhos encorpados e intensos; chegou no séc. XIX'],
+    ['Lar', 'Mendoza virou o lar da Malbec: clima seco e solos propícios']
   ]);
   P('Castas brancas da Argentina', 'fatos', [
     ['Torrontés Riojano', 'Mais de 9 mil ha; branca mais importante; cruzamento de Moscatel de Alexandria com Criolla'],
-    ['Chardonnay', 'Pouco menos de 6 mil ha; robusto, amadeirado e aromático'],
+    ['Chardonnay', 'Pouco menos de 6 mil ha; robusto, amadeirado e aromático; 2ª branca em área, mas a preferida de muitos'],
     ['Sauvignon Blanc', '1.900 ha: fresca, leve, versátil; muito apreciada pelos brasileiros'],
     ['Chenin Blanc', '1.744 ha'],
     ['Semillón', '653 ha'],
@@ -217,8 +228,8 @@ STUDY_PACKS.push((function () {
   ]);
   P('Castas tintas da Argentina', 'fatos', [
     ['Bonarda', 'Mais de 18 mil ha, 2ª mais plantada: vinhos frutados e de bom corpo'],
-    ['Cabernet Sauvignon', 'Mais de 14 mil ha: encorpados, complexos e longevos'],
-    ['Syrah', '11 mil ha: complexos, com especiarias e encorpados'],
+    ['Cabernet Sauvignon', 'Mais de 14 mil ha, considerada a 2ª casta mais importante do país: encorpados, complexos e longevos'],
+    ['Syrah', '11 mil ha: complexos, com especiarias e encorpados; uma das melhores castas do mundo, achou na Argentina o terroir perfeito'],
     ['Merlot', '5.062 ha'],
     ['Cabernet Franc', '1.352 ha'],
     ['Pinot Noir', '1.992 ha']
@@ -274,7 +285,7 @@ STUDY_PACKS.push((function () {
   ]);
   R(MZ, 'Luján de Cuyo', 'Luján de Cuyo', 'fatos', [
     ['Fama', 'Considerada a melhor sub-região de Mendoza e da Argentina'],
-    ['Pioneirismo', 'Primeira DOC da Argentina (1989); o slide diz do continente americano', 'conferir'],
+    ['Pioneirismo', 'Primeira DOC da Argentina (1993, segundo a Wikipédia); o slide diz "do continente americano", que não consegui confirmar', 'conferir'],
     ['Distritos', 'Perdriel, Vistalba, Agrelo, Las Compuertas, Carrodilla e Mayor Drummond'],
     ['Produtores', 'Nieto Senetiner, Kaiken, Weinert, Norton, Terrazas de los Andes, Achaval Ferrer, Viña Cobos, Mendel e Catena Zapata']
   ]);
@@ -296,7 +307,7 @@ STUDY_PACKS.push((function () {
     ['Área', '30.856 ha: 2ª província do país, com 16% da área plantada'],
     ['Vales (IGs)', 'Pedernal, Calingasta, Zonda, Ullum, Iglesia e Jáchal'],
     ['Clima e solo', 'Quente e seco; solos aluviais de areia e argila'],
-    ['Tintas', 'Syrah é a casta típica; também Malbec, Cabernet Sauvignon e Bonarda'],
+    ['Tintas', 'Syrah é a casta típica; também Malbec (com diferenças interessantes de outras regiões), Cabernet Sauvignon e Bonarda'],
     ['Brancas', 'Torrontés e castas criollas como Pedro Giménez e Moscatel de Alexandria']
   ]);
   R(SJ, 'La Rioja (Chilecito)', 'La Rioja', 'fatos', [
@@ -331,12 +342,13 @@ STUDY_PACKS.push((function () {
     ['San Patricio del Chañar', 'Surge no fim dos anos 1990 como centro e diversifica os vinhos'],
     ['Área e altitude', '1.764 ha entre 270 e 415 m; a latitude compensa a baixa altitude'],
     ['Clima', 'Quente, noites muito frias, seco, ventos constantes: uvas muito sãs'],
-    ['Castas', 'Malbec, Cabernet Sauvignon, Merlot, Pinot Noir e Chardonnay']
+    ['Castas', 'Malbec, Cabernet Sauvignon, Merlot, Pinot Noir e Chardonnay'],
+    ['Vinhos', 'Notável concentração de cor, aromas muito frutados, grande corpo e estrutura']
   ]);
   R(PT, 'Alto Valle del Río Negro', 'Río Negro', 'fatos', [
     ['Local', 'Vales das bacias dos rios Colorado e Negro; cerca de 1.455 ha'],
     ['Altitude', 'De 370 m nos vales altos a oeste até 4 m perto do Atlântico'],
-    ['Oeste', 'Continental e seco; invernos frios, verões quentes e secos; ventos da cordilheira dão sanidade'],
+    ['Oeste', 'Continental e seco; invernos frios, verões quentes e secos, com muita luminosidade e grande amplitude térmica; ventos da cordilheira dão sanidade'],
     ['Leste', 'San Javier, no Vale Inferior: planície de 4 a 16 m, clima moderado pelo mar (viticultura atlântica)'],
     ['Castas', 'Chardonnay, Malbec, Merlot e Pinot Noir']
   ]);
@@ -364,13 +376,13 @@ STUDY_PACKS.push((function () {
     'Cafayate': 'avancado', 'Catamarca': 'expert', 'Neuquén': 'avancado', 'Río Negro': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'AR', version: 1, cards: cards };
+  return { code: 'AR', version: 2, cards: cards };
 })());
 
 ;
 // ---- 23_SeedStudyBRUY.js
 /**
- * CARTÕES DE ESTUDO — Brasil (Rio Grande do Sul e outras regiões) e Uruguai (material de aula, v1).
+ * CARTÕES DE ESTUDO — Brasil (Rio Grande do Sul e outras regiões) e Uruguai (material de aula, v2).
  * Tópicos curtos; o material pode ter erros: "corrigido" = conferido em fonte aberta e o slide estava errado;
  * "conferir" = não confirmado (fica fora do quiz).
  * Itens: [chave, texto, marca?]. Para 'denominacoes': [nome, descrição, classificação].
@@ -434,12 +446,29 @@ STUDY_PACKS.push((function () {
     ['Expectativa', 'Produção média de 60 mil garrafas de vinho por ano']
   ]);
 
+  P('Indicações geográficas de vinhos do Brasil', 'fatos', [
+    ['IP Vale do São Francisco', 'Associação Vinhovasf (PE e BA)'],
+    ['IP Vinhos de Bituruna', 'Associação Apruvibi (PR)'],
+    ['IP Vales da Uva Goethe', 'Associação Progoethe (SC)'],
+    ['IP Vinhos de Altitude de Santa Catarina', 'Associação Vinhos de Altitude P&A (SC)'],
+    ['IP Altos Montes', 'Associação Apromontes (RS)'],
+    ['IP Farroupilha', 'Associação Afavin (RS)'],
+    ['IP Monte Belo', 'Associação Aprobelo (RS)'],
+    ['IP Pinto Bandeira', 'Associação Asprovinho (RS)'],
+    ['DO Altos de Pinto Bandeira', 'Associação Asprovinho (RS)'],
+    ['IP Vale dos Vinhedos', 'Associação Aprovale (RS)'],
+    ['DO Vale dos Vinhedos', 'Associação Aprovale (RS)'],
+    ['IP Campanha Gaúcha', 'Vinhos da Campanha Gaúcha (RS)'],
+    ['Fonte do mapa', 'IGs registradas no INPI; IP = Indicação de Procedência, DO = Denominação de Origem (Embrapa Uva e Vinho e UCS, dez/2022)']
+  ]);
+
   // ---------- Rio Grande do Sul ----------
   R('Rio Grande do Sul', '', 'Rio Grande do Sul: panorama', 'fatos', [
     ['Peso', 'Maior polo de produção de Vitis vinifera do Brasil'],
     ['Clima', 'Subtropical úmido, verões quentes e invernos moderados'],
     ['Viníferas', 'Cerca de 15% das uvas cultivadas são Vitis vinifera: foco em vinhos finos'],
-    ['Sub-regiões', 'Três importantes: Serra Gaúcha, Campanha Gaúcha e Serra do Sudeste']
+    ['Sub-regiões', 'Três importantes: Serra Gaúcha, Campanha Gaúcha e Serra do Sudeste'],
+    ['Mapa do slide', 'Mostra também Campos de Cima da Serra, junto à Serra Gaúcha, e o Planalto Catarinense logo ao norte']
   ]);
   R('Rio Grande do Sul', '', 'Castas do Rio Grande do Sul', 'fatos', [
     ['As 6 principais', 'Dezenas de variedades, mas a produção se concentra em 6 castas'],
@@ -534,7 +563,7 @@ STUDY_PACKS.push((function () {
   R('Santa Catarina', '', 'Santa Catarina em resumo', 'fatos', [
     ['Fama', 'Brancos de qualidade em regiões de alta altitude e a histórica uva Goethe (com selo de IP)'],
     ['IP de 2021', 'Segunda indicação geográfica para vinhos do estado: Vinhos de Altitude de Santa Catarina'],
-    ['Solo', 'Mistura de argila, areia e matéria orgânica; profundo, bem drenado e fértil nas melhores áreas'],
+    ['Solo', 'Mistura de argila, areia e matéria orgânica; profundo, bem drenado e fértil nas melhores áreas (Vale do Rio do Peixe e Planalto Catarinense)'],
     ['Clima', 'Ameno, com oscilações térmicas que ajudam a qualidade'],
     ['Área', '2.300 ha: Vale do Rio do Peixe 2.100 ha e Planalto Serrano 200 ha']
   ]);
@@ -579,6 +608,7 @@ STUDY_PACKS.push((function () {
     ['Área', '10.000 ha cultivados'],
     ['Condução', 'Principalmente latada; as uvas vão sobretudo ao consumo in natura'],
     ['Estilos', 'Destaque para tintos e espumantes moscatéis; vinhos frutados e frescos'],
+    ['Evolução', 'Viticultura para vinhos e sucos é mais recente; os vinhos de qualidade vêm sobretudo de vinícolas da Bahia e de Pernambuco'],
     ['Paralelo 8', 'A Rio Sol, em Lagoa Grande (PE), faz vinhos e espumantes premiados no Brasil e no exterior']
   ]);
   R('Vale do São Francisco', '', 'Uvas do Vale do São Francisco', 'fatos', [
@@ -595,7 +625,8 @@ STUDY_PACKS.push((function () {
     ['Galeto ao primo canto', 'Frango de leite de cerca de 25 dias (500 a 700 g), assado no espeto; "primo canto" é o primeiro canto'],
     ['Costela fogo de chão', 'Surgiu nas fazendas, quando as costelas, cortes não nobres, ficavam para os peões'],
     ['Matambre recheado', 'De "mata el hambre"; corte de flanco típico do RS, Uruguai e Argentina, trazido pela colonização espanhola'],
-    ['Sagu ao creme', 'Também citado entre os pratos de destaque da cozinha regional']
+    ['Sagu ao creme', 'Também citado entre os pratos de destaque da cozinha regional'],
+    ['Outros pratos populares', 'Carreteiro, puchero, quibebe, mandioca e batata-doce também são comuns nas mesas gaúchas']
   ]);
   H('Santa Catarina', 'Cozinha catarinense', [
     ['Tainha', 'Peixe típico do inverno, pescado de forma artesanal de maio a julho; assada na brasa, no forno, na telha ou na folha de bananeira, ou frita; às vezes recheada com a ova ou farofa']
@@ -620,6 +651,7 @@ STUDY_PACKS.push((function () {
   ]);
 
   var LEVELS = {
+    'Indicações geográficas de vinhos do Brasil': 'expert',
     'O Brasil em resumo': 'medio',
     'Marcos do vinho no Brasil': 'avancado',
     'Vinhedos e produção do Brasil (2022)': 'avancado',
@@ -662,7 +694,7 @@ STUDY_PACKS.push((function () {
     'Cozinha fluminense': 'expert' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'BR', version: 1, cards: cards };
+  return { code: 'BR', version: 2, cards: cards };
 })());
 
 // =====================  URUGUAI  =====================
@@ -702,6 +734,7 @@ STUDY_PACKS.push((function () {
     ['Origem', 'Região de Madiran, na França'],
     ['Chegada', 'Por volta de 1870, com imigrantes franceses; Pascual Harriague plantou as primeiras mudas'],
     ['Estilo', 'Mais frutado e menos rústico que o francês, pelo clima e solo locais'],
+    ['Reconhecimento', 'O Uruguai é visto como um dos principais produtores da variedade; casta emblemática e símbolo das vinícolas do país'],
     ['Influências', 'Rios Uruguai e da Prata e Oceano Atlântico: clima temperado, vinhos estruturados e de taninos macios']
   ]);
   P('Castas brancas do Uruguai', 'fatos', [
@@ -711,8 +744,10 @@ STUDY_PACKS.push((function () {
   ]);
   P('Castas tintas do Uruguai', 'fatos', [
     ['Merlot', '2ª casta mais plantada; versátil e fácil de beber'],
+    ['Merlot: cor', 'Cor azul intensa que lhe daria o nome, segundo o slide', 'conferir'],
     ['Cabernet Sauvignon', 'Originária de Bordeaux; cor rubi intensa e aromas suaves'],
-    ['Cabernet Franc', 'Brotação e maturação precoces; aromas vegetais']
+    ['Cabernet Franc', 'Brotação e maturação precoces; aromas vegetais'],
+    ['Cabernet Franc: origem', 'Do Médoc, segundo o slide', 'conferir']
   ]);
   P('Clima e solo do Uruguai', 'fatos', [
     ['Altitude', 'Média de cerca de 200 m'],
@@ -722,6 +757,15 @@ STUDY_PACKS.push((function () {
   P('Regiões vinícolas do Uruguai', 'fatos', [
     ['INAVI', 'Divide o país em seis grandes zonas; a Metropolitana e a Oceânica seriam as mais importantes, segundo o slide', 'conferir'],
     ['Regiões-chave', 'Canelones, San José e Maldonado']
+  ]);
+  P('As seis zonas vinícolas do Uruguai (mapa)', 'fatos', [
+    ['Litoral Norte', 'Artigas, Salto e Paysandú'],
+    ['Litoral Sul', 'Río Negro, Soriano e Colonia'],
+    ['Metropolitana', 'San José, Canelones e Montevidéu'],
+    ['Centro', 'Durazno, Florida e Lavalleja'],
+    ['Oceânica', 'Maldonado e Rocha'],
+    ['Norte', 'Rivera e Tacuarembó'],
+    ['Sem zona no mapa', 'Flores, Cerro Largo e Treinta y Tres aparecem em branco']
   ]);
   P('Grandes produtores do Uruguai', 'produtores', [
     ['Bodegas Carrau', ''], ['Bodega Garzón', ''], ['Giménez Méndez', ''], ['Bodega Bouza', ''],
@@ -771,6 +815,7 @@ STUDY_PACKS.push((function () {
     'Castas tintas do Uruguai': 'medio',
     'Clima e solo do Uruguai': 'avancado',
     'Regiões vinícolas do Uruguai': 'avancado',
+    'As seis zonas vinícolas do Uruguai (mapa)': 'expert',
     'Grandes produtores do Uruguai': 'avancado',
     'Canelones': 'avancado',
     'Grandes produtores de Canelones': 'expert',
@@ -780,13 +825,13 @@ STUDY_PACKS.push((function () {
     'Cozinha do Uruguai': 'medio' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'UY', version: 1, cards: cards };
+  return { code: 'UY', version: 2, cards: cards };
 })());
 
 ;
 // ---- 23_SeedStudyEU.js
 /**
- * CARTÕES DE ESTUDO — Alemanha, Áustria, Grécia, Líbano e Eslovênia (aulas 30 e 31; v1).
+ * CARTÕES DE ESTUDO — Alemanha, Áustria, Grécia, Líbano e Eslovênia (aulas 30 e 31; v2).
  * Tópicos curtos; o material pode ter erros: "corrigido" = conferido em fonte aberta e diferente do slide;
  * "conferir" = não confirmado em fonte aberta (fica fora do quiz).
  * Itens: [chave, texto, marca?]. Para 'denominacoes': [nome, descrição, classificação].
@@ -824,6 +869,7 @@ STUDY_PACKS.push((function () {
     ['Nome', 'Vem da igreja Liebfrauenstift-Kirche, em Worms (Rheinhessen)'],
     ['Origem', 'Müller-Thurgau, Silvaner, Kerner e outras, em vinhedos ao redor de Worms'],
     ['Fama', 'Popular no séc. XIX e início do XX; virou sinônimo de vinho genérico e de massa'],
+    ['Popularização', 'Cresceu com a chegada das garrafas de vidro e dos rótulos padronizados'],
     ['Regras', 'Entre 18 e 40 g/L de açúcar residual; 70% de Riesling, Silvaner, Kerner ou Müller-Thurgau'],
     ['Onde', 'Rheinhessen, Nahe, Rheingau e Pfalz']
   ]);
@@ -836,22 +882,23 @@ STUDY_PACKS.push((function () {
   P('Outras brancas da Alemanha', 'fatos', [
     ['Müller-Thurgau', 'Cruzamento de Riesling e Madeleine Royale; leve, aromática e menos ácida que a Riesling'],
     ['Silvaner', 'Maturação precoce; aromas sutis e frescos, notas herbáceas; de seco a ligeiramente doce'],
-    ['Grauburgunder', 'Pinot Gris; corpo médio, boa acidez, frutas maduras, às vezes especiarias e frutas secas']
+    ['Grauburgunder', 'Pinot Gris, parente da Pinot Noir; corpo médio, boa acidez, frutas maduras, às vezes especiarias e frutas secas']
   ]);
   P('Tintas da Alemanha', 'fatos', [
-    ['Spätburgunder', 'Pinot Noir, a tinta mais importante; elegante e complexa, frutas vermelhas e notas terrosas'],
-    ['Dornfelder', 'Cruzamento de Helfensteiner e Heroldrebe; tintos profundos, frutas escuras e especiarias'],
+    ['Spätburgunder', 'Pinot Noir, a tinta mais importante; elegante e complexa, frutas vermelhas e notas terrosas; sensível ao terroir e à vinificação'],
+    ['Dornfelder', 'Cruzamento de Helfensteiner e Heroldrebe; tintos profundos, frutas escuras e especiarias; popular em tintos secos e suaves'],
     ['Blauer Portugieser', 'Maturação precoce; tintos leves e frutados, pouco tanino; entra em blends e rosés']
   ]);
   P('Eiswein', 'fatos', [
     ['O que é', 'Vinho de uvas superamadurecidas congeladas naturalmente na vinha'],
     ['Como', 'Prensadas ainda congeladas, a água fica no gelo e o açúcar sai mais fácil'],
     ['Resultado', 'Extremamente doce, raro e sofisticado'],
-    ['Destaques', 'Mosel, Pfalz e Franken']
+    ['Destaques', 'Mosel, Pfalz e Franken'],
+    ['Fama', 'Muitas regiões produzem; é considerado uma joia alemã']
   ]);
   P('Outras regiões alemãs', 'lista', [
     ['', 'Franken (Francônia)'], ['', 'Ahr'], ['', 'Nahe'], ['', 'Mittelrhein'],
-    ['', 'Hessische Bergstrasse'], ['', 'Württemberg'], ['', 'Baden']
+    ['', 'Hessische Bergstrasse'], ['', 'Württemberg'], ['', 'Baden'], ['', 'Saale-Unstrut'], ['', 'Sachsen']
   ]);
   P('Grandes produtores da Alemanha', 'produtores', [
     ['Meyer-Näkel', ''], ['Dr. Loosen', ''], ['Hermann Dönnhoff', ''], ['Eugen Müller', ''], ['August Eser', ''], ['Hupfeld', '']
@@ -859,7 +906,7 @@ STUDY_PACKS.push((function () {
 
   R('Mosel', '', 'Mosel em resumo', 'fatos', [
     ['Onde', 'Sudoeste, na fronteira com Luxemburgo'],
-    ['Nome', 'Vem de três rios (Mosel, Saar e Ruwer), sendo o Mosel o maior'],
+    ['Nome', 'Mosel-Saar-Ruwer: vem de três rios, sendo o Mosel o maior'],
     ['Área', 'Cerca de 9.000 ha'],
     ['Brancos', '90% do vinho é branco; Riesling dominante'],
     ['Bereiche', 'Cinco sub-regiões, segundo o slide', 'conferir'],
@@ -915,7 +962,7 @@ STUDY_PACKS.push((function () {
   ]);
 
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
-  return { code: 'DE', version: 1, cards: cards };
+  return { code: 'DE', version: 2, cards: cards };
 })());
 
 // ======================  ÁUSTRIA  ======================
@@ -986,7 +1033,8 @@ STUDY_PACKS.push((function () {
   R('Viena (Wien)', '', 'Viena', 'fatos', [
     ['Curiosidade', 'Capital com vinhedos dentro dos limites urbanos (o slide diz ser a única capital europeia)', 'conferir'],
     ['Castas', 'Grüner Veltliner, Riesling, Zweigelt e Blaufränkisch'],
-    ['Vinhedos', 'Nas colinas ao redor da cidade, com encostas íngremes e boa exposição ao sol']
+    ['Vinhedos', 'Nas colinas ao redor da cidade, com encostas íngremes e boa exposição ao sol'],
+    ['Fama', 'Conhecida também por vinícolas pitorescas e tradições vinícolas antigas']
   ]);
   R('Burgenland', '', 'Burgenland em resumo', 'fatos', [
     ['Onde', 'Leste, na fronteira com a Hungria'],
@@ -999,7 +1047,8 @@ STUDY_PACKS.push((function () {
     ['Onde', 'Sudeste; paisagem montanhosa com vinhas em encostas'],
     ['Brancos', 'Frescos e aromáticos, sobretudo de Sauvignon Blanc e Welschriesling'],
     ['Laranja', 'Também vinhos laranja, de brancas com maceração prolongada'],
-    ['Tintos', 'Blauer Wildbacher e Zweigelt']
+    ['Tintos', 'Blauer Wildbacher e Zweigelt'],
+    ['Welschriesling', 'O slide a chama de autóctone; origem não confirmada em fonte aberta', 'conferir']
   ]);
 
   var LEVELS = { 'A Áustria em números': 'avancado',
@@ -1025,7 +1074,7 @@ STUDY_PACKS.push((function () {
   ]);
 
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
-  return { code: 'AT', version: 1, cards: cards };
+  return { code: 'AT', version: 2, cards: cards };
 })());
 
 // ======================  GRÉCIA  ======================
@@ -1038,6 +1087,12 @@ STUDY_PACKS.push((function () {
   }
   function H(group, title, items) { cards.push({ topic: 'harmonizacao', group: group, title: title, kind: 'fatos', items: mk(items) }); }
 
+  P('A Grécia em resumo', 'fatos', [
+    ['Raízes', 'Vitivinicultura milenar, com ampla variedade de uvas nativas e regiões únicas'],
+    ['Paisagem', 'Das encostas vulcânicas de Santorini às colinas verdes da Macedônia'],
+    ['Hoje', 'Ressurgimento nas últimas décadas e reconhecimento internacional por qualidade, originalidade e caráter'],
+    ['Ícones', 'Assyrtiko mineral de Santorini e Xinomavro robusto da Macedônia']
+  ]);
   P('A Grécia em números', 'numeros', [
     ['96 mil ha', 'Vinhedos'],
     ['Mais de 300', 'Castas nativas, segundo o slide (a Wikipedia cita cerca de 200 variedades)', 'conferir'],
@@ -1058,15 +1113,18 @@ STUDY_PACKS.push((function () {
     ['1821', 'Turcos perdem e destroem vinhedos; segue vinho de baixa qualidade'],
     ['1898-1920', 'Filoxera, seguida de investimento em cooperativas e quantidade'],
     ['Pós-guerras', 'Cinco grupos dominam: Achaia, Cambas, Kourtakis, Boutaris e Tsantalis'],
-    ['A partir de 1980', 'Regulamentação e melhora da qualidade, com padrões europeus'],
+    ['A partir de 1980', 'Regulamentação e melhora da qualidade, com padrões europeus, mas com muitos problemas econômicos'],
     ['1990-2000', 'Mercado amadurece; crescem vinícolas independentes de pequena produção'],
-    ['Hoje', 'Único setor agrícola do país totalmente autofinanciado']
+    ['Hoje', 'Mais saudável e consistente; único setor agrícola do país totalmente autofinanciado']
   ]);
   P('Geografia da Grécia', 'fatos', [
     ['Ilhas', 'Cerca de 3.000 ilhas, 63 habitadas, segundo o slide; a Wikipedia cita até 227 habitadas', 'corrigido'],
     ['Latitude', '34º a 42º N'],
-    ['Mares', 'Egeu a leste, Jônico a oeste'],
+    ['Mares', 'Egeu a leste, Jônico a oeste e mar da Líbia ao sul'],
+    ['Mar Jônico', 'O slide o diz parte do Adriático; é uma baía do Mediterrâneo ligada ao Adriático (Wikipedia)', 'corrigido'],
     ['Relevo', 'Muito montanhosa, com terras baixas só perto da costa; Pindos é a espinha dorsal'],
+    ['Cordilheiras', 'O slide as diz extensão dos Alpes da Europa Central; a Wikipedia diz que os Pindos prolongam os Alpes Dináricos', 'corrigido'],
+    ['Peloponeso', 'Uma longa e estreita faixa de mar o separa quase por completo do resto do país; as montanhas seguem até o fim dele'],
     ['Monte Olimpo', '2.917 m, o pico mais alto, perto do Egeu'],
     ['Planícies', 'Três importantes: Tessália, Macedônia e Trácia'],
     ['Ilhas do Egeu', 'Cordilheiras submersas emergem nos pontos mais altos e formam as ilhas do sul do Egeu']
@@ -1086,8 +1144,8 @@ STUDY_PACKS.push((function () {
   ]);
   P('Tintas da Grécia', 'fatos', [
     ['Xinomavro', 'Sobretudo da Macedônia; tintos encorpados, taninos firmes, bons para envelhecer'],
-    ['Agiorgitiko', 'Sobretudo do Peloponeso; versátil, de tintos leves a encorpados'],
-    ['Mavrodaphne', 'Sobretudo do Peloponeso; tintos doces, aromáticos e encorpados, também fortificados']
+    ['Agiorgitiko', 'Sobretudo do Peloponeso; versátil, de tintos leves a encorpados; amplamente cultivada e apreciada'],
+    ['Mavrodaphne', 'Sobretudo do Peloponeso; tintos doces, aromáticos e encorpados, também fortificados; valorizada localmente']
   ]);
   P('Brancas da Grécia', 'fatos', [
     ['Assyrtiko', 'Sobretudo de Santorini; seca, fresca e mineral; reconhecida no mundo'],
@@ -1162,7 +1220,8 @@ STUDY_PACKS.push((function () {
     ['Castas', 'Vilana e Vidiano, brancas']
   ]);
 
-  var LEVELS = { 'A Grécia em números': 'avancado',
+  var LEVELS = { 'A Grécia em resumo': 'avancado',
+    'A Grécia em números': 'avancado',
     'Marcos do vinho grego': 'avancado',
     'Geografia da Grécia': 'expert',
     'Solo e clima da Grécia': 'avancado',
@@ -1191,7 +1250,7 @@ STUDY_PACKS.push((function () {
   ]);
 
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
-  return { code: 'GR', version: 1, cards: cards };
+  return { code: 'GR', version: 2, cards: cards };
 })());
 
 // ======================  LÍBANO  ======================
@@ -1206,6 +1265,8 @@ STUDY_PACKS.push((function () {
   P('O Líbano em resumo', 'fatos', [
     ['História', 'Mais de 5.000 anos de vinho, ligados aos fenícios (Byblos, Sidon e Tyre), que o espalharam pelo Mediterrâneo'],
     ['Otomanos', 'A tradição foi preservada por comunidades cristãs, sobretudo no Vale do Bekaa'],
+    ['Comércio', 'Fenícios vendiam vinho a Egito, Grécia e Roma, ajudando a expandir a Vitis vinifera no mundo antigo'],
+    ['Notoriedade', 'Pouco conhecido no cenário global até tempos recentes'],
     ['Área', 'Cerca de 2.000 ha de vinhedos'],
     ['Produção', '8 a 10 milhões de garrafas por ano'],
     ['Estilo', 'Forte vocação para tintos estruturados, de estilo mediterrâneo']
@@ -1217,6 +1278,7 @@ STUDY_PACKS.push((function () {
     ['Tintas', 'Cabernet Sauvignon, Cinsault, Carignan, Syrah, Grenache e Mourvèdre'],
     ['Brancas', 'Chardonnay, Sauvignon Blanc, Viognier e Muscat'],
     ['Cinsault', 'Por décadas, a espinha dorsal dos vinhos libaneses, antes das bordalesas'],
+    ['Perfil', 'Predominam castas internacionais, bem adaptadas ao terroir local'],
     ['Autóctones', 'Obaideh e Merwah (renascimento recente)'],
     ['Parentesco', 'Obaideh e Merwah seriam parentes antigas de Chardonnay e Sémillon', 'conferir']
   ]);
@@ -1237,11 +1299,16 @@ STUDY_PACKS.push((function () {
     ['Colheita', 'Manual, obrigatória pelo relevo'],
     ['Irrigação', 'Raramente necessária (vinhas profundas)'],
     ['Cinsault', 'Vinhas antigas, com mais de 60 anos'],
-    ['Resiliência', 'Produção mantida mesmo na guerra civil']
+    ['Resiliência', 'Produção mantida mesmo na guerra civil'],
+    ['Identidade', 'Forte identidade fenícia; o vinho é mais que agricultura, é patrimônio cultural milenar']
   ]);
 
+  P('Vinícolas no mapa do Líbano', 'lista', [
+    ['', 'Batroun: Château Marsyas'], ['', 'Château Musar e Château St Thomas'], ['', 'Bekaa: Château Ksara, Château Kefraya e Massaya'], ['', 'Jezzine: Karam Wines']
+  ]);
   R('Vale do Bekaa', '', 'Vale do Bekaa', 'fatos', [
     ['Peso', 'Mais de 80% da produção nacional, segundo o slide', 'conferir'],
+    ['Proteção', 'Vale protegido por montanhas, a cerca de 1.000 m; dias quentes e noites frias'],
     ['Altitude', 'Média de 900 a 1.200 m'],
     ['Clima', 'Mediterrâneo continentalizado: verões quentes e secos, invernos frios com neve, grande amplitude térmica'],
     ['Solos', 'Calcário, cascalho, argila e pedra'],
@@ -1268,13 +1335,14 @@ STUDY_PACKS.push((function () {
     'Estilo dos vinhos libaneses': 'avancado',
     'Château Musar': 'avancado',
     'Classificação e particularidades': 'expert',
+    'Vinícolas no mapa do Líbano': 'expert',
     'Vale do Bekaa': 'avancado',
     'Produtores históricos do Bekaa': 'avancado',
     'Monte Líbano': 'expert',
     'Sul do Líbano': 'expert' };
 
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
-  return { code: 'LB', version: 1, cards: cards };
+  return { code: 'LB', version: 2, cards: cards };
 })());
 
 // ======================  ESLOVÊNIA  ======================
@@ -1286,6 +1354,12 @@ STUDY_PACKS.push((function () {
     cards.push({ topic: 'regiao', ref: sub ? ['Eslovênia', region, sub] : ['Eslovênia', region], title: title, kind: kind, items: mk(items) });
   }
 
+  P('A Eslovênia em resumo', 'fatos', [
+    ['Origem', 'Vitivinicultura remonta aos tempos romanos, nas encostas dos Alpes Julianos e nas colinas de Brda (segundo o slide, em outro ponto, há 2.500 anos)'],
+    ['Estilos', 'Grande variedade, refletindo microclimas e solos diversos'],
+    ['Regiões', 'Três principais: Primorska, Podravje e Posavje'],
+    ['Sustentabilidade', 'Abordagem sustentável, com muitos produtores orgânicos e biodinâmicos']
+  ]);
   P('A Eslovênia em números', 'numeros', [
     ['14.900 ha', 'Vinhedos, segundo o slide (a Wikipedia cita 22.300 ha)', 'conferir'],
     ['55 mi L', 'Produção média anual, segundo o slide (a Wikipedia cita 80 a 90 mi L)', 'conferir'],
@@ -1327,20 +1401,24 @@ STUDY_PACKS.push((function () {
   R('Primorska (Litoral)', '', 'Primorska', 'fatos', [
     ['Local', 'Oeste; influência do Adriático e dos Alpes Julianos'],
     ['Clima e solo', 'Mediterrâneo e calcário'],
-    ['Castas', 'Rebula, Malvazija Istarska e Refošk']
+    ['Castas', 'Rebula, Malvazija Istarska e Refošk'],
+    ['Sustentabilidade', 'Muitos produtores adotam práticas sustentáveis']
   ]);
   R('Podravje (Drava)', '', 'Podravje', 'fatos', [
     ['Clima', 'Continental: invernos frios e verões quentes'],
     ['Solos', 'Variados e férteis'],
-    ['Castas', 'Sauvignon Blanc, Chardonnay, Riesling, Pinot Gris, Pinot Noir e Blaufränkisch']
+    ['Castas', 'Sauvignon Blanc, Chardonnay, Riesling, Pinot Gris, Pinot Noir e Blaufränkisch'],
+    ['Tradição', 'Rica tradição vinícola e adoção de práticas sustentáveis']
   ]);
   R('Posavje (Baixo Sava)', '', 'Posavje', 'fatos', [
     ['Clima', 'Mais temperado'],
     ['Paisagem', 'Vales férteis, colinas suaves e planícies fluviais'],
-    ['Castas', 'Riesling, Sauvignon Blanc, Chardonnay, Blaufränkisch e Zweigelt']
+    ['Castas', 'Riesling, Sauvignon Blanc, Chardonnay, Blaufränkisch e Zweigelt'],
+    ['Sustentabilidade', 'Produtores visam preservar o ambiente e fazer vinhos de alta qualidade']
   ]);
 
-  var LEVELS = { 'A Eslovênia em números': 'expert',
+  var LEVELS = { 'A Eslovênia em resumo': 'avancado',
+    'A Eslovênia em números': 'expert',
     'Marcos do vinho esloveno': 'expert',
     'Três regiões da Eslovênia': 'avancado',
     'Brancas da Eslovênia': 'avancado',
@@ -1351,13 +1429,13 @@ STUDY_PACKS.push((function () {
     'Posavje': 'expert' };
 
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
-  return { code: 'SI', version: 1, cards: cards };
+  return { code: 'SI', version: 2, cards: cards };
 })());
 
 ;
 // ---- 23_SeedStudyFR1.js
 /**
- * CARTÕES DE ESTUDO — França: panorama e Bordeaux (aulas 14, 15 e 16; v1).
+ * CARTÕES DE ESTUDO — França: panorama e Bordeaux (aulas 14, 15 e 16; v2).
  * Tópicos curtos; o material pode ter erros: "corrigido" = conferido em fonte aberta (Wikipedia) e o slide estava errado;
  * "conferir" = não confirmado (fica fora do quiz). Itens: [chave, texto, marca?]. Para 'denominacoes': [nome, descrição, classificação].
  */
@@ -1412,7 +1490,9 @@ STUDY_PACKS.push((function () {
     ['Produção', 'Mais de 700 milhões de litros por ano, segundo o slide', 'conferir'],
     ['Participação', 'Uma em cada três garrafas da França e uma em cada dez do mundo (Robert Joseph), segundo o slide', 'conferir'],
     ['Castas', 'Influência do Rhône: Syrah, Grenache, Carignan, Viognier e Clairette'],
-    ['Novidades', 'Com investidores estrangeiros (Austrália, Nova Zelândia), plantam e testam Cabernet Sauvignon, Merlot e Chardonnay']
+    ['Novidades', 'Com investidores estrangeiros (Austrália, Nova Zelândia), plantam e testam Cabernet Sauvignon, Merlot e Chardonnay'],
+    ['Estilos', 'Grande variedade de estilos e de uvas cultivadas'],
+    ['Objetivo', 'Movimento de produtores locais para criar uma identidade positiva para os vinhos da região']
   ]);
 
   // ---------- Champagne ----------
@@ -1445,6 +1525,7 @@ STUDY_PACKS.push((function () {
   R('Alsácia', '', 'Alsácia: perfil e castas', 'fatos', [
     ['Local', 'Nordeste, fronteira com a Alemanha; forte influência alemã'],
     ['Estilo', 'Brancos de mineralidade e elegância'],
+    ['Fama', 'Segundo o slide, a mais importante região produtora de vinhos brancos do mundo', 'conferir'],
     ['Uvas', 'Dez cultivadas, segundo o slide', 'conferir'],
     ['Nobres', 'Só 4 podem compor Grand Cru: Riesling, Gewurztraminer, Pinot Gris e Muscat']
   ]);
@@ -1457,6 +1538,7 @@ STUDY_PACKS.push((function () {
     ['100', 'AOCs na Borgonha (o slide diz 110)', 'corrigido']
   ]);
   R('Borgonha', '', 'Borgonha: classificação e castas', 'fatos', [
+    ['Fama', 'Cinco sub-regiões de vinhos de fama internacional, tidos como o ápice da enologia clássica; séculos de tradição'],
     ['Origem', 'Sistema histórico criado por monges cistercienses no fim da Idade Média'],
     ['Categorias', 'Grand Cru e Premier Cru (o slide simplifica: há também village e regional, 4 níveis)', 'corrigido'],
     ['Complicação', 'Pelo sistema napoleônico de herança, um vinhedo tem dezenas de donos: grande variação de qualidade num mesmo cru'],
@@ -1491,11 +1573,12 @@ STUDY_PACKS.push((function () {
     ['57', 'AOCs, segundo o slide; a Wikipedia cita 65', 'conferir'],
     ['7.000', 'Châteaux, segundo o slide; a Wikipedia cita cerca de 5.660 produtores', 'conferir'],
     ['12.000', 'Viticultores (produtores de uvas), segundo o slide', 'conferir'],
-    ['57', 'Cooperativas, segundo o slide', 'conferir'],
+    ['57', 'Cooperativas que apoiam o pequeno produtor, segundo o slide', 'conferir'],
     ['400 e 130', 'Negociantes e corretores que comercializam o vinho, segundo o slide', 'conferir']
   ]);
   R('Bordeaux', '', 'O nome Bordeaux', 'fatos', [
     ['Etimologia', 'Segundo o slide, de "au bord de l\'eau" (à beira d\'água); é etimologia popular', 'conferir'],
+    ['Local', 'Sudoeste da França, no Atlântico'],
     ['Água', 'Rios e afluentes serviram de rota de escoamento do vinho; região no Atlântico, com um dos portos mais movimentados da França'],
     ['Escala', 'Descrita como um "império": impressiona pela quantidade e pela qualidade']
   ]);
@@ -1514,38 +1597,62 @@ STUDY_PACKS.push((function () {
     ['Margem direita', 'Rios Dordogne e Gironde (o slide diz Garonne); Merlot predomina; vinhos suaves, frutados e de estrutura equilibrada', 'corrigido'],
     ['Margem direita: nomes', 'Saint-Émilion e Pomerol, além de Fronsac, Lalande-de-Pomerol, Côtes de Castillon e Côtes de Francs'],
     ['Margem esquerda', 'Médoc e Graves; Cabernet Sauvignon predomina; vinhos encorpados e de longa guarda'],
-    ['Margem esquerda: nomes', 'Graves, Haut-Médoc e as comunas Pauillac, Margaux, Saint-Julien e Saint-Estèphe']
+    ['Margem esquerda: nomes', 'Graves, Haut-Médoc e as comunas Pauillac, Margaux, Saint-Julien e Saint-Estèphe'],
+    ['Margem direita: perfil', 'Quase só tintos: taninos suaves, estrutura arredondada; cereja, ameixa, especiarias, tabaco e às vezes chocolate'],
+    ['Margem direita: público', 'Vinhos acessíveis, atraentes no mercado interno e no externo; as sub-regiões menos famosas dão opções para vários paladares e bolsos'],
+    ['Margem esquerda: rio', 'Ao longo do Gironde'],
+    ['Margem esquerda: fama', 'Lar de alguns dos vinhos mais prestigiosos (Lafite Rothschild, Margaux); garrafas muito valorizadas por colecionadores'],
+    ['Margem esquerda: perfil', 'Predomínio de tintas (Cabernet Sauvignon e Merlot): vinhos encorpados e de longa guarda'],
+    ['Margem esquerda: destaques', 'Pauillac e Margaux brilham no mundo; as demais sub-regiões também têm alta qualidade e estilos variados'],
+    ['Perfil no slide da margem esquerda', 'O slide repete o texto da margem direita (taninos suaves, cereja, ameixa, chocolate), o que destoa de "encorpados e de longa guarda"', 'conferir']
   ]);
   R('Bordeaux', '', 'Merlot', 'fatos', [
     ['Origem', 'Bordeaux; cultivada no mundo todo'],
     ['Cacho', 'Médio a grande, bagos de casca fina: vinhos de cor vermelha profunda'],
     ['Aromas', 'Cereja, ameixa, chocolate, tabaco e especiarias'],
     ['Papel', 'Rainha da margem direita; no Médoc entra nos cortes para dar suavidade'],
-    ['Perfil', 'Taninos suaves, adaptável a vários terroirs']
+    ['Perfil', 'Taninos suaves, adaptável a vários terroirs'],
+    ['Fama', 'Acessível e versátil: escolha popular entre iniciantes e apreciadores']
   ]);
   R('Bordeaux', '', 'Cabernet Sauvignon', 'fatos', [
     ['Origem', 'Cruzamento de Cabernet Franc com Sauvignon Blanc, entre o fim do séc. XVII e o início do XVIII, em Bordeaux'],
     ['Cacho', 'Casca espessa: vinhos encorpados, taninos robustos e grande longevidade'],
     ['Aromas', 'Cassis, amora e especiarias'],
-    ['Papel', 'Predomina na margem esquerda; base dos Grands Crus do Médoc']
+    ['Papel', 'Predomina na margem esquerda; base dos Grands Crus do Médoc'],
+    ['Perfil', 'Adaptável a vários climas; une elegância, complexidade e potência; presente em cortes renomados']
   ]);
   R('Bordeaux', '', 'Outras tintas de Bordeaux', 'fatos', [
-    ['Cabernet Franc', 'Complexidade, aromas herbáceos e de especiarias (o slide troca as descrições de Franc e Sauvignon)', 'corrigido'],
+    ['Cabernet Franc', 'Complexidade, aromas herbáceos e de especiarias; também comum na margem esquerda (o slide troca as descrições de Franc e Sauvignon)', 'corrigido'],
     ['Petit Verdot', 'Em pequena quantidade: cor profunda e notas de especiarias']
   ]);
   R('Bordeaux', '', 'Brancas de Bordeaux', 'fatos', [
-    ['Sauvignon Blanc', 'Acidez vibrante e aromas cítricos, que dão frescor (o slide troca com a Sémillon)', 'corrigido'],
+    ['Sauvignon Blanc', 'Acidez vibrante e aromas cítricos, como limão e grapefruit, que dão frescor (o slide troca com a Sémillon)', 'corrigido'],
     ['Sémillon', 'Corpo e textura aveludada; muito afetada por podridão nobre: complexidade e mel (o slide troca com a Sauvignon)', 'corrigido'],
     ['Muscadelle', 'Pouca quantidade: aromas florais e frutados; equilibra Sauvignon Blanc e Sémillon']
   ]);
 
+  R('Bordeaux', '', 'Mapa de Bordeaux: denominações', 'fatos', [
+    ['Médoc', 'Médoc, Haut-Médoc, Saint-Estèphe, Pauillac, Saint-Julien, Listrac-Médoc, Moulis e Margaux'],
+    ['Graves e doces', 'Pessac-Léognan, Graves, Cérons, Barsac e Sauternes; a leste Loupiac, Sainte-Croix-du-Mont e Saint-Macaire'],
+    ['Entre-Deux-Mers', 'Entre-Deux-Mers, Haut-Benauge, Graves de Vayres, Cadillac Côtes de Bordeaux e Sainte-Foy-Bordeaux'],
+    ['Perto de Libourne', 'Pomerol, Lalande-de-Pomerol, Fronsac, Canon-Fronsac e Saint-Émilion'],
+    ['Satélites de Saint-Émilion', 'Lussac, Montagne, Puisseguin e Saint-Georges, todos com "Saint-Émilion" no nome'],
+    ['Côtes', 'Blaye Côtes de Bordeaux, Côtes de Bourg, Francs Côtes de Bordeaux e Castillon Côtes de Bordeaux']
+  ]);
+  cards.push({ topic: 'producao', group: 'Espumantes', title: 'Método tradicional: como é feito (slide da França)', kind: 'lista', items: mk([
+    ['', 'O vinho base passa por uma segunda fermentação em garrafa'],
+    ['', 'Depois da fermentação, fica em contato com as leveduras por 1 a 10 anos, conforme a legislação, segundo o slide', 'conferir'],
+    ['', 'Terminado o amadurecimento, as leveduras são retiradas e o espumante tem seu estilo definido']
+  ]) });
+
   // ---------- Classificação de 1855 ----------
   R('Bordeaux', '', 'Classificação de 1855', 'fatos', [
     ['Contexto', 'Feita para a Exposição Universal de Paris; ainda em vigor'],
-    ['Propriedades', '61 châteaux, quase todos da margem esquerda (Médoc, mais Haut-Brion de Graves)'],
+    ['Propriedades', '61 châteaux, quase todos da margem esquerda do Gironde (Médoc, mais Haut-Brion de Graves)'],
     ['Categorias', 'Cinco, de Premiers Crus a Cinquièmes Crus'],
     ['Base', 'Reputação dos vinhos na época; muito estável desde então'],
     ['Mudança única', 'Mouton-Rothschild promovido a Premier Cru em 1973'],
+    ['Debate', 'Há debates sobre a imutabilidade do sistema, mas segue como referência fundamental e dá prestígio duradouro'],
     ['Contagem', '5 Premiers, 14 Deuxièmes, 14 Troisièmes, 10 Quatrièmes e 18 Cinquièmes']
   ]);
   R('Bordeaux', '', '1855: Premiers Crus', 'fatos', [
@@ -1611,6 +1718,7 @@ STUDY_PACKS.push((function () {
     ['Estilo', 'Alguns dos tintos mais prestigiosos do mundo; domina a Cabernet Sauvignon'],
     ['Solo', 'Cascalho, com drenagem excepcional'],
     ['Aromas', 'Cassis, grafite e tabaco; taninos firmes e longevidade'],
+    ['Perfil', 'Força, estrutura e complexidade; vinhos de classe mundial'],
     ['Ícones', 'Château Lafite Rothschild e Château Latour']
   ]);
   R('Bordeaux', 'Saint-Julien', 'Saint-Julien', 'fatos', [
@@ -1630,6 +1738,7 @@ STUDY_PACKS.push((function () {
   R('Bordeaux', 'Graves', 'Graves', 'fatos', [
     ['Nome', 'Do solo de cascalho, pedras e seixos, bem drenado'],
     ['Clima', 'Temperado, influenciado pelo rio Garonne'],
+    ['Terroir', 'Solo bem drenado: uvas concentradas e complexas'],
     ['Tintos', 'Liderados pela Cabernet Sauvignon: taninos estruturados e frutas escuras'],
     ['Brancos', 'Sauvignon Blanc e Sémillon: frescor, acidez vibrante e aromas cítricos']
   ]);
@@ -1664,7 +1773,7 @@ STUDY_PACKS.push((function () {
     ['Premier A hoje', 'Em 2022 só Château Figeac e Château Pavie ocupam o topo']
   ]);
   R('Bordeaux', 'Saint-Émilion', 'Grandes produtores de Saint-Émilion', 'produtores', [
-    ['Cheval Blanc', ''], ['Ausone', ''], ['Pavie', ''], ['Figeac', '']
+    ['Cheval Blanc', ''], ['Ausone', ''], ['Pavie', ''], ['Figeac', ''], ['Château Angélus', '']
   ]);
   R('Bordeaux', 'Pomerol', 'Pomerol', 'fatos', [
     ['Local', 'Pequena sub-região na margem direita do Dordogne, a nordeste de Libourne (o slide diz Garonne e a oeste)', 'corrigido'],
@@ -1677,6 +1786,7 @@ STUDY_PACKS.push((function () {
     ['Aromas', 'Frutas vermelhas, ameixa, alcaçuz, tabaco e toques de terra'],
     ['Guarda', 'Envelhecem bem e ganham profundidade'],
     ['Vinificação', 'Fermentação em aço inox e envelhecimento em carvalho francês'],
+    ['Fama', 'Pétrus, Le Pin e Lafleur estão entre os vinhos mais cobiçados do mundo, cada château com estilo próprio; atrai colecionadores'],
     ['Classificação', 'Pomerol não tem classificação oficial (nenhuma das de Bordeaux inclui a região)']
   ]);
   R('Bordeaux', 'Pomerol', 'Grandes produtores de Pomerol', 'produtores', [
@@ -1690,20 +1800,21 @@ STUDY_PACKS.push((function () {
     ['Preço', 'Excelente relação qualidade-preço: tintos de Bordeaux sem os preços das sub-regiões famosas']
   ]);
   R('Bordeaux', '', 'Outras sub-regiões da margem direita', 'lista', [
-    ['', 'Lalande-de-Pomerol'], ['', 'Côtes de Castillon'], ['', 'Côtes de Francs'], ['', 'Fronsac e Canon-Fronsac']
+    ['', 'Lalande-de-Pomerol'], ['', 'Côtes de Castillon'], ['', 'Côtes de Francs'], ['', 'Fronsac e Canon-Fronsac'],
+    ['', 'Vinhos de alta qualidade a preços mais acessíveis, também com Merlot nos cortes']
   ]);
 
   // =====================  HARMONIZAÇÕES  =====================
   H('Bordeaux', 'Cozinha de Bordeaux: margem direita', [
     ['Ingredientes locais', 'Carnes, peixes, cogumelos, alcachofras, echalota e hortaliças (Pomerol e Saint-Émilion)'],
-    ['Entrecôte bordelaise', 'Entrecôte grelhada com molho bordelaise (vinho tinto da região, gordura, caldo de carne e echalotas); vem com batatas'],
+    ['Entrecôte bordelaise', 'Entrecôte grelhada com molho bordelaise (vinho tinto da região, gordura, caldo de carne e echalotas); acompanha batatas fritas ou sauté'],
     ['Lamproie à la bordelaise', 'Lampreia em molho de vinho tinto de Bordeaux, alho, cebola e especiarias; só na temporada de lampreias', 'conferir']
   ]);
   H('Bordeaux', 'Cozinha de Bordeaux: margem esquerda', [
     ['Ingredientes locais', 'Carnes, peixes, cogumelos, alcachofras, ostras, nozes e castanhas'],
     ['Canard aux pruneaux', 'Pato dourado e cozido lentamente com ameixas, cebola, alho e ervas; rico e doce, com tinto da região'],
-    ['Huîtres d\'Arcachon', 'Ostras da Baía de Arcachon, cruas com limão; vinho branco seco'],
-    ['Canelé de Bordeaux', 'Sobremesa de casca caramelizada e crocante e miolo macio: farinha, leite, ovos, açúcar, baunilha e às vezes rum']
+    ['Huîtres d\'Arcachon', 'Ostras da Baía de Arcachon (sudoeste da cidade): carnudas e salgadas; cruas com limão; vinho branco seco'],
+    ['Canelé de Bordeaux', 'Sobremesa de casca caramelizada e crocante e miolo macio: farinha, leite, ovos, açúcar, baunilha e às vezes rum; aromas intensos de baunilha e rum']
   ]);
 
   // Nível no quiz, por notoriedade (avaliação editorial; ajustável): medio = conhecido no mundo todo.
@@ -1733,6 +1844,8 @@ STUDY_PACKS.push((function () {
     'Cabernet Sauvignon': 'medio',
     'Outras tintas de Bordeaux': 'avancado',
     'Brancas de Bordeaux': 'avancado',
+    'Mapa de Bordeaux: denominações': 'expert',
+    'Método tradicional: como é feito (slide da França)': 'avancado',
     'Classificação de 1855': 'medio',
     '1855: Premiers Crus': 'medio',
     '1855: Deuxièmes Crus': 'avancado',
@@ -1764,7 +1877,7 @@ STUDY_PACKS.push((function () {
   };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'FR1', version: 1, cards: cards };
+  return { code: 'FR1', version: 2, cards: cards };
 })());
 
 ;
@@ -1856,7 +1969,19 @@ STUDY_PACKS.push((function () {
     ['La Moutonne', 'Cerca de 2,5 ha, segundo o slide']
   ]);
   R('Borgonha', 'Chablis', 'Produtores de Chablis (rótulos do slide)', 'produtores', [
-    ['Domaine William Fèvre', ''], ['Domaine Long-Depaquit', ''], ['Louis Michel & Fils', '']
+    ['Domaine William Fèvre', ''], ['Domaine Long-Depaquit', ''], ['Louis Michel & Fils', ''],
+    ['Albert Bichot', ''], ['La Chablisienne', '']
+  ]);
+  R('Borgonha', 'Chablis', 'Rótulos de Chablis no slide', 'fatos', [
+    ['Les Clos', 'Chablis Grand Cru de Domaine William Fèvre e de Louis Michel & Fils'],
+    ['Moutonne', 'Chablis Grand Cru de Domaine Long-Depaquit; o rótulo traz Albert Bichot, e diz "seul propriétaire" (monopólio)'],
+    ['Les Preuses', 'Chablis Grand Cru no rótulo de La Chablisienne']
+  ]);
+  R('Borgonha', 'Chablis', 'Premier Crus de Chablis no mapa', 'lista', [
+    ['', 'Fourchaume'], ['', 'Montée de Tonnerre'], ['', 'Mont de Milieu'], ['', 'Vaillons'], ['', 'Montmains'],
+    ['', 'Côte de Léchet'], ['', 'Beauroy'], ['', 'Vau Ligneau'], ['', 'Vau de Vey'], ['', 'Berdiot'],
+    ['', 'Côte de Vaubarousse'], ['', 'Les Fourneaux'], ['', 'Vaucoupin'], ['', 'Vosgros'],
+    ['', 'Chaume de Talvat'], ['', 'Côte de Jouan'], ['', 'Les Beauregards']
   ]);
 
   // ---------- Côte de Nuits ----------
@@ -1872,6 +1997,12 @@ STUDY_PACKS.push((function () {
   R('Borgonha', 'Côte de Nuits', 'Produtores da Côte de Nuits (rótulos do slide)', 'produtores', [
     ['Domaine de la Romanée-Conti', ''], ['Joseph Drouhin', ''], ['Domaine Dujac', '']
   ]);
+  R('Borgonha', 'Côte de Nuits', 'Rótulos da Côte de Nuits no slide', 'fatos', [
+    ['Romanée-Conti', 'Rótulo do Domaine de la Romanée-Conti (Vosne-Romanée), safra 2000'],
+    ['La Tâche', 'Também do Domaine de la Romanée-Conti'],
+    ['Grands-Échezeaux', 'Grand Cru de Joseph Drouhin'],
+    ['Clos de la Roche', 'Grand Cru de Domaine Dujac (Morey-Saint-Denis)']
+  ]);
 
   // ---------- Côte de Beaune ----------
   R('Borgonha', 'Côte de Beaune', 'Côte de Beaune em resumo', 'fatos', [
@@ -1880,7 +2011,7 @@ STUDY_PACKS.push((function () {
     ['Extensão', 'Cerca de 25 km, de Ladoix-Serrigny às colinas de Maranges (o slide diz 20 km)', 'corrigido'],
     ['Vinhedos', 'Voltados para o sol da manhã'],
     ['Uvas', 'Brancos de Chardonnay e tintos de Pinot Noir'],
-    ['História', 'Um dos territórios mais antigos da França; vinificação desde a Alta Idade Média'],
+    ['História', 'Um dos territórios mais antigos da França; vinificação desde a Alta Idade Média, e os duques da Borgonha já apreciavam seus vinhos'],
     ['AOC', 'Classificada como AOC em 1936, segundo o slide', 'conferir']
   ]);
   R('Borgonha', 'Côte de Beaune', 'AOCs da Côte de Beaune', 'lista', [
@@ -1900,6 +2031,10 @@ STUDY_PACKS.push((function () {
   R('Borgonha', 'Côte de Beaune', 'Produtores da Côte de Beaune (rótulos do slide)', 'produtores', [
     ['Domaine Leflaive', ''], ['Louis Latour', ''], ['Henri Boillot', ''], ['Louis Jadot', '']
   ]);
+  R('Borgonha', 'Côte de Beaune', 'Rótulos da Côte de Beaune no slide', 'fatos', [
+    ['Montrachet', 'Grand Cru nos rótulos de Domaine Leflaive, Louis Latour e Henri Boillot'],
+    ['Bâtard-Montrachet', 'Grand Cru de Louis Jadot (Beaune)']
+  ]);
 
   // ---------- Côte Chalonnaise ----------
   R('Borgonha', 'Côte Chalonnaise', 'Côte Chalonnaise em resumo', 'fatos', [
@@ -1918,6 +2053,9 @@ STUDY_PACKS.push((function () {
   ]);
   R('Borgonha', 'Côte Chalonnaise', 'Produtores da Côte Chalonnaise (rótulo do slide)', 'produtores', [
     ['Domaine Joblot', '']
+  ]);
+  R('Borgonha', 'Côte Chalonnaise', 'Rótulo de Givry no slide', 'fatos', [
+    ['Mademoiselle', 'Givry Premier Cru, rótulo do Domaine Joblot']
   ]);
 
   // ---------- Mâconnais ----------
@@ -1940,6 +2078,10 @@ STUDY_PACKS.push((function () {
   ]);
   R('Borgonha', 'Mâconnais', 'Produtores do Mâconnais (rótulos do slide)', 'produtores', [
     ['Bouchard Père & Fils', ''], ['Domaines Leflaive', '']
+  ]);
+  R('Borgonha', 'Mâconnais', 'Rótulos de Pouilly-Fuissé no slide', 'fatos', [
+    ['Bouchard Père & Fils', 'Pouilly-Fuissé, "Grand Vin de Bourgogne"; casa fundada em 1731, em Beaune'],
+    ['Domaines Leflaive', 'Pouilly-Fuissé; a casa fica em Puligny-Montrachet']
   ]);
 
   // =====================  BEAUJOLAIS (aula 18)  =====================
@@ -2034,6 +2176,11 @@ STUDY_PACKS.push((function () {
   ]);
   R('Beaujolais', '', 'Produtores do Beaujolais (rótulos do slide)', 'produtores', [
     ['Philippe Pacalet', ''], ['Mommessin', ''], ['Pierre Cotton', '']
+  ]);
+  R('Beaujolais', '', 'Rótulos do Beaujolais no slide', 'fatos', [
+    ['Philippe Pacalet', 'Rótulo de Moulin-à-Vent'],
+    ['Mommessin', 'AOC Beaujolais; négociant-éleveur de Mâcon, casa fundada em 1865'],
+    ['Pierre Cotton', 'AOC Côte de Brouilly, safra 2014']
   ]);
 
   // =====================  CHAMPAGNE (aula 19)  =====================
@@ -2154,6 +2301,13 @@ STUDY_PACKS.push((function () {
     'Os 7 Grand Crus de Chablis': 'avancado',
     'Tamanho dos Grand Crus de Chablis': 'expert',
     'Produtores de Chablis (rótulos do slide)': 'expert',
+    'Rótulos de Chablis no slide': 'expert',
+    'Premier Crus de Chablis no mapa': 'expert',
+    'Rótulos da Côte de Nuits no slide': 'avancado',
+    'Rótulos da Côte de Beaune no slide': 'avancado',
+    'Rótulo de Givry no slide': 'expert',
+    'Rótulos de Pouilly-Fuissé no slide': 'expert',
+    'Rótulos do Beaujolais no slide': 'expert',
     'Côte de Nuits em resumo': 'medio',
     'Comunas da Côte de Nuits': 'avancado',
     'Produtores da Côte de Nuits (rótulos do slide)': 'avancado',
@@ -2205,13 +2359,13 @@ STUDY_PACKS.push((function () {
   };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'FR2', version: 1, cards: cards };
+  return { code: 'FR2', version: 2, cards: cards };
 })());
 
 ;
 // ---- 23_SeedStudyFR3.js
 /**
- * CARTÕES DE ESTUDO — França: Vale do Loire, Vale do Rhône e Sul da França (material de aula, v1).
+ * CARTÕES DE ESTUDO — França: Vale do Loire, Vale do Rhône e Sul da França (material de aula, v2).
  * Tópicos curtos; o material pode ter erros: "corrigido" = conferido em fonte aberta (Wikipedia); "conferir" = não confirmado (fica fora do quiz).
  * Itens: [chave, texto, marca?]. Para 'denominacoes': [nome, descrição, classificação].
  */
@@ -2245,18 +2399,29 @@ STUDY_PACKS.push((function () {
     ['Tinel-Blondelet', ''], ['Nicolas Joly', ''], ['Domaine Baumard', ''], ['Famille Bougrier', ''], ['Château des Gillières', ''], ['Domaine du Sauvard', '']
   ]);
 
+  R(L, '', 'Loire no mapa do slide', 'lista', [
+    ['', 'Pays Nantais: Muscadet, Muscadet Sèvre-et-Maine, Muscadet Coteaux de la Loire, Muscadet Côtes de Grand Lieu, Fiefs Vendéens'],
+    ['', 'Anjou-Saumur: Savennières, Anjou, Coteaux de l\'Aubance, Coteaux du Layon, Saumur, Saumur-Champigny, Bonnezeaux'],
+    ['', 'Touraine: Vouvray, Montlouis, Chinon, Bourgueil, Cheverny, Cour-Cheverny, Jasnières, Coteaux du Vendômois, Haut-Poitou'],
+    ['', 'Centre: Sancerre, Pouilly-Fumé, Menetou-Salon, Quincy, Reuilly, Coteaux du Giennois, Châteaumeillant']
+  ]);
+
   // Centre
   R(L, 'Sancerre', 'Centre: terroir e uvas', 'fatos', [
     ['Solos', 'Variam de calcário a argila; clima continental, com invernos frios e verões moderadamente quentes'],
     ['Calcário', 'Ideal para a Sauvignon Blanc'],
     ['Argila', 'Favorece a Pinot Noir'],
     ['Sauvignon Blanc', 'Acidez elevada, notas cítricas e florais e mineralidade'],
-    ['Pinot Noir', 'Tintos de frutas vermelhas frescas, taninos suaves e elegância'],
-    ['Vinificação', 'Brancos em aço inox; tintos podem passar por barris de carvalho']
+    ['Pinot Noir', 'Tintos de frutas vermelhas frescas, taninos suaves e elegância estruturada'],
+    ['Vinificação', 'Brancos em aço inox; tintos podem passar por barris de carvalho'],
+    ['Estilos', 'De Sauvignon Blancs frescos a Pinot Noirs complexos'],
+    ['Filosofia', 'Vinificação que preserva a autenticidade da uva e do terroir'],
+    ['Maturação', 'O clima continental favorece maturação gradual']
   ]);
   R(L, 'Sancerre', 'Sancerre', 'fatos', [
     ['Solos', 'Sílex, calcário e argila'],
     ['Branco', 'Sauvignon Blanc de mineralidade marcante, com limão, grapefruit e notas herbáceas'],
+    ['Sílex', 'A mineralidade marcante vem do solo de sílex'],
     ['Tinto', 'Também faz tintos elegantes, sobretudo de Pinot Noir']
   ]);
   R(L, 'Pouilly-Fumé', 'Pouilly-Fumé', 'fatos', [
@@ -2264,7 +2429,8 @@ STUDY_PACKS.push((function () {
     ['Uva', 'Sauvignon Blanc, casta dominante'],
     ['Estilo', 'Brancos mais intensos que os de Sancerre, com toques defumados'],
     ['Vinificação', 'Aço inox, para preservar a fruta e a pureza'],
-    ['Fama', 'Um dos grandes Sauvignon Blancs do mundo']
+    ['Fama', 'Um dos grandes Sauvignon Blancs do mundo, com reconhecimento internacional'],
+    ['Local', 'AOC no coração do Vale do Loire, na sub-região Centre']
   ]);
   // Touraine
   R(L, 'Vouvray e Montlouis', 'Touraine: terroir e castas', 'fatos', [
@@ -2323,7 +2489,8 @@ STUDY_PACKS.push((function () {
     ['Área', 'Cerca de 78 mil ha segundo o slide; a Wikipedia traz 83,8 mil ha na AOC Côtes du Rhône (2008)', 'conferir'],
     ['Solos', 'Argila, calcário e pedregulhos'],
     ['Clima', 'Mediterrâneo, com verões quentes e secos e invernos suaves'],
-    ['Norte e sul', 'Dois blocos: Rhône Setentrional (norte) e Meridional (sul)']
+    ['Norte e sul', 'Dois blocos: Rhône Setentrional (norte) e Meridional (sul)'],
+    ['Regulação', 'AOCs rigorosamente regulamentadas, para garantir autenticidade e qualidade']
   ]);
   R(RH, '', 'Estrelas do Rhône', 'fatos', [
     ['Tintos robustos', 'Châteauneuf-du-Pape e Gigondas'],
@@ -2333,7 +2500,13 @@ STUDY_PACKS.push((function () {
   R(RH, '', 'Produtores do Rhône', 'produtores', [
     ['Château de Beaucastel', ''], ['E. Guigal', ''], ['Michel Chapoutier', ''], ['Château Rayas', ''], ['Domaine Durieu', ''], ['Domaine Clos des Papes', '']
   ]);
+  R(RH, '', 'Rhône no mapa do slide', 'lista', [
+    ['', 'Norte: Côte-Rôtie, Condrieu, Château-Grillet, Saint-Joseph, Crozes-Hermitage, Hermitage, Cornas, Saint-Péray'],
+    ['', 'Sul: Châteauneuf-du-Pape, Gigondas, Vacqueyras, Rasteau, Beaumes-de-Venise, Lirac, Tavel, Côtes du Ventoux, Côtes du Luberon, Costières de Nîmes, Coteaux du Tricastin'],
+    ['', 'Genéricas: Côtes du Rhône e Côtes du Rhône Villages; Diois: Clairette de Die e Châtillon-en-Diois']
+  ]);
   R(RH, '', 'Syrah', 'fatos', [
+    ['Fama', 'Casta com história centenária, redescoberta e espalhada pelo mundo; adapta-se a vários estilos e regiões'],
     ['Origem', 'Norte do Rhône; a Syrah é a grande uva tinta do norte'],
     ['Vinhas', 'Videira vigorosa, cachos pequenos e bagos escuros; sensível ao clima'],
     ['Aromas', 'Especiarias, pimenta preta e frutas escuras (amora, ameixa)'],
@@ -2343,7 +2516,8 @@ STUDY_PACKS.push((function () {
   R(RH, '', 'Viognier', 'fatos', [
     ['Origem', 'Norte do Rhône; redescoberta e espalhada pelo mundo'],
     ['Vinhas', 'Videira vigorosa, cachos pequenos e bagos dourados; sensível ao clima'],
-    ['Aromas', 'Violeta e flor de laranjeira; pêssego e damasco'],
+    ['Aromas', 'Violeta e flor de laranjeira; frutas de polpa branca, pêssego e damasco'],
+    ['Estilo', 'Brancos aromáticos e encorpados'],
     ['Textura', 'Sedosa e aveludada'],
     ['Terroir', 'Prefere granito decomposto e clima moderadamente quente']
   ]);
@@ -2358,19 +2532,22 @@ STUDY_PACKS.push((function () {
     ['Condrieu', 'Brancos de Viognier em encostas íngremes de granito decomposto e mica'],
     ['Estilo', 'Intensidade aromática, florais marcantes e textura sedosa'],
     ['Château-Grillet', 'AOC autônoma dentro de Condrieu, só de Viognier'],
+    ['Solos', 'Em Château-Grillet, solos xistosos que dão mineralidade única'],
+    ['Microclima', 'Exposição solar máxima e microclima local, de vinhos excepcionais'],
     ['Perfil', 'Viognier concentrado, elegante e expressivo']
   ]);
   R(RH, 'Hermitage', 'Hermitage', 'fatos', [
     ['Vinhas', 'Encostas íngremes com exposições variadas'],
     ['Solos', 'Granito desintegrado, argila, calcário e pedregulhos'],
-    ['Clima', 'Continental moderado, com grande oscilação térmica'],
+    ['Clima', 'Continental moderado, de verões quentes e invernos frios, com grande oscilação térmica que retém acidez'],
     ['Tintos', 'Syrah: encorpados, complexos e de grande potencial de guarda'],
     ['Brancos', 'Marsanne e Roussanne']
   ]);
   R(RH, 'Crozes-Hermitage', 'Crozes-Hermitage', 'fatos', [
     ['Vinhas', 'Extensa área ao norte do Rhône, em encostas suaves e planícies'],
     ['Solos', 'De granito a argila e pedregulhos'],
-    ['Clima', 'Continental moderado, com marcante oscilação térmica: acidez equilibrada']
+    ['Clima', 'Continental moderado, de verões quentes e invernos frios; marcante oscilação térmica: acidez equilibrada'],
+    ['Expressão', 'Solos diversos dão mineralidade e estrutura notáveis']
   ]);
   R(RH, 'Saint-Joseph', 'Saint-Joseph', 'fatos', [
     ['Vinhas', 'Encostas íngremes, com exposições variadas'],
@@ -2387,7 +2564,7 @@ STUDY_PACKS.push((function () {
   R(RH, '', 'Saint-Péray', 'fatos', [
     ['Estilo', 'Brancos exclusivos, de Marsanne e Roussanne'],
     ['Solos', 'Calcários e argilosos'],
-    ['Perfil', 'Frescos, minerais e elegantes']
+    ['Perfil', 'Frescos, minerais e elegantes, com exposição solar bem regulada']
   ]);
   // Sul
   R(RH, 'Châteauneuf-du-Pape', 'Châteauneuf-du-Pape: terroir', 'fatos', [
@@ -2395,7 +2572,8 @@ STUDY_PACKS.push((function () {
     ['Solos', 'Galets (pedras roladas), arenito e argila'],
     ['Galets', 'Retêm calor de dia e o irradiam à noite, ajudando a maturação'],
     ['Clima', 'Mediterrâneo, de verões quentes e secos'],
-    ['Mistral', 'Vento forte que controla a umidade e previne doenças']
+    ['Mistral', 'Vento forte que controla a umidade e previne doenças'],
+    ['Relevo', 'Encostas suaves; argila e arenito dão riqueza, estrutura e mineralidade']
   ]);
   R(RH, 'Châteauneuf-du-Pape', 'Uvas de Châteauneuf-du-Pape', 'fatos', [
     ['Brancas', 'Grenache Blanc, Clairette, Roussanne, Bourboulenc, Picpoul e Picardan'],
@@ -2405,6 +2583,7 @@ STUDY_PACKS.push((function () {
   R(RH, 'Châteauneuf-du-Pape', 'Grenache', 'fatos', [
     ['Origem', 'Natural de Aragão, na Espanha; associada ao sul da França e ao nordeste espanhol'],
     ['Clima', 'Videiras vigorosas que preferem clima quente e seco'],
+    ['Cachos', 'Cachos e bagos de tamanho médio a grande'],
     ['Perfil', 'Cereja, morango e amora maduros, com especiarias como pimenta e algo herbáceo']
   ]);
   R(RH, 'Côtes du Rhône e Villages', 'Côtes du Rhône-Villages', 'fatos', [
@@ -2420,7 +2599,8 @@ STUDY_PACKS.push((function () {
   ]);
   R(RH, 'Tavel e Lirac', 'Lirac', 'fatos', [
     ['Estilos', 'Tintos e brancos; mais conhecida pelos tintos robustos'],
-    ['Tintos', 'Dominados pela Grenache: frutas intensas, taninos bem integrados e elegância'],
+    ['Tintos', 'Dominados pela Grenache: frutas intensas, taninos bem integrados e elegância que melhora com o envelhecimento'],
+    ['Terroir', 'Solo diversificado e influência mediterrânea'],
     ['Brancos', 'Muitas vezes de Clairette e Viognier']
   ]);
   R(RH, '', 'Côtes du Ventoux', 'fatos', [
@@ -2442,7 +2622,8 @@ STUDY_PACKS.push((function () {
     ['Peso', 'Maior região francesa em área e em volume'],
     ['Mudança', 'Reduziu muito o volume nas últimas décadas e passou a focar qualidade'],
     ['Investimento', 'Capital estrangeiro (australiano e americano) modernizou a indústria'],
-    ['Castas', 'Plantio amplo de Chardonnay, Cabernet Sauvignon e Merlot'],
+    ['Castas', 'Plantio amplo de Chardonnay, Cabernet Sauvignon e Merlot (castas "mais comerciais")'],
+    ['Tecnologia', 'Uso da tecnologia incentivado'],
     ['Solos', 'Variados; predominam xisto, calcário e argila'],
     ['Clima', 'Mediterrâneo: verões quentes e secos, influência marítima e amplitude térmica']
   ]);
@@ -2452,16 +2633,21 @@ STUDY_PACKS.push((function () {
     ['', 'Collioure, Côtes du Roussillon Villages, Côtes du Roussillon, Maury Sec, Rivesaltes, Maury, Banyuls']
   ]);
   R(LR, '', 'Denominações do Languedoc', 'denominacoes', [
-    ['Clairette du Languedoc', 'Brancos secos e espumantes aromáticos de Clairette, perto de Montpellier', 'AOC'],
+    ['Clairette du Languedoc', 'Brancos secos e espumantes aromáticos de Clairette (acidez equilibrada), perto de Montpellier', 'AOC'],
     ['Fitou', 'Tintos potentes, muitas vezes com Carignan; entre Narbonne e Perpignan', 'AOC'],
-    ['Muscat de Frontignan', 'Vinho doce natural (VDN) de Muscat: aromas intensos e florais', 'AOC'],
-    ['Muscat de Mireval', 'Vinho doce natural (VDN) de Muscat, de doçura equilibrada', 'AOC']
+    ['Muscat de Frontignan', 'Vinho doce natural (VDN) de Muscat, em Frontignan, perto de Montpellier: aromas intensos e florais', 'AOC'],
+    ['Muscat de Mireval', 'Vinho doce natural (VDN) de Muscat, perto de Mireval: doçura equilibrada e aromas envolventes', 'AOC']
   ]);
   R(LR, '', 'Denominações do Roussillon', 'denominacoes', [
-    ['Côtes du Roussillon', 'Tintos (Syrah, Grenache, Carignan), brancos e rosés', 'AOC'],
+    ['Côtes du Roussillon', 'Tintos (Syrah, Grenache, Carignan), brancos e rosés; abrange áreas no Roussillon e no Languedoc', 'AOC'],
     ['Rivesaltes', 'De tintos e brancos a doces fortificados; Grenache e Macabeu', 'AOC'],
     ['Maury Sec', 'Tintos secos e encorpados de Grenache, Syrah e Carignan', 'AOC'],
     ['Muscat de Rivesaltes', 'Doce natural de Muscat: aromas florais e frutados', 'AOC']
+  ]);
+  R(LR, '', 'Languedoc-Roussillon no mapa do slide', 'lista', [
+    ['', 'Languedoc: Coteaux du Languedoc, Saint-Chinian, Faugères, Minervois, Corbières, Fitou, Blanquette de Limoux, Picpoul de Pinet, Muscat (Frontignan e Mireval)'],
+    ['', 'Roussillon: Maury, Côtes du Roussillon, Rivesaltes, Côtes du Roussillon Villages, Banyuls'],
+    ['', 'Cidades no mapa: Montpellier, Béziers, Narbonne, Perpignan, Nîmes']
   ]);
   R(LR, 'Corbières', 'Corbières', 'fatos', [
     ['Onde', 'Vasta área do Languedoc, de solos e climas diversos'],
@@ -2497,6 +2683,8 @@ STUDY_PACKS.push((function () {
     ['História', 'Tradição vitivinícola de mais de 2.600 anos'],
     ['Rosés', 'Cerca de 80% da produção, segundo o slide', 'conferir'],
     ['Uvas', 'Grenache, Syrah e Vermentino'],
+    ['Rosés', 'Reconhecidos pela elegância e pelo frescor; a região também faz brancos e tintos'],
+    ['Tradição', 'Métodos tradicionais combinados com inovações contemporâneas'],
     ['Solos e clima', 'Argila, calcário e xisto; clima mediterrâneo'],
     ['Números', 'Quase 28 mil ha e cerca de 120 milhões de litros por ano'],
     ['Além do vinho', 'Azeites, alhos, ervas e lavanda']
@@ -2517,10 +2705,10 @@ STUDY_PACKS.push((function () {
   R(PV, 'Palette', 'Palette', 'fatos', [
     ['Onde', 'Pequena AOC ao redor de Aix-en-Provence'],
     ['Estilos', 'Tintos, brancos e rosés'],
-    ['Tintos', 'Frequentemente de Grenache e Mourvèdre, encorpados']
+    ['Tintos', 'Frequentemente de Grenache e Mourvèdre, encorpados e com boa capacidade (o slide corta a frase)', 'conferir']
   ]);
   R(PV, 'Côtes de Provence', 'Côtes de Provence', 'fatos', [
-    ['Peso', 'Maior AOC da Provença'],
+    ['Peso', 'Maior AOC da Provença, abrangendo várias sub-regiões'],
     ['Rosés', 'Pálidos, frescos e elegantes; frequentemente com Grenache, Cinsault, Syrah e Mourvèdre'],
     ['Outros', 'Também faz tintos e brancos']
   ]);
@@ -2534,7 +2722,7 @@ STUDY_PACKS.push((function () {
     ['Sandre au beurre blanc', 'Peixe de água doce do Loire com beurre blanc (manteiga, vinho branco, chalota e redução de vinagre); o slide o chama de lavaret', 'corrigido'],
     ['Poulet de Bresse', 'Frango de carne tenra com molho cremoso rico; a Bresse fica no leste da França, não no Loire', 'conferir'],
     ['Moules à la marinière', 'Mexilhões cozidos com vinho branco, alho, cebola e ervas; o caldo serve para molhar o pão'],
-    ['Tarte Tatin', 'Torta de maçã caramelizada, servida de cabeça para baixo']
+    ['Tarte Tatin', 'Torta de maçã caramelizada, servida de cabeça para baixo; as maçãs caramelizam antes de receber a massa e ir ao forno']
   ]);
   H('Vale do Rhône', 'Cozinha do Rhône', [
     ['Ingredientes', 'Alho, azeites, chalotas, queijo Banon, truta, embutidos e mel de lavanda'],
@@ -2556,6 +2744,7 @@ STUDY_PACKS.push((function () {
     'Vale do Loire: visão geral': 'medio',
     'Sub-regiões do Loire e suas estrelas': 'medio',
     'Produtores do Loire': 'expert',
+    'Loire no mapa do slide': 'expert',
     'Centre: terroir e uvas': 'avancado',
     'Sancerre': 'medio',
     'Pouilly-Fumé': 'medio',
@@ -2570,6 +2759,7 @@ STUDY_PACKS.push((function () {
     'Muscadet Sèvre-et-Maine': 'avancado',
     'Vale do Rhône: visão geral': 'medio',
     'Estrelas do Rhône': 'medio',
+    'Rhône no mapa do slide': 'expert',
     'Produtores do Rhône': 'avancado',
     'Syrah': 'medio',
     'Viognier': 'medio',
@@ -2597,6 +2787,7 @@ STUDY_PACKS.push((function () {
     'Limoux': 'avancado',
     'Banyuls e Collioure': 'avancado',
     'Maury': 'expert',
+    'Languedoc-Roussillon no mapa do slide': 'expert',
     'Produtores do Languedoc-Roussillon': 'expert',
     'Provença: visão geral': 'medio',
     'Denominações da Provença': 'avancado',
@@ -2611,13 +2802,13 @@ STUDY_PACKS.push((function () {
   };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'FR3', version: 1, cards: cards };
+  return { code: 'FR3', version: 2, cards: cards };
 })());
 
 ;
 // ---- 23_SeedStudyHAR.js
 /**
- * CARTÕES DE ESTUDO — Harmonização geral (material de aula: brancos, tintos, espumantes, fortificados e doces; v1).
+ * CARTÕES DE ESTUDO — Harmonização geral (material de aula: brancos, tintos, espumantes, fortificados e doces; v2).
  * Condensado em tópicos curtos. Onde conferi com fonte aberta o dado foi corrigido e marcado "corrigido".
  * Cozinha regional por país/região fica nos cartões de cada país. Itens: [chave, texto, marca?].
  */
@@ -2701,6 +2892,7 @@ STUDY_PACKS.push((function () {
   ]);
   C('Espumantes', 'Espumantes leves (Prosecco)', 'fatos', [
     ['Aperitivos leves', 'Prosecco com canapés, bruschettas e crostini'],
+    ['Refeições leves', 'O Prosecco é versátil: serve de aperitivo ou acompanha refeições leves'],
     ['Frutos do mar', 'Camarões grelhados, ostras e ceviche são realçados pela frescura do Prosecco'],
     ['Comida italiana', 'Massas leves e antipastos'],
     ['Saladas', 'Frescas, de preferência cítricas (rúcula com grapefruit): combinam com a acidez de um espumante jovem e leve'],
@@ -2716,6 +2908,7 @@ STUDY_PACKS.push((function () {
   C('Fortificados e doces', 'Ice Wine, Vin Santo e Porto', 'fatos', [
     ['Ice Wine', 'Sobremesas de frutas, queijos suaves e frutas frescas; uvas congeladas dão doçura intensa e sabor frutado'],
     ['Vin Santo', 'Biscotti, sobremesas com nozes e queijos curados; caráter amendoado e notas de caramelo'],
+    ['Vin Santo (tradição toscana)', 'Muito apreciado com biscoitos cantuccini, famosos na Toscana, ou em sobremesas como tiramisù'],
     ['Vinho do Porto', 'Queijos duros, chocolate, frutas secas e carnes defumadas; versátil: antes, durante ou depois da refeição']
   ]);
 
@@ -2728,7 +2921,7 @@ STUDY_PACKS.push((function () {
   };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'HAR', version: 1, cards: cards };
+  return { code: 'HAR', version: 2, cards: cards };
 })());
 
 ;
@@ -2748,6 +2941,11 @@ STUDY_PACKS.push((function () {
       var o = { k: i[0], v: i[1] }; if (i[2]) o.tag = i[2]; return o; }) });
   }
 
+  C('Antiguidade', 'Vinho e sociedade', 'lista', [
+    ['', 'Uma das bebidas mais antigas e reverenciadas da humanidade'],
+    ['', 'Papel vital em rituais religiosos, no comércio e no convívio social'],
+    ['', 'Mostra a evolução das técnicas de vinificação e das culturas que moldaram a apreciação atual']
+  ]);
   C('Antiguidade', 'Os primeiros vinhos', 'linha', [
     ['6000 a.C.', 'Geórgia: primeiras evidências arqueológicas de produção de vinho (achado de 2017)'],
     ['4100 a.C.', 'Armênia: vinificação (vinícola mais antiga conhecida, Areni-1); o slide traz 5000 a.C.', 'corrigido'],
@@ -2771,13 +2969,14 @@ STUDY_PACKS.push((function () {
   ]);
   C('França', 'Marcos da França', 'linha', [
     ['1100', 'Vinhas se expandem além do sul, puxadas pelo comércio'],
-    ['1309', 'Châteauneuf-du-Pape, perto de Avignon, nasce com o papado e vira região importante'],
+    ['1309', 'Châteauneuf-du-Pape, perto de Avignon, nasce com o papado (Papa João XXII, segundo o slide) e vira região importante'],
     ['1443', 'Hospices de Beaune (Borgonha) é fundado por Nicolas Rolin e esposa como hospital'],
     ['1855', 'Classificação dos vinhos de Bordeaux para a Exposição Universal de Paris'],
-    ['1932', 'Bordeaux responde com a classificação Cru Bourgeois, revista a cada década']
+    ['1932', 'Bordeaux responde com a classificação Cru Bourgeois, revista a cada década'],
+    ['', 'Cru Bourgeois: cinco níveis, segundo o slide', 'conferir']
   ]);
   C('Novo Mundo', 'Américas', 'linha', [
-    ['1492', 'Colombo chega ao Novo Mundo; videiras nas ilhas do Caribe (o slide cita Colombo plantando)', 'conferir'],
+    ['1492', 'Colombo, explorador genovês, chega ao Novo Mundo; videiras nas ilhas do Caribe (o slide cita Colombo plantando)', 'conferir'],
     ['1513', 'Panamá: Vasco Núñez de Balboa introduz a viticultura na América Central'],
     ['1524', 'México: videiras atribuídas ao conquistador Hernán Cortés'],
     ['1554', 'Peru: frei Francisco de Carabantes; a uva se adapta bem ao clima andino'],
@@ -2803,7 +3002,7 @@ STUDY_PACKS.push((function () {
     'Américas': 'avancado', 'Oceania e Canadá': 'expert', 'Vinho no Brasil': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'HIS', version: 2, cards: cards };
+  return { code: 'HIS', version: 3, cards: cards };
 })());
 
 ;
@@ -2882,6 +3081,15 @@ STUDY_PACKS.push((function () {
     ['Adega de Borba', ''], ['Quinta do Serrado', ''], ['Pêra Grave', ''], ['Vinha do Contador', ''], ['Justino\'s', '']
   ]);
 
+  P('Cidades-símbolo das regiões (paisagens)', 'fatos', [
+    ['Minho', 'Melgaço'],
+    ['Bairrada', 'Aveiro'],
+    ['Dão', 'Viseu'],
+    ['Alentejo', 'Évora'],
+    ['Ilha da Madeira', 'Funchal'],
+    ['Douro', 'Cima Corgo (vinhedos em socalcos)']
+  ]);
+
   // ---------- Vinho Verde ----------
   R('Vinho Verde (Minho)', '', 'Vinho Verde em resumo', 'fatos', [
     ['Perfil', 'Vinho extremamente fresco, com características específicas'],
@@ -2940,6 +3148,11 @@ STUDY_PACKS.push((function () {
     ['Posição', 'Parte alta do rio, com pouca chuva'],
     ['Vinhos', 'Tendem a ser mais alcoólicos e potentes'],
     ['Produtores', 'Quinta do Vale Meão, Quinta de Vila Maior, Quinta do Reguengo, Dona Berta']
+  ]);
+  R('Douro e Porto', '', 'Cidades do mapa do Douro', 'lista', [
+    ['', 'Porto, Lamego, Peso da Régua'],
+    ['', 'Vila Real, Pinhão, Vila Nova de Foz Côa'],
+    ['', 'O mapa mostra as 3 sub-regiões em ordem de oeste a leste: Baixo Corgo, Cima Corgo e Douro Superior']
   ]);
   R('Douro e Porto', '', 'Vinho do Porto', 'fatos', [
     ['O que é', 'Vinho fortificado, produção iniciada no séc. XVII; símbolo maior da enologia portuguesa'],
@@ -3055,6 +3268,10 @@ STUDY_PACKS.push((function () {
     ['28 ha', 'Trincadeira das Pratas'],
     ['4 ha', 'Tamarez']
   ]);
+  R('Alentejo', '', 'Mapa das 8 sub-regiões do Alentejo', 'lista', [
+    ['', '1 Portalegre, 2 Borba, 3 Évora, 4 Redondo'],
+    ['', '5 Reguengos, 6 Granja-Amareleja, 7 Vidigueira, 8 Moura']
+  ]);
   R('Alentejo', '', 'Solos das sub-regiões do Alentejo', 'fatos', [
     ['Portalegre', 'Granito nas partes altas e xisto nas baixas'],
     ['Borba', 'Mármore e xisto vermelho: solo pobre'],
@@ -3091,6 +3308,7 @@ STUDY_PACKS.push((function () {
   R('Alentejo', 'Évora', 'Évora', 'fatos', [
     ['Área', 'Cerca de 1.418 ha de vinhedos'],
     ['Papel', 'Grande centro econômico; abriga algumas das melhores vinícolas do país'],
+    ['Templo romano', 'O Templo de Diana, com cerca de 2 mil anos, é o símbolo da cidade (foto do slide)'],
     ['Vinhos', 'Por solo e clima quente, tendem a ser mais encorpados e longevos'],
     ['Produtores', 'Cartuxa (Eugénio de Almeida), Pêra Grave, Herdade da Fonte Coberta, Casa Relvas']
   ]);
@@ -3157,14 +3375,19 @@ STUDY_PACKS.push((function () {
   ]);
   H('Alentejo', 'Cozinha do Alentejo', 'fatos', [
     ['Pão alentejano', 'Trigo, sal, fermento e água morna; segundo o slide, considerado recentemente o melhor do mundo', 'conferir'],
-    ['Porco preto', 'Também chamado porco da raça alentejana; origina embutidos, cozidos e presuntos'],
+    ['Cereais', 'Trigo, aveia, cevada e triticale (cruzamento de trigo e centeio); relação estreita com os pães'],
+    ['Porco preto', 'Também chamado porco da raça alentejana ou porco preto ibérico; origina embutidos, cozidos e presuntos'],
     ['Pata Negra', 'Segundo o slide, um dos presuntos mais caros do mundo, do porco preto alentejano', 'conferir'],
     ['Borrego', 'Cordeiro alentejano; segundo o slide, tem IGP própria em Portalegre', 'conferir'],
+    ['Alimentação do borrego', 'Rigorosamente controlada, com o desenvolvimento acompanhado de perto pelos produtores'],
     ['Azeite', 'Alentejo está no topo do ranking mundial; Galega cobre 80% da área plantada'],
-    ['Outras azeitonas', 'Cobrançosa (de Trás-os-Montes), Cordovil de Serpa (a mais amarga), Verdeal Alentejana']
+    ['Outras azeitonas', 'Cobrançosa (de Trás-os-Montes), Cordovil de Serpa (a mais amarga), Verdeal Alentejana (da região, resistente)']
   ]);
 
   var LEVELS = {
+    'Cidades-símbolo das regiões (paisagens)': 'expert',
+    'Cidades do mapa do Douro': 'expert',
+    'Mapa das 8 sub-regiões do Alentejo': 'avancado',
     'Portugal em números': 'medio',
     'Marcos do vinho português': 'avancado',
     'Povos antigos em Portugal': 'avancado',
@@ -3222,7 +3445,7 @@ STUDY_PACKS.push((function () {
     'Cozinha do Alentejo': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'PT', version: 1, cards: cards };
+  return { code: 'PT', version: 2, cards: cards };
 })());
 
 // =====================================================================
@@ -3295,6 +3518,36 @@ STUDY_PACKS.push((function () {
     ['Clos Mogador', ''], ['Clos Erasmus', ''], ['Maestro Sierra', ''], ['Píntia', ''], ['Tio Pepe', '']
   ]);
 
+  P('Uvas principais por comunidade (mapa)', 'fatos', [
+    ['Galícia', 'Albariño, Mencía, Godello'],
+    ['Castela e Leão', 'Tempranillo, Verdejo, Mencía'],
+    ['País Basco', 'Hondarrabi Zuri (branca) e Hondarrabi Beltza (tinta)'],
+    ['La Rioja', 'Tempranillo, Garnacha (Grenache), Viura'],
+    ['Navarra', 'Garnacha, Tempranillo, rosado'],
+    ['Aragão', 'Garnacha, Tempranillo, Cariñena'],
+    ['Catalunha', 'Cava, Garnacha, Syrah'],
+    ['Castela-La Mancha', 'Airén, Bobal, Monastrell, Tempranillo'],
+    ['Extremadura', 'Tempranillo, Cabernet Sauvignon, Syrah'],
+    ['Comunidade Valenciana', 'Monastrell (Mourvèdre), Airén, Bobal'],
+    ['Múrcia', 'Monastrell e Syrah'],
+    ['Andaluzia', 'Sherry (Jerez) e Pedro Ximénez'],
+    ['Madri', 'Monastrell, Garnacha e Syrah, segundo o mapa', 'conferir']
+  ]);
+  P('DOs por comunidade (mapa)', 'fatos', [
+    ['Galícia', 'Rías Baixas, Ribeiro, Ribeira Sacra, Valdeorras, Monterrei'],
+    ['Castela e Leão', 'Bierzo, Tierra de León, Arlanza, Cigales, Ribera del Duero, Toro, Rueda, Tierra del Vino de Zamora, Arribes'],
+    ['País Basco', 'Txakolina (Bizkaiko, Getariako e Arabako)'],
+    ['Aragão', 'Somontano, Campo de Borja, Calatayud, Cariñena'],
+    ['Catalunha', 'Empordà, Pla de Bages, Costers del Segre, Alella, Conca de Barberà, Penedès, Priorat, Montsant, Tarragona, Terra Alta'],
+    ['Castela-La Mancha', 'Méntrida, Mondéjar, Uclés, Ribera del Júcar, Manchuela, La Mancha, Almansa, Valdepeñas'],
+    ['Madri e Extremadura', 'Vinos de Madrid; Ribera del Guadiana'],
+    ['Comunidade Valenciana', 'Utiel-Requena, Valencia, Alicante'],
+    ['Múrcia', 'Yecla, Jumilla, Bullas'],
+    ['Andaluzia', 'Condado de Huelva, Jerez, Manzanilla-Sanlúcar de Barrameda, Montilla-Moriles, Málaga e Sierras de Málaga'],
+    ['Baleares', 'Binissalem e Plà i Llevant (Maiorca)'],
+    ['Canárias', 'La Palma, Ycoden-Daute-Isora, Tacoronte-Acentejo, Valle de la Orotava, Valle de Güímar, Abona, Lanzarote, entre outras']
+  ]);
+
   // ---------- Rioja ----------
   R('Rioja', '', 'Rioja em resumo', 'fatos', [
     ['Área', 'Cerca de 65.000 ha de vinhedos'],
@@ -3312,17 +3565,20 @@ STUDY_PACKS.push((function () {
   R('Rioja', 'Rioja Alta', 'Rioja Alta', 'fatos', [
     ['Importância', 'A mais importante das três sub-regiões'],
     ['Área', 'Pouco mais de 27 mil ha, segundo o slide', 'conferir'],
-    ['Perfil', 'Clima e solos perfeitos para a Tempranillo']
+    ['Perfil', 'Clima e solos perfeitos para a Tempranillo'],
+    ['Cidades no mapa', 'Haro, Briones, Santo Domingo de la Calzada, Nájera, Logroño, Navarrete, Badarán, Baños de Río Tobía']
   ]);
   R('Rioja', 'Rioja Alavesa', 'Rioja Alavesa', 'fatos', [
     ['Importância', '2ª sub-região mais importante'],
     ['Local', 'Na zona do País Basco'],
-    ['Área', 'Pouco mais de 13 mil ha, segundo o slide', 'conferir']
+    ['Área', 'Pouco mais de 13 mil ha, segundo o slide', 'conferir'],
+    ['Cidades no mapa', 'Labastida, Laguardia e Elciego']
   ]);
   R('Rioja', 'Rioja Oriental', 'Rioja Oriental', 'fatos', [
     ['Nome antigo', 'Rioja Baja'],
     ['Perfil', 'A mais simples; no sudeste, com solos pobres'],
-    ['Área', 'Pouco mais de 24 mil ha, segundo o slide', 'conferir']
+    ['Área', 'Pouco mais de 24 mil ha, segundo o slide', 'conferir'],
+    ['Cidades no mapa', 'Viana, Mendavia, Andosilla, San Adrián, Calahorra, Arnedo, Grávalos, Alfaro']
   ]);
   R('Rioja', '', 'Grandes produtores de Rioja', 'produtores', [
     ['Bodegas Roda', ''], ['Marqués de Murrieta', ''], ['Marqués de Vargas', ''], ['Bodega Muga', ''],
@@ -3342,6 +3598,12 @@ STUDY_PACKS.push((function () {
   ]);
   R('Navarra', '', 'Grandes produtores de Navarra', 'produtores', [
     ['Julián Chivite', ''], ['Gran Feudo', ''], ['Viña Zorzal', '']
+  ]);
+
+  R('Navarra', '', 'Vizinhas de Navarra e Rioja (mapa)', 'lista', [
+    ['', 'Txakolina do País Basco: Bizkaiko, Getariako e Arabako'],
+    ['', 'Rioja e Navarra, ao longo do Rio Ebro'],
+    ['', 'Campo de Borja, Cariñena e Somontano, em Aragão']
   ]);
 
   // ---------- Castela e Leão ----------
@@ -3365,6 +3627,9 @@ STUDY_PACKS.push((function () {
     ['Uvas', 'Tempranillo (Tinta del País) e Cabernet Sauvignon'],
     ['Envelhecimento', '7 anos em carvalho americano e mais 3 em garrafa antes de sair'],
     ['Reserva Especial', 'Versão não safrada, ao lado do Único (safrado)']
+  ]);
+  R('Castela e Leão', 'Ribera del Duero', 'Cidades de Ribera del Duero (mapa)', 'lista', [
+    ['', 'Aranda de Duero, Roa, Peñafiel e San Esteban de Gormaz, ao longo do Rio Duero']
   ]);
   R('Castela e Leão', '', 'Outras regiões de Castela e Leão', 'fatos', [
     ['Toro', 'Tintos robustos de Tinta del Toro (Tempranillo)'],
@@ -3463,7 +3728,8 @@ STUDY_PACKS.push((function () {
   ]);
   R('Andaluzia', 'Jerez-Xérès-Sherry', 'Solera de Jerez', 'lista', [
     ['', 'Barris empilhados em andanas: solera embaixo, 1ª e 2ª criaderas acima'],
-    ['', 'A saca retira vinho da solera; o rocío repõe com o vinho da fileira de cima']
+    ['', 'A saca retira vinho da solera; o rocío repõe com o vinho da fileira de cima'],
+    ['', 'No esquema do slide, a "sobretablas" aparece indicada acima da fileira mais alta de barris']
   ]);
 
   // ---------- Harmonização ----------
@@ -3471,6 +3737,9 @@ STUDY_PACKS.push((function () {
     ['Conceito', 'Pequenas porções servidas em bares para acompanhar bebidas'],
     ['Origem', 'Da prática de cobrir (tapar) as bebidas'],
     ['Cortesia', 'Tapa oferecida ao pedir uma bebida cria ambiente informal e de convivência']
+  ]);
+  H('Espanha', 'Cozinha espanhola', 'fatos', [
+    ['Valores', 'Calma, respeito aos ingredientes e a arte de compartilhar']
   ]);
   H('Rioja e Navarra', 'Cozinha de Rioja e Navarra', 'lista', [
     ['', 'Chorizo riojano (embutido) e cordeiro'],
@@ -3487,7 +3756,8 @@ STUDY_PACKS.push((function () {
     ['Lechazo asado', 'Cordeiro assado'],
     ['Morcilla de Burgos', 'Embutido típico'],
     ['Queso de oveja', 'Queijo de ovelha'],
-    ['Pimentões marinados', 'Também entre os pratos de destaque']
+    ['Pimentões marinados', 'Também entre os pratos de destaque'],
+    ['Leitão', 'Citado entre as especialidades da região, ao lado de cordeiro, morcillas e queijos']
   ]);
   H('Jerez de la Frontera', 'Cozinha de Jerez', 'fatos', [
     ['Andaluzia', 'Encontro da cultura alimentar europeia com influências árabes e africanas'],
@@ -3498,6 +3768,11 @@ STUDY_PACKS.push((function () {
   ]);
 
   var LEVELS = {
+    'Uvas principais por comunidade (mapa)': 'avancado',
+    'DOs por comunidade (mapa)': 'expert',
+    'Vizinhas de Navarra e Rioja (mapa)': 'expert',
+    'Cidades de Ribera del Duero (mapa)': 'expert',
+    'Cozinha espanhola': 'medio',
     'A Espanha em números': 'medio',
     'Classificação dos vinhos espanhóis': 'medio',
     'Crianza': 'medio',
@@ -3543,7 +3818,7 @@ STUDY_PACKS.push((function () {
     'Cozinha de Jerez': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'ES', version: 1, cards: cards };
+  return { code: 'ES', version: 2, cards: cards };
 })());
 
 ;
@@ -3568,7 +3843,13 @@ STUDY_PACKS.push((function () {
     ['718 mil ha', 'Área plantada: 3ª do mundo (Espanha 955 mil, França 812 mil)'],
     ['4,9 bi L', 'Produção: 1ª do mundo (França 4,5 bi, Espanha 3,5 bi)'],
     ['2,3 bi L', 'Consumo: 2º maior da União Europeia'],
-    ['33,9 L', 'Consumo por habitante (Portugal lidera, com 67,5 L)']
+    ['33,9 L', 'Consumo por habitante (Portugal lidera, com 67,5 L)'],
+    ['193 mil ha', 'Portugal, para comparação (o Chile tem 196 mil ha)'],
+    ['3º', 'Consumo mundial em volume absoluto: atrás de EUA e França']
+  ]);
+  P('Importações brasileiras (2021)', 'numeros', [
+    ['158 mi L', 'Total importado pelo Brasil; cerca de 7,9 milhões vieram da França'],
+    ['48%', 'Chile'], ['16%', 'Portugal'], ['14%', 'Argentina'], ['7%', 'Itália'], ['5%', 'França'], ['10%', 'Outros']
   ]);
   P('Marcos do vinho italiano', 'linha', [
     ['Séc. I a.C.', 'Romanos introduzem a videira, segundo o slide', 'conferir'],
@@ -3597,6 +3878,9 @@ STUDY_PACKS.push((function () {
     ['2', 'Zonas: costa e colinas'],
     ['Sangiovese', 'Casta mais importante; Chianti e Brunello são os mais famosos']
   ]);
+  R('Toscana', '', 'Províncias da Toscana', 'lista', [
+    ['', 'Massa-Carrara, Lucca, Pistoia, Prato, Firenze'], ['', 'Pisa, Arezzo, Siena, Livorno, Grosseto']
+  ]);
   R('Toscana', '', 'Sangiovese', 'fatos', [
     ['Origem', 'Natural da Toscana; 1º registro no séc. XV'],
     ['Nome', 'De "sanguis Jovis": sangue de Júpiter'],
@@ -3605,11 +3889,13 @@ STUDY_PACKS.push((function () {
   ]);
   R('Toscana', 'Montalcino', 'Brunello di Montalcino', 'fatos', [
     ['Criador', 'Ferruccio Biondi-Santi, propriedade Il Greppo'],
+    ['Primeiras vinhas', 'Sangiovese Grosso plantada por Biondi-Santi em 1870'],
     ['1ª safra', '1888; até 1950 só os Biondi-Santi o faziam'],
     ['Uva', 'Sangiovese Grosso: 65 ha até 1970, cerca de 1.600 ha hoje'],
     ['Estágio', 'Mínimo 24 meses em barril; Riserva, 30 meses'],
     ['Volume', 'Cerca de 7 milhões de litros por ano'],
-    ['Curiosidade', 'Em 2012 um ex-funcionário da Case Basse (Soldera) abriu os tanques: 62 mil litros perdidos (safras 2007 a 2012)']
+    ['Curiosidade', 'Em 2 de dezembro de 2012 um ex-funcionário da Case Basse (de Giancarlo Soldera) abriu os tanques: 62 mil litros perdidos (safras 2007 a 2012)'],
+    ['Preço', 'Uma garrafa de Brunello Soldera custava em média R$ 8.000 na importadora Mistral, segundo o slide']
   ]);
   R('Toscana', 'Chianti (e subzonas)', 'Chianti', 'fatos', [
     ['Nome', 'Vem de uma cadeia de montanhas; área demarcada pelo Duque da Toscana em 1716'],
@@ -3729,12 +4015,12 @@ STUDY_PACKS.push((function () {
   ]);
   P('Cozinha do Norte', 'fatos', [
     ['Piemonte', 'Risotto al Barolo; vitello tonnato (vitelo frio com molho cremoso de atum); trufas, carne bovina e queijos envelhecidos'],
-    ['Vêneto', 'Polenta; risotto al nero di seppia (arroz com tinta de lula); frutos do mar'],
-    ['Lombardia', 'Ossobuco alla milanese (vitelo com vinho branco, tomate e açafrão); risoto milanês com açafrão'],
+    ['Vêneto', 'Polenta; risotto al nero di seppia (Carnaroli ou Arborio, tinta de lula, caldo de peixe, alho e cebola; influência do Adriático); frutos do mar frescos'],
+    ['Lombardia', 'Ossobuco alla milanese (vitelo com vinho branco, tomate e açafrão); risoto milanês com açafrão e gremolata'],
     ['Trentino', 'Canederli'],
     ['Vale d\'Aosta', 'Fonduta'],
     ['Ligúria', 'Pesto'],
-    ['Friuli', 'Frico: queijo Montasio com batatas, crosta crocante']
+    ['Friuli', 'Frico: queijo Montasio (semiduro) com batatas, crosta crocante e dourada']
   ]);
   P('Grandes produtores do Norte', 'produtores', [
     ['Giuseppe Mascarello', ''], ['Giacomo Conterno', ''], ['Angelo Gaja', ''], ['La Spinetta', ''], ['Zenato', ''],
@@ -3756,7 +4042,8 @@ STUDY_PACKS.push((function () {
     ['Nome', 'De "nebbia": névoa que cobre os vinhedos de manhã'],
     ['Cultivo', 'Delicada e difícil; amadurecimento tardio e rendimento baixo (vinhos caros)'],
     ['Estilo', 'Casca grossa: muito tanino; acidez alta; cor clara (pouca antocianina)'],
-    ['Aromas', 'Terrosos, florais e frutados']
+    ['Aromas', 'Terrosos, florais e frutados'],
+    ['Clima e solo', 'Cresce melhor em climas frescos e solos bem drenados; colhida tardiamente']
   ]);
   R('Piemonte', '', 'Castas do Piemonte', 'lista', [
     ['', 'Brancas: Cortese, Moscato, Arneis'], ['', 'Tintas: Croatina (Bonarda), Dolcetto, Barbera, Nebbiolo']
@@ -3765,22 +4052,24 @@ STUDY_PACKS.push((function () {
     ['Apelido', '"Rei dos vinhos e vinho dos reis"'],
     ['Uva', 'Só Nebbiolo'],
     ['Denominação', 'DOC em 1966 e DOCG em 1980 (o slide diz DOCG em 1966)', 'corrigido'],
-    ['Estágio', 'Mínimo 3 anos em barril; Riserva, 5 anos'],
+    ['Perfil', 'Vinho "para iniciados": exige conhecimento e paciência (Saul Galvão, "Tintos e Brancos")'],
+    ['Aldeias', 'Barolo, La Morra, Monforte d\'Alba, Serralunga d\'Alba e Castiglione Falletto'],
+    ['Estágio', 'Mínimo 3 anos, ao menos 18 meses em madeira (o slide diz 3 anos em barril); Riserva, 5 anos', 'corrigido'],
     ['Álcool', 'Mínimo 13%'],
     ['Extrato seco', 'Mínimo 22 g/L'],
     ['Comunas', 'Barolo, Castiglione Falletto e Serralunga d\'Alba inteiras, mais parcelas de outras oito aldeias; La Morra é a mais importante']
   ]);
   R('Piemonte', 'Barolo', 'Três zonas do Barolo', 'fatos', [
-    ['Vale de Serralunga', 'Vinhos encorpados e potentes, taninos marcados, longa guarda'],
+    ['Vale de Serralunga', 'Vinhos encorpados e potentes, taninos marcados, longa guarda; vinhedos de prestígio: Serralunga d\'Alba e Monforte d\'Alba'],
     ['Vale do Barolo', 'Barolo e La Morra: mais delicados, elegantes e macios, com grande estrutura'],
     ['Castiglione Falletto', 'Entre os dois vales; solo parecido com o de Serralunga: elegância do Barolo com potência de Serralunga']
   ]);
   R('Piemonte', 'Barbaresco', 'Barbaresco', 'fatos', [
     ['Apelido', '"Irmão mais novo" do Barolo; produção iniciada nos primeiros anos depois da 2ª guerra'],
     ['Uva', 'Só Nebbiolo; menos longevo que o Barolo'],
-    ['Denominação', 'DOCG em 1968, segundo o slide', 'conferir'],
+    ['Denominação', 'DOC em 1966 e DOCG em 1980 (o slide diz DOCG em 1968)', 'corrigido'],
     ['Área', 'Pouco mais de 680 ha'],
-    ['Estágio', 'Mínimo 3 anos em barril; Riserva, 5 anos'],
+    ['Estágio', 'Mínimo 2 anos, 9 meses em madeira; Riserva, 4 anos (o slide diz 3 e 5 anos em barril)', 'corrigido'],
     ['Álcool', 'Mínimo 12,5%'],
     ['Extrato seco', 'Mínimo 20 g/L'],
     ['Comunas', 'Barbaresco, Neive e Treiso; destaques: Santo Stefano e Bricco di Neive']
@@ -3898,7 +4187,7 @@ STUDY_PACKS.push((function () {
     ['Perfil', 'Estrutura encorpada e fortes notas defumadas e tostadas, vindas das cascas']
   ]);
   R('Basilicata', '', 'Denominação da Basilicata', 'denominacoes', [
-    ['Aglianico del Vulture', 'Única DOCG da Basilicata: só tintos de Aglianico', 'DOCG']
+    ['Aglianico del Vulture', 'Única DOCG da Basilicata: só tintos de Aglianico; a DOCG é a versão Superiore (2011), o slide diz apenas Aglianico del Vulture', 'DOCG']
   ]);
   R('Basilicata', '', 'Grandes produtores da Basilicata', 'produtores', [
     ['Cantina di Venosa', ''], ['Paternoster', ''], ['D\'Angelo', ''], ['Damaschito', '']
@@ -3916,8 +4205,8 @@ STUDY_PACKS.push((function () {
     ['', 'Tintas: Aglianico, Merlot, Cabernet Sauvignon'], ['', 'Brancas: Fiano, Greco, Falanghina']
   ]);
   R('Campânia', '', 'Denominações da Campânia', 'denominacoes', [
-    ['Taurasi', 'Tinto de Aglianico; 3 anos em barris, segundo o slide', 'DOCG'],
-    ['Aglianico del Taburno', 'Tintos e rosés de Aglianico', 'DOCG'],
+    ['Taurasi', 'Tinto de Aglianico; 3 anos em barris, segundo o slide; DOCG desde 1993', 'DOCG'],
+    ['Aglianico del Taburno', 'Tintos e rosés de Aglianico; DOCG desde 2011', 'DOCG'],
     ['Fiano di Avellino', 'Branco de Fiano', 'DOCG'],
     ['Greco di Tufo', 'Branco de Greco', 'DOCG']
   ]);
@@ -3988,6 +4277,8 @@ STUDY_PACKS.push((function () {
   // Nível no quiz, por notoriedade (avaliação editorial; ajustável): medio = conhecido no mundo todo.
   var LEVELS = { 'A Itália em números (2022)': 'avancado',
     'Marcos do vinho italiano': 'avancado',
+    'Importações brasileiras (2021)': 'avancado',
+    'Províncias da Toscana': 'expert',
     'Estilos de destaque': 'medio',
     'Norte da Itália: vinhos de cada região': 'medio',
     'Cozinha do Norte': 'avancado',
@@ -4057,7 +4348,7 @@ STUDY_PACKS.push((function () {
     'Grandes produtores da Sardenha': 'expert' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'IT', version: 3, cards: cards };
+  return { code: 'IT', version: 4, cards: cards };
 })());
 
 ;
@@ -4102,7 +4393,7 @@ STUDY_PACKS.push((function () {
     ['1905', 'Universidade da Califórnia começa programas de viticultura e enologia, segundo o slide', 'conferir'],
     ['1920', 'Lei Seca proíbe produção, venda e transporte de álcool e trava o vinho no país'],
     ['1933', 'Fim da Lei Seca: a indústria volta a crescer em produção e qualidade'],
-    ['1976', 'Julgamento de Paris (24 de maio): degustação às cegas de vinhos franceses e americanos'],
+    ['1976', 'Julgamento de Paris (24 de maio): degustação às cegas de vinhos franceses e americanos por um painel de especialistas europeus'],
     ['1980', 'Vinhos da Califórnia ganham reconhecimento internacional', 'conferir'],
     ['1990', 'Filoxera atinge a Califórnia e exige replantio com porta-enxertos resistentes']
   ]);
@@ -4110,7 +4401,8 @@ STUDY_PACKS.push((function () {
     ['Origem', 'Dalmácia, Croácia, onde se chama Crljenak Kaštelanski; na Itália é o Primitivo'],
     ['Perfil', 'Tinto encorpado e frutado: frutas vermelhas maduras, especiarias, pimenta-preta e tabaco'],
     ['Estilo', 'De mais leve a mais encorpado, conforme terroir e vinificação'],
-    ['Terroirs', 'Lodi, Sierra Foothills e Paso Robles']
+    ['Terroirs', 'Lodi, Sierra Foothills e Paso Robles'],
+    ['Nos EUA', 'Na Califórnia, uma das uvas tintas mais cultivadas e proeminentes']
   ]);
   P('Castas brancas dos EUA', 'fatos', [
     ['Sauvignon Blanc', 'Califórnia, Washington e Oregon: brancos frescos e aromáticos, com cítricos e ervas'],
@@ -4130,6 +4422,11 @@ STUDY_PACKS.push((function () {
     ['Syrah', 'Em várias regiões: tinto rico, frutas escuras, especiarias e toques defumados'],
     ['Petite Sirah', 'Comum na Califórnia: tinto potente e robusto, notas picantes']
   ]);
+  P('Estados produtores de vinho dos EUA (mapa)', 'lista', [
+    ['', 'Costa oeste: Washington, Oregon, Califórnia e Idaho'],
+    ['', 'Sudoeste e centro: Arizona, Novo México, Texas, Colorado, Oklahoma e Missouri'],
+    ['', 'Leste: Wisconsin, Ohio, Pensilvânia, Nova York, Virgínia Ocidental, Geórgia e Alabama']
+  ]);
   P('Sistema americano: AVA', 'fatos', [
     ['O que é', 'Área de Viticultura Americana: região geográfica delimitada com solo, clima e topografia próprios'],
     ['Origem', 'Regulamento do ATF de 1978 (o slide cita uma lei de 1980)', 'corrigido'],
@@ -4144,6 +4441,13 @@ STUDY_PACKS.push((function () {
     ['Maturação', 'Temporada longa, com amadurecimento lento e completo'],
     ['Solos', 'De argilosos a arenosos e calcários, com excelente drenagem e boa retenção de água']
   ]);
+  R('Califórnia', '', 'Regiões vinícolas da Califórnia (mapa)', 'fatos', [
+    ['Northern California', 'Napa Valley, Sonoma, Santa Rosa, Alexander Valley, Carneros, Mendocino e Lake County'],
+    ['Sierra Foothills', 'El Dorado County e Amador County'],
+    ['Central Coast', 'Monterey, Paso Robles, Livermore Valley, Santa Cruz, Santa Barbara e Santa Ynez Valley'],
+    ['Southern California', 'Temecula'],
+    ['Central Valley', 'Lodi']
+  ]);
   R('Califórnia', '', 'Áreas vinícolas da Califórnia', 'lista', [
     ['', 'North Coast AVA'], ['', 'Central Coast AVA'], ['', 'Central Valley AVA'], ['', 'South Coast AVA']
   ]);
@@ -4152,6 +4456,7 @@ STUDY_PACKS.push((function () {
     ['Clima', 'Mediterrâneo; de fresco e nebuloso perto do oceano a quente e ensolarado no interior'],
     ['Solos', 'Argilosos, calcários e vulcânicos'],
     ['Importância', 'Segundo o slide, a melhor e mais importante AVA dos EUA'],
+    ['Estilo', 'Complexidade, elegância e expressão do terroir; alta qualidade'],
     ['Castas', 'Cabernet Sauvignon, Zinfandel, Merlot e Chardonnay']
   ]);
   R('Califórnia', '', 'Central Coast AVA', 'fatos', [
@@ -4178,7 +4483,15 @@ STUDY_PACKS.push((function () {
     ['Clima', 'Mediterrâneo; as cadeias de montanhas protegem e criam microclima ideal'],
     ['Solos', 'Argilosos, calcários e vulcânicos'],
     ['Castas', 'Cabernet Sauvignon, Merlot, Chardonnay e Sauvignon Blanc'],
-    ['Sub-regiões', 'Stags Leap District, Rutherford, Oakville e Howell Mountain']
+    ['Paisagem', 'Beleza cênica'],
+    ['Sub-regiões', 'Stags Leap District, Rutherford, Oakville e Howell Mountain'],
+    ['Estilo', 'Riqueza, complexidade e elegância; reconhecimento internacional']
+  ]);
+  R('Califórnia', 'Napa Valley', 'AVAs do Napa Valley (mapa)', 'lista', [
+    ['', 'Calistoga, Diamond Mountain District, Spring Mountain, St. Helena, Rutherford'],
+    ['', 'Oakville, Yountville, Mount Veeder, Oak Knoll District, Los Carneros'],
+    ['', 'Howell Mountain, Chiles Valley District, Stags Leap District, Atlas Peak'],
+    ['', 'Coombsville e Wild Horse Valley']
   ]);
 
   R('Oregon', '', 'Oregon em resumo', 'fatos', [
@@ -4240,6 +4553,9 @@ STUDY_PACKS.push((function () {
     'Central Valley AVA': 'expert',
     'South Coast AVA': 'expert',
     'Napa Valley': 'medio',
+    'AVAs do Napa Valley (mapa)': 'expert',
+    'Regiões vinícolas da Califórnia (mapa)': 'avancado',
+    'Estados produtores de vinho dos EUA (mapa)': 'expert',
     'Oregon em resumo': 'avancado',
     'Willamette Valley': 'avancado',
     'Washington em resumo': 'avancado',
@@ -4249,7 +4565,7 @@ STUDY_PACKS.push((function () {
     'Cozinha dos Estados Unidos': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'US', version: 1, cards: cards };
+  return { code: 'US', version: 2, cards: cards };
 })());
 
 // =====================  AUSTRÁLIA (aula 40)  =====================
@@ -4287,7 +4603,8 @@ STUDY_PACKS.push((function () {
     ['Origem', 'Rhône, na França; chegou à Austrália no século XIX'],
     ['Regiões', 'Barossa Valley, McLaren Vale e Hunter Valley, de climas quentes'],
     ['Importância', 'A casta tinta mais importante do país'],
-    ['Perfil', 'Cor profunda, frutas escuras, especiarias e taninos sedosos']
+    ['Perfil', 'Cor profunda, frutas escuras, especiarias e taninos sedosos'],
+    ['Área', 'Cobre porcentagem significativa dos vinhedos do país']
   ]);
   P('Castas brancas da Austrália', 'fatos', [
     ['Semillon', 'Envelhece com graça; usada em cortes; em Hunter Valley dá vinhos secos e frescos'],
@@ -4317,6 +4634,12 @@ STUDY_PACKS.push((function () {
     ['', '5. Coonawarra (Austrália do Sul)']
   ]);
 
+  P('Áreas vinícolas da Austrália (mapa)', 'lista', [
+    ['', 'Austrália Ocidental e Austrália do Sul'],
+    ['', 'Vitória e Nova Gales do Sul'],
+    ['', 'Queensland: South Burnett e Granite Belt (legenda "South Eastern Australia")'],
+    ['', 'Tasmânia']
+  ]);
   R('Austrália do Sul', 'Barossa Valley', 'Barossa Valley', 'fatos', [
     ['Onde', 'Austrália do Sul: Tanunda, Nuriootpa, Lyndoch e Angaston'],
     ['Produção', 'Volume substancial; vinhos tendem a ser mais acessíveis'],
@@ -4330,6 +4653,7 @@ STUDY_PACKS.push((function () {
     ['Produção', 'Substancial, com vinhos de qualidade acessível'],
     ['Condução', 'Muitas vinhas na "latada", com movimento de modernização, segundo o slide', 'conferir'],
     ['Solo e clima', 'Solos predominantemente arenosos; clima geralmente quente'],
+    ['Terroir', 'Excepcional; atrai investimento nacional e internacional'],
     ['Produtores', 'd\'Arenberg, Wirra Wirra, Yangarra Estate, Kay Brothers e Coriole']
   ]);
   R('Nova Gales do Sul', 'Hunter Valley', 'Hunter Valley', 'fatos', [
@@ -4346,6 +4670,7 @@ STUDY_PACKS.push((function () {
   R('Austrália do Sul', 'Coonawarra', 'Coonawarra', 'fatos', [
     ['Onde', 'Sul da Austrália; uma das regiões mais icônicas do país'],
     ['Solo', 'Terra vermelha'],
+    ['Estilo', 'Área de prestígio, de vinhos excepcionais e distintos'],
     ['Clima', 'Fresco e moderado: amadurecimento gradual e equilibrado'],
     ['Casta de destaque', 'Cabernet Sauvignon'],
     ['Produtores', 'Wynns Coonawarra Estate, Penley Estate, Katnook Estate, Yalumba The Menzies e Balnaves of Coonawarra']
@@ -4357,7 +4682,7 @@ STUDY_PACKS.push((function () {
   ]);
 
   H('Austrália', 'Cozinha da Austrália', [
-    ['Panorama', 'Mistura de influências culturais e ingredientes locais frescos; frutos do mar, cordeiro e canguru'],
+    ['Panorama', 'Mistura de influências culturais e ingredientes locais frescos; frutos do mar (camarões e ostras), cordeiro e canguru'],
     ['Meat pie', 'Torta de carne moída com temperos e molho, coberta de massa folhada'],
     ['BBQ prawns', 'Camarões grelhados com temperos e marinadas; popular no verão australiano'],
     ['Barramundi', 'Peixe nativo, grelhado ou assado, com legumes e molhos cítricos']
@@ -4369,6 +4694,7 @@ STUDY_PACKS.push((function () {
     'Castas brancas da Austrália': 'medio',
     'Castas tintas da Austrália': 'medio',
     'Austrália: clima e solo': 'avancado',
+    'Áreas vinícolas da Austrália (mapa)': 'expert',
     'Regiões vinícolas da Austrália': 'medio',
     'Barossa Valley': 'medio',
     'McLaren Vale': 'avancado',
@@ -4379,7 +4705,7 @@ STUDY_PACKS.push((function () {
     'Cozinha da Austrália': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'AU', version: 1, cards: cards };
+  return { code: 'AU', version: 2, cards: cards };
 })());
 
 // =====================  NOVA ZELÂNDIA (aula 41)  =====================
@@ -4445,10 +4771,15 @@ STUDY_PACKS.push((function () {
     ['', '4. Hawke\'s Bay (Ilha Norte)']
   ]);
 
+  P('Regiões vinícolas da Nova Zelândia (mapa)', 'lista', [
+    ['', 'Ilha Norte: Auckland, Waikato, Gisborne, Hawke\'s Bay e Wairarapa'],
+    ['', 'Ilha Sul: Nelson, Marlborough, Canterbury e Waipara, Central Otago']
+  ]);
   R('Marlborough', '', 'Marlborough', 'fatos', [
     ['Importância', 'A região mais importante do país, famosa mundialmente pelo Sauvignon Blanc'],
     ['Onde', 'Ilha Sul: Blenheim e Renwick'],
     ['Solo', 'Aluviais, mistura de argila e pedras'],
+    ['Estilo', 'Produção substancial; vinhos frutados e vibrantes'],
     ['Clima', 'Fresco, ideal para brancos aromáticos'],
     ['Produtores', 'Cloudy Bay, Villa Maria, Brancott Estate, Nautilus Estate e Saint Clair']
   ]);
@@ -4457,6 +4788,7 @@ STUDY_PACKS.push((function () {
     ['Onde', 'Ilha Sul: Cromwell, Alexandra e Bannockburn'],
     ['Clima e solo', 'Continental extremo; solos predominantemente de xisto'],
     ['Estilo', 'Elegância, fruta vibrante e estrutura bem definida'],
+    ['Viticultura', 'Muitas vinícolas com métodos tradicionais; cresce o interesse por práticas modernas; atrai investimento'],
     ['Produtores', 'Felton Road, Rippon, Quartz Reef, Mount Difficulty e Wooing Tree']
   ]);
   R('Wairarapa (Martinborough)', 'Martinborough', 'Martinborough', 'fatos', [
@@ -4464,6 +4796,7 @@ STUDY_PACKS.push((function () {
     ['Fama', 'Pinot Noir elegante e Sauvignon Blanc aromático'],
     ['Clima', 'Temperado, com verões quentes e secos e invernos frescos'],
     ['Solos', 'Depósitos aluviais, calcário e argila'],
+    ['Estilo', 'Complexidade, equilíbrio e terroir nítido; muitas vinícolas adotam práticas sustentáveis'],
     ['Produtores', 'Ata Rangi, Palliser Estate, Craggy Range, Escarpment e Te Kairanga']
   ]);
   R('Hawke\'s Bay', '', 'Hawke\'s Bay', 'fatos', [
@@ -4471,6 +4804,7 @@ STUDY_PACKS.push((function () {
     ['Clima', 'Quente e seco, com solos variados'],
     ['Tintas', 'Merlot, Cabernet Sauvignon e Syrah'],
     ['Brancas', 'Chardonnay e Sauvignon Blanc'],
+    ['Estilo', 'Riqueza, complexidade e elegância'],
     ['Produtores', 'Craggy Range, Te Mata Estate, Elephant Hill, Trinity Hill e Church Road']
   ]);
 
@@ -4482,7 +4816,7 @@ STUDY_PACKS.push((function () {
   cards[cards.length - 1].items[4].v = 'Grafado "Ataawaha" no slide';
 
   H('Nova Zelândia', 'Cozinha da Nova Zelândia', [
-    ['Panorama', 'Fusão de influências culturais e ingredientes frescos; frutos do mar, cordeiro e carneiro'],
+    ['Panorama', 'Fusão de influências culturais e ingredientes frescos; frutos do mar (lagostas e ostras), cordeiro e carneiro'],
     ['Hangi', 'Técnica maori, não um prato: comida cozida em buraco no chão (carne, cebola, alho e batata-doce)'],
     ['Whitebait fritters', 'Peixinhos brancos fritos em massa leve: iguaria crocante'],
     ['Lamb roasted', 'Cordeiro assado, com legumes assados e molho de hortelã']
@@ -4495,6 +4829,7 @@ STUDY_PACKS.push((function () {
     'Castas brancas da Nova Zelândia': 'avancado',
     'Castas tintas da Nova Zelândia': 'medio',
     'Nova Zelândia: clima e solo': 'avancado',
+    'Regiões vinícolas da Nova Zelândia (mapa)': 'avancado',
     'Regiões vinícolas da Nova Zelândia': 'medio',
     'Marlborough': 'medio',
     'Central Otago': 'medio',
@@ -4504,7 +4839,7 @@ STUDY_PACKS.push((function () {
     'Cozinha da Nova Zelândia': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'NZ', version: 1, cards: cards };
+  return { code: 'NZ', version: 2, cards: cards };
 })());
 
 // =====================  ÁFRICA DO SUL (aula 42)  =====================
@@ -4577,6 +4912,16 @@ STUDY_PACKS.push((function () {
     ['Doctor Cape', 'Vento forte e seco do sudoeste que limpa os vinhedos de fungos e parasitas'],
     ['Chuvas', 'Entre 800 e 1.000 mm por ano, segundo o slide', 'conferir']
   ]);
+  P('Mercados do vinho sul-africano', 'fatos', [
+    ['Apartheid', 'Com o fim do apartheid, a indústria do vinho ganhou força e conquistou o mundo'],
+    ['Embargos', 'O fim dos embargos da União Europeia foi marco decisivo na virada do setor']
+  ]);
+  P('Mapa das regiões do Cabo Ocidental (KWV)', 'fatos', [
+    ['Região Costeira', 'Distritos Swartland, Tulbagh, Paarl e Stellenbosch (Tulbagh e Paarl formam a zona Boberg)'],
+    ['Breede River', 'Distritos Worcester, Robertson e Swellendam'],
+    ['Outras regiões', 'Olifants River e Klein Karoo'],
+    ['Distritos fora de regiões', 'Overberg, Piquetberg e Douglas']
+  ]);
   P('Wine of Origin (W.O.)', 'fatos', [
     ['O que é', 'Sistema sul-africano de denominação controlada, criado em 1973'],
     ['Níveis', 'Unidade geográfica, região, distrito e ward (área delimitada)'],
@@ -4598,6 +4943,7 @@ STUDY_PACKS.push((function () {
   ]);
   R(WC, 'Stellenbosch', 'Stellenbosch', 'fatos', [
     ['Importância', 'O distrito mais importante do país, com as melhores vinícolas'],
+    ['Destaque', 'Abriga as melhores vinícolas e cultiva as uvas mais emblemáticas do país'],
     ['Castas', 'Chenin Blanc, Chardonnay, Sauvignon Blanc, Pinotage e Cabernet Franc'],
     ['Universidade', 'Universidade do Cabo: importante centro de pesquisa enológica (segundo o slide)', 'conferir']
   ]);
@@ -4623,7 +4969,7 @@ STUDY_PACKS.push((function () {
   cards[cards.length - 1].items[7].v = 'Grafado "Delair" no slide';
 
   H('África do Sul', 'Cozinha da África do Sul', [
-    ['Panorama', 'Fusão de influências e ingredientes locais; frutos do mar, cordeiro e carneiro; Chenin Blanc e Pinotage acompanham'],
+    ['Panorama', 'Fusão de influências e ingredientes locais; frutos do mar (lagostas e ostras), cordeiro e carneiro; Chenin Blanc e Pinotage acompanham; de snoek braais a biltongs'],
     ['Cape Malay seafood curry', 'Técnicas e ingredientes malaios com frutos do mar do Cabo; servido com arroz branco ou pão naan'],
     ['Bobotie', 'Carne moída temperada com ovos e especiarias, coberta com leite e ovos e assada; doce e picante, de influência malaia'],
     ['Braai', 'Churrasco sul-africano: boerewors, costelas e espetinhos; com saladas e pão de milho'],
@@ -4641,6 +4987,8 @@ STUDY_PACKS.push((function () {
     'Pinotage': 'medio',
     'Clima da África do Sul': 'avancado',
     'Wine of Origin (W.O.)': 'avancado',
+    'Mercados do vinho sul-africano': 'avancado',
+    'Mapa das regiões do Cabo Ocidental (KWV)': 'expert',
     'Escopo do Wine of Origin': 'expert',
     'Região Costeira': 'avancado',
     'Stellenbosch': 'medio',
@@ -4651,13 +4999,13 @@ STUDY_PACKS.push((function () {
     'Cozinha da África do Sul': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'ZA', version: 1, cards: cards };
+  return { code: 'ZA', version: 2, cards: cards };
 })());
 
 ;
 // ---- 23_SeedStudyPRO.js
 /**
- * CARTÕES DE ESTUDO — Produção de vinho (material de aula 3 a 13, v1).
+ * CARTÕES DE ESTUDO — Produção de vinho (material de aula 3 a 13, v2).
  * Panorama, viticultura, vinificação (brancos, tintos), amadurecimento, espumantes, fortificados e doces, naturais,
  * Velho e Novo Mundo, análise sensorial e ficha de degustação. Trechos de harmonização ficam com o pacote de harmonização.
  * O material pode ter erros: "corrigido" = conferi em fonte aberta e o slide estava errado; "conferir" = não consegui
@@ -4696,7 +5044,7 @@ STUDY_PACKS.push((function () {
     ['718 mil ha', 'Itália: estabilizada após a expansão de 2016 a 2020']
   ]);
   P('Panorama', 'Vinhedos da América do Sul (2022)', 'numeros', [
-    ['207 mil ha', 'Argentina: em queda desde 2015 (-2% em 2022); seca, calor e falta de água podem explicar'],
+    ['207 mil ha', 'Argentina: em queda desde 2015 (-4 mil ha, -2% em 2022); escassez de água, calor e seca podem explicar'],
     ['196 mil ha', 'Chile: quase inalterado em relação a 2021'],
     ['81 mil ha', 'Brasil: +0,8% em 2022, depois de oito anos de queda']
   ]);
@@ -4710,13 +5058,16 @@ STUDY_PACKS.push((function () {
     ['258 mhl', 'Produção mundial, sem sucos e mostos (-1% sobre 2021); estável perto de 260 mhl nos últimos quatro anos'],
     ['161,1 mhl', 'Produção da UE (+4% sobre 2021, alinhada à média de cinco anos)'],
     ['51%', 'Parte da produção mundial feita por Itália, França e Espanha juntas'],
-    ['Causas da queda', 'Colheita menor que o esperado na Europa e nos EUA e produção média no Hemisfério Sul']
+    ['Causas da queda', 'Colheita menor que o esperado na Europa e nos EUA e produção média no Hemisfério Sul'],
+    ['Clima 2022', 'Condições secas e quentes levaram a colheitas precoces e volumes médios'],
+    ['Média de 20 anos', 'A produção estável perto de 260 mhl fica ligeiramente abaixo da média de 20 anos']
   ]);
   P('Panorama', 'Produção na Europa em 2022', 'fatos', [
-    ['Itália', '-1% em relação a 2021'],
+    ['Itália', '-1% em relação a 2021 e +2% sobre a média de cinco anos'],
     ['França', '+21% em relação a 2021 e +7% sobre a média de cinco anos'],
     ['Espanha', '+1% sobre 2021, mas 5% abaixo da média de cinco anos'],
     ['Alemanha', '+6% sobre 2021'],
+    ['Demais da UE', 'Variações negativas na maioria dos outros países da UE'],
     ['Clima', 'Geada, granizo e calor excessivo marcaram a safra europeia']
   ]);
   P('Panorama', 'Produção fora da UE: Hemisfério Norte', 'fatos', [
@@ -4756,7 +5107,9 @@ STUDY_PACKS.push((function () {
     ['232 mhl', 'Consumo mundial estimado (-1% sobre 2021); queda regular desde 2018'],
     ['111 mhl', 'Consumo da UE: 48% do mundial (era 59% em 2000)'],
     ['-2 mhl/ano', 'Perda média da China desde 2018, principal causa da queda global'],
-    ['Consumo aparente', 'Método das estimativas; não conta bem estoques, perdas e usos industriais']
+    ['Consumo aparente', 'Método das estimativas; não conta bem estoques, perdas e usos industriais'],
+    ['2020', 'A queda se acentuou com a pandemia de Covid-19, que afetou muitos mercados'],
+    ['UE', 'Consumo -2% sobre 2021 e abaixo da média dos últimos dez anos']
   ]);
   P('Panorama', 'Desafios do consumo', 'lista', [
     ['', '2020: pandemia e confinamento; canal HoReCa (hotelaria, restaurantes e catering) e turismo interrompidos'],
@@ -4766,7 +5119,7 @@ STUDY_PACKS.push((function () {
   ]);
   P('Panorama', 'Consumo na Europa (2022)', 'numeros', [
     ['25,3 mhl', 'França: maior consumo da UE, em alta após a Covid'],
-    ['23,0 mhl', 'Itália (-5% sobre 2021)'],
+    ['23,0 mhl', 'Itália (-5% sobre 2021, alinhado à média de cinco anos)'],
     ['19,4 mhl', 'Alemanha (-3%)'],
     ['12,8 mhl', 'Reino Unido (-2%)'],
     ['10,8 mhl', 'Rússia (+3% desde 2018)'],
@@ -4778,16 +5131,17 @@ STUDY_PACKS.push((function () {
     ['34,0 mhl', 'EUA: maior consumidor do mundo (+3%), de volta ao nível pré-pandemia'],
     ['8,8 mhl', 'China (-16%, por demanda interna)'],
     ['8,3 mhl', 'Argentina (-1,3%)'],
-    ['5,5 mhl', 'Austrália (-3%, segundo ano de queda)'],
+    ['5,5 mhl', 'Austrália (-3%, segundo ano de queda; 2% abaixo da média de cinco anos)'],
     ['4,6 mhl', 'África do Sul (+16%)'],
     ['3,6 mhl', 'Brasil (-12,9%)'],
-    ['3,4 mhl', 'Japão (+2% sobre 2021)']
+    ['3,4 mhl', 'Japão (+2% sobre 2021, mas 3% abaixo da média de cinco anos)']
   ]);
   P('Panorama', 'Comércio mundial de vinho (2022)', 'numeros', [
     ['107 mhl', 'Volume exportado no mundo (-5% sobre 2021)'],
     ['37,6 bi €', 'Valor das exportações (+9%), puxado pelo aumento dos preços médios'],
     ['21,9 mhl', 'Itália, maior exportadora em volume (20% do total mundial)'],
-    ['12,3 bi €', 'França, maior exportadora em valor (cerca de um terço do total)']
+    ['12,3 bi €', 'França, maior exportadora em valor (cerca de um terço do total)'],
+    ['Exceções', 'A maioria dos países exportou menos em volume; Austrália e Canadá foram exceções']
   ]);
   P('Panorama', 'Os três maiores exportadores', 'fatos', [
     ['Volume', 'Itália 21,9 mhl (-0,6%), Espanha 21,2 (-10%), França 14,0 (-5%): juntas 57 mhl, 53% do mundo'],
@@ -4798,10 +5152,13 @@ STUDY_PACKS.push((function () {
     ['53%', 'Do volume exportado é vinho engarrafado (< 2 L), 68% do valor; preço médio 4,5 €/L'],
     ['11%', 'Do volume são espumantes, mas 23% do valor; preço médio 7,7 €/L'],
     ['+5% / +18%', 'Espumantes em 2022: volume e valor; única categoria a crescer nos dois'],
-    ['4%', 'Do volume é bag-in-box (> 2 L e < 10 L), 2% do valor; preço médio 1,8 €/L']
+    ['4%', 'Do volume é bag-in-box (> 2 L e < 10 L), 2% do valor; preço médio 1,8 €/L'],
+    ['-4% / +7%', 'Vinho engarrafado em 2022: volume e valor em relação a 2021'],
+    ['-4% / +6%', 'Bag-in-box em 2022: volume e valor em relação a 2021'],
+    ['2ª em valor', 'Espumantes: segunda categoria em valor, depois dos engarrafados; França, Itália e Espanha lideram']
   ]);
   P('Panorama', 'Maiores importadores (2022)', 'fatos', [
-    ['EUA', '14,4 mhl (+3%); líder em valor, 7,0 bi € (+17%)'],
+    ['EUA', '14,4 mhl (+3%); líder em valor, 7,0 bi € (+17%), com alta em todas as categorias'],
     ['Alemanha', '13,4 mhl (-9,3%) e 2,7 bi € (-4%): 2º em volume'],
     ['Reino Unido', '13,0 mhl (-2%), mas valor em alta: 4,8 bi € (+22,1%)'],
     ['Juntos', '41 mhl: 38% do volume importado no mundo']
@@ -4850,7 +5207,7 @@ STUDY_PACKS.push((function () {
     ['Regiões chuvosas', 'Em Borgonha, Champagne e Serra Gaúcha, os melhores vinhedos ficam nas encostas']
   ]);
   P('Viticultura', 'Condução: latada e espaldeira', 'fatos', [
-    ['Latada', 'Planta fixada em arames sobre mourões a 1,50 a 1,60 m; dá para andar por baixo; trazida ao Brasil pelos italianos'],
+    ['Latada', 'Planta fixada em arames sobre mourões de pedra ou cimento a 1,50 a 1,60 m; dá para andar por baixo; trazida ao Brasil pelos italianos'],
     ['Espaldeira', 'Arames na vertical e linhas separadas: sol dos dois lados, manhã e tarde, e melhor amadurecimento'],
     ['Guyot', 'O slide trata como sinônimo de espaldeira, mas Guyot é um sistema de poda', 'conferir']
   ]);
@@ -4864,25 +5221,30 @@ STUDY_PACKS.push((function () {
     ['O que é', 'Pulgão (Phylloxera vastatrix, cerca de 1 mm) que suga as raízes da videira'],
     ['Origem', 'Vivia nas raízes das videiras americanas, robustas e adaptadas a ele'],
     ['Chegada à Europa', 'Meados do séc. XIX, após a navegação a vapor: mudas americanas levadas com terra a jardins botânicos'],
-    ['Alvo', 'As viníferas europeias, que não resistem ao pulgão']
+    ['Alvo', 'As viníferas europeias, que não resistem ao pulgão'],
+    ['Tamanho', 'Cerca de 1 mm de comprimento por 0,5 mm de largura'],
+    ['Navegação a vapor', 'Começou por volta de 1850 a 1860 e facilitou o transporte das mudas americanas']
   ]);
   P('Viticultura', 'Inimigo: míldio', 'fatos', [
     ['O que é', 'Praga fúngica da videira'],
     ['Data', 'Primeira observação em 1834, nos EUA; o slide traz a Europa por volta de 1835', 'corrigido'],
     ['Remédio', 'Calda bordalesa: sulfato de cobre e cal'],
-    ['Descoberta', 'Millardet, de Bordeaux, notou seu efeito em 1882 (o slide não traz a data)', 'corrigido']
+    ['Descoberta', 'Millardet, de Bordeaux, notou seu efeito em 1882 (o slide não traz a data)', 'corrigido'],
+    ['Sequência', 'O slide diz que a filoxera veio logo após o controle do míldio; a ordem não foi confirmada', 'conferir']
   ]);
   P('Viticultura', 'Botrytis cinerea', 'fatos', [
     ['Podridão nobre', 'Em certas regiões ataca os cachos de modo desigual e fura as cascas'],
     ['Efeito', 'Só a água evapora, concentrando açúcares e sais: vinho doce de sobremesa'],
     ['Onde', 'Sauternes (Bordeaux), Tokaj (Hungria), Mosel e Reno (Alemanha)'],
-    ['Lado ruim', 'Na maior parte dos casos é praga: a podridão cinza']
+    ['Lado ruim', 'Na maior parte dos casos é praga: a podridão cinza'],
+    ['Mistério', 'Fenômeno ainda não muito bem explicado']
   ]);
   P('Viticultura', 'Terroir', 'lista', [
     ['', 'Palavra francesa: originalmente uma extensão delimitada de terra'],
     ['', 'Hoje reúne geografia, geologia e clima de um lugar'],
     ['', 'Define a singularidade que cada uva ganha em cada região (Malbec argentino e francês diferem em aromas)'],
-    ['', 'O slide cita o Master of Wine Alexander Hunt: o terroir molda até diferenças dentro de um mesmo vinhedo', 'conferir']
+    ['', 'O slide cita o Master of Wine Alexander Hunt: o terroir molda até diferenças dentro de um mesmo vinhedo', 'conferir'],
+    ['', 'Atua também no desenvolvimento das uvas durante o cultivo; algumas regiões ficaram famosas por microclimas únicos']
   ]);
   P('Viticultura', 'Castas de regiões francesas', 'fatos', [
     ['Champagne', 'Chardonnay, Pinot Noir, Pinot Meunier, Pinot Blanc, Pinot Gris, Arbane, Petit Meslier'],
@@ -4919,7 +5281,8 @@ STUDY_PACKS.push((function () {
     ['Ésteres', 'Aromas frutados'],
     ['Terpenos', 'Notas florais'],
     ['Aldeídos e cetonas', 'Nuances de nozes e caramelo'],
-    ['Outros álcoois', 'Metanol, propanol e butanol, em quantidades mínimas']
+    ['Outros álcoois', 'Metanol, propanol e butanol, em quantidades mínimas'],
+    ['Grupo', 'Saccharomyces: as "leveduras do açúcar"']
   ]);
   P('Vinificação de brancos', 'Acidez e malolática nos brancos', 'lista', [
     ['', 'O ácido málico da uva pode virar ácido lático, o que suaviza a acidez e muda a textura'],
@@ -4964,13 +5327,28 @@ STUDY_PACKS.push((function () {
     ['7 a 20 dias', 'Duração média da fermentação'],
     ['2 a 4 °C', 'Temperatura do tanque de espera após a filtragem, para homogeneizar e evitar a malolática'],
     ['Acima de 18 °C', 'Substâncias aromáticas e voláteis se dispersam com o gás carbônico'],
-    ['Abaixo de 13 °C', 'A fermentação fica muito difícil']
+    ['Abaixo de 13 °C', 'A fermentação fica muito difícil'],
+    ['Constante', 'Temperatura ajustada à uva e ao produto final e mantida constante até o fim']
   ]);
   P('Vinificação de brancos', 'Fim da fermentação do branco', 'lista', [
     ['', 'Quando o açúcar acaba, as leveduras morrem e a fermentação termina'],
     ['', 'Vinho seco: as leveduras consumiram toda a glicose e a frutose'],
     ['', 'O vinho novo traz sólidos em suspensão: mucilagens, leveduras, restos de casca'],
     ['', 'É bombeado para outro tanque de aço, com filtro, e fica semanas até o engarrafamento']
+  ]);
+
+  P('Vinificação de brancos', 'Etapas dos brancos: detalhes', 'fatos', [
+    ['Colheita', 'Cada região fixa, pelas próprias regras, o limite de uvas por hectare; a temperatura da fruta também influencia'],
+    ['Desengace', 'Separar cachos e bagos evita taninos e outros elementos indesejáveis'],
+    ['Esmagamento', 'Pode ser feito para liberar suco e polpa, onde ficam açúcares, enzimas e outros componentes'],
+    ['Fermentação', 'Libera calor e gás carbônico; controlar a temperatura evita calor excessivo, que prejudica aromas e sabores'],
+    ['Remontagem', 'Também prevista: remontagem ou punching down levam as partes sólidas de volta ao mosto'],
+    ['Estabilização', 'Pode incluir clarificação, filtragem e, em alguns casos, filtração esterilizante'],
+    ['Mercado', 'Na grande maioria dos casos o vinho é feito sob demanda ou para um mercado específico']
+  ]);
+  P('Vinificação de brancos', 'Casta, solo e clima', 'lista', [
+    ['', 'A escolha da casta deve considerar o terroir (solo e clima) para maximizar a expressão aromática e gustativa'],
+    ['', 'Solos ricos, clima moderado e a casta certa dão vinhos que carregam o terroir e a paixão do produtor']
   ]);
 
   // ======================= VINIFICAÇÃO DE TINTOS (Aula 8) =======================
@@ -5008,7 +5386,9 @@ STUDY_PACKS.push((function () {
     ['10 a 18 dias', 'Duração da fermentação'],
     ['23 a 30 °C', 'Faixa do slide; fonte aberta cita 22 a 25 °C como típico, e o calor demais cozinha o aroma', 'conferir'],
     ['1 a 2 por dia', 'Remontagens, para romper o chapéu de cascas e extrair a cor'],
-    ['A cada 2 h', 'Amostras para controlar cor, pH, densidade, açúcares e álcool']
+    ['A cada 2 h', 'Amostras para controlar cor, pH, densidade, açúcares e álcool'],
+    ['Mínimo 23 °C e máx. ~30 °C', 'Segundo o slide: abaixo de 23 a extração de pigmentos fica muito difícil; acima de 30 os aromas se perdem e surge cheiro de cozido', 'conferir'],
+    ['Padrão de cor', 'As vinícolas mantêm um padrão de cor para cada linha de produto']
   ]);
   P('Vinificação de tintos', 'Chapéu e remontagem', 'lista', [
     ['', 'A fermentação tumultuosa levanta as cascas e forma uma camada grossa: o chapéu'],
@@ -5018,7 +5398,8 @@ STUDY_PACKS.push((function () {
   P('Vinificação de tintos', 'Do tinto leve ao encorpado', 'fatos', [
     ['Mais leve', 'Ao atingir a cor desejada, o enólogo drena o mosto para outro tanque, longe das cascas'],
     ['Mais encorpado', 'O mosto fica em contato com as cascas por mais tempo, até o fim da fermentação'],
-    ['Vinho de prensa', 'Das cascas prensadas, muito escuro; usado para corrigir a cor do vinho principal']
+    ['Vinho de prensa', 'Das cascas prensadas, muito escuro; usado para corrigir a cor do vinho principal'],
+    ['Vinho-flor', 'Vinho que escorre das cascas antes da prensagem; as cascas ainda guardam vinho para o vinho de prensa']
   ]);
   P('Vinificação de tintos', 'Clarificação (colagem)', 'lista', [
     ['', 'Usa cola de peixe, clara de ovo, albumina, gelatina, caseína do leite'],
@@ -5038,6 +5419,14 @@ STUDY_PACKS.push((function () {
     ['Bandol', 'Rosés de alta qualidade, principalmente de Mourvèdre']
   ]);
 
+  P('Vinificação de tintos', 'Etapas dos tintos: detalhes', 'fatos', [
+    ['Colheita', 'Cada região fixa, pelas próprias regras, o limite de uvas por hectare; alguns colhem à noite pela temperatura da fruta'],
+    ['Desengace', 'Separar cachos e bagos evita excesso de taninos e outros elementos indesejáveis'],
+    ['Malolática', 'Em alguns vinhos, bactérias convertem o ácido málico em lático, o que suaviza a acidez'],
+    ['Estabilização', 'Pode incluir clarificação, filtragem e, em alguns casos, filtração esterilizante'],
+    ['Mercado', 'Na grande maioria dos casos o vinho é feito sob demanda ou para um mercado específico']
+  ]);
+
   // ======================= AMADURECIMENTO (Aula 9) =======================
   P('Amadurecimento', 'Amadurecimento × envelhecimento', 'fatos', [
     ['Amadurecimento', 'Em barris de carvalho ou tanques de aço inox, antes do lançamento'],
@@ -5052,7 +5441,7 @@ STUDY_PACKS.push((function () {
   ]);
   P('Amadurecimento', 'Espécies de carvalho', 'fatos', [
     ['Quercus petraea', 'Carvalho sessile, da Europa central e ocidental: frutas secas, especiarias e estrutura sólida'],
-    ['Quercus robur', 'Pedunculado, comum na França: influência mais suave, menos baunilha que o americano'],
+    ['Quercus robur', 'Pedunculado (ou inglês), comum na França e na Europa: influência mais suave, menos baunilha que o americano'],
     ['Quercus alba', 'Carvalho branco americano: baunilha, coco e especiarias; marca de muitos vinhos americanos']
   ]);
   P('Amadurecimento', 'Benefícios técnicos do carvalho', 'fatos', [
@@ -5060,7 +5449,8 @@ STUDY_PACKS.push((function () {
     ['Estabilização', 'Certos ácidos e aldeídos voláteis indesejados podem diminuir'],
     ['Clarificação', 'A estrutura porosa age como filtro natural e reduz a filtração'],
     ['Complexidade', 'Lignina e hemicelulose se degradam na tosta: baunilha, coco, especiarias e tostados'],
-    ['Longevidade', 'Condições ideais para vinhos de guarda evoluírem']
+    ['Longevidade', 'Condições ideais para vinhos de guarda evoluírem'],
+    ['Perfis', 'Carvalho francês, americano, húngaro e esloveno têm sabores e aromas próprios; a escolha personaliza o vinho']
   ]);
   P('Amadurecimento', 'Origem do carvalho', 'fatos', [
     ['França', 'Limousin, Allier, Nevers e Vosges: muito valorizado'],
@@ -5072,7 +5462,8 @@ STUDY_PACKS.push((function () {
   P('Amadurecimento', 'Tipos de barril (1)', 'fatos', [
     ['Barrica bordalesa', 'Bordeaux: cerca de 225 L (300 garrafas); tintos de Bordeaux e outras regiões'],
     ['Barrica borgonhesa', 'Borgonha: cerca de 228 L (304 garrafas); forma mais larga'],
-    ['Pipa', 'Portugal: 550 a 620 L; Porto e fortificados']
+    ['Pipa', 'Portugal: 550 a 620 L; Porto e fortificados'],
+    ['Escolha', 'Cada barril afeta o vinho pela relação entre superfície interna e volume e pelo tipo de carvalho']
   ]);
   P('Amadurecimento', 'Tipos de barril (2)', 'fatos', [
     ['Gönc', 'Tokaj, Hungria: frequentemente 136 L; para o Tokaji Aszú'],
@@ -5081,7 +5472,7 @@ STUDY_PACKS.push((function () {
   ]);
   P('Amadurecimento', 'Barris franceses grandes', 'fatos', [
     ['Foudre', 'França: milhares de litros; vinhos tranquilos em grande escala'],
-    ['Tonneau', 'França: de 350 a 500 L segundo o slide, valor que parece baixo', 'conferir'],
+    ['Tonneau', 'França: de 350 a 500 L segundo o slide, para vinhos finos de envelhecimento intermediário; o valor parece baixo', 'conferir'],
     ['Demi-muid', 'França: 600 a 700 L segundo o slide; fontes abertas costumam citar menos', 'conferir']
   ]);
   P('Amadurecimento', 'Dentro da garrafa', 'lista', [
@@ -5112,12 +5503,20 @@ STUDY_PACKS.push((function () {
     ['Brasil', 'Reservado deve ser indicado para consumo jovem e ter ao menos 10% de álcool, segundo o slide', 'conferir']
   ]);
 
+  P('Amadurecimento', 'Tanoarias pelo mundo', 'produtores', [
+    ['Tanoaria Ramalho', 'Esmoriz, Portugal'],
+    ['Trust Cooperage', 'Szigetvár, Hungria'],
+    ['Tonnellerie Remond', 'Ladoix-Serrigny, França'],
+    ['Tanoaria Espanha', 'Santa Catarina, Brasil'],
+    ['Canton Cooperage', 'Kentucky, EUA']
+  ]);
+
   // ======================= ESPUMANTES (Aula 11) =======================
   P('Espumantes', 'História dos espumantes', 'linha', [
     ['1531', 'Método ancestral: fermentação primária em garrafa, no sul da França (Limoux)'],
     ['1662', 'Champagne vira famosa por seus espumantes; Dom Pérignon não os inventou: foi encarregado de eliminar as bolhas', 'corrigido'],
     ['1710', 'Método champenoise (tradicional), de segunda fermentação em garrafa, é aprimorado em Champagne'],
-    ['1870', 'Método Asti, criado na Itália para o Moscato d\'Asti, segundo o slide', 'conferir'],
+    ['1870', 'Método Asti, criado na Itália para o Moscato d\'Asti, preservando doçura e frutado da uva; segundo o slide', 'conferir'],
     ['1895', 'Federico Martinotti patenteia a segunda fermentação em tanque; Charmat a aprimora e patenteia em 1907', 'corrigido']
   ]);
   P('Espumantes', 'Método ancestral', 'fatos', [
@@ -5153,7 +5552,8 @@ STUDY_PACKS.push((function () {
   P('Espumantes', 'Método Charmat', 'fatos', [
     ['Nomes', 'Também chamado método italiano; fermentação secundária em tanques de aço'],
     ['Vantagem', 'Mais rápido e econômico; preserva o frescor e o frutado'],
-    ['Perfil', 'Espumantes frescos e acessíveis']
+    ['Perfil', 'Espumantes frescos e acessíveis'],
+    ['Surgimento', 'Final do séc. XIX: segunda fermentação em tanques de aço, produção mais rápida e econômica']
   ]);
   P('Espumantes', 'Método Charmat: etapas', 'linha', [
     ['1', 'Fermentação primária em tanques de aço a temperatura controlada: vinho-base'],
@@ -5172,12 +5572,14 @@ STUDY_PACKS.push((function () {
   P('Espumantes', 'Cava', 'fatos', [
     ['Método', 'Tradicional, o mesmo do Champagne: 2ª fermentação na garrafa'],
     ['Uvas', 'Macabeo, Xarel-lo e Parellada, com Chardonnay, Pinot Noir e outras autorizadas'],
-    ['Região', 'Penedès, que o slide chama de a melhor']
+    ['Região', 'Penedès, que o slide chama de a melhor'],
+    ['Fama', 'O espumante mais renomado da Espanha']
   ]);
   P('Espumantes', 'Franciacorta', 'fatos', [
     ['Onde', 'Lombardia, Itália'],
     ['Método', 'Tradicional, 2ª fermentação na garrafa'],
-    ['Uvas', 'Chardonnay (cítrico, elegância), Pinot Noir e Pinot Blanc']
+    ['Uvas', 'Chardonnay (cítrico, elegância), Pinot Noir e Pinot Blanc'],
+    ['Papel das uvas', 'A Chardonnay é central; as uvas tintas adicionam complexidade']
   ]);
   P('Espumantes', 'Sekt', 'fatos', [
     ['O que é', 'O espumante alemão'],
@@ -5207,13 +5609,16 @@ STUDY_PACKS.push((function () {
     ['1865', 'Filoxera chega ao Douro por Sabrosa, segundo o slide; na Europa ela surge em 1863', 'conferir'],
     ['1933', 'Criado o instituto que regula o Porto, hoje IVDP, segundo o slide', 'conferir'],
     ['Séc. XX', 'Categorias Ruby, Tawny, Vintage e LBV são definidas'],
-    ['2001', 'Alto Douro Vinhateiro é Patrimônio Mundial da UNESCO']
+    ['1990', 'O slide diz que o Porto ganha reconhecimento internacional', 'conferir'],
+    ['2001', 'Alto Douro Vinhateiro é Patrimônio Mundial da UNESCO'],
+    ['2003', 'Segundo o slide, a indústria foca em sustentabilidade, conversão de manejo e modernização', 'conferir'],
+    ['Hoje', 'Estilos mais diversos e conquista de novos mercados']
   ]);
   P('Fortificados e doces', 'Como se faz o Porto', 'linha', [
     ['1', 'Colheita entre setembro e outubro, com seleção cuidadosa dos cachos'],
-    ['2', 'Desengace e esmagamento'],
-    ['3', 'Fermentação alcoólica em tanques'],
-    ['4', 'Adição de aguardente vínica, que interrompe a fermentação e guarda o açúcar'],
+    ['2', 'Desengace e esmagamento, que liberam o mosto'],
+    ['3', 'Fermentação alcoólica em tanques, com leveduras naturais ou adicionadas; gera calor e aromas'],
+    ['4', 'Adição de aguardente vínica (brandy de uva) de alto teor alcoólico: interrompe a fermentação e guarda o açúcar'],
     ['5', 'Maturação em barris de carvalho, com oxidação lenta (Ruby, Tawny, LBV ou Vintage)'],
     ['6', 'Blending de safras e barris (comum em Tawny, Ruby e Old Tawny)'],
     ['7', 'Filtração e engarrafamento; os Vintages seguem evoluindo na garrafa']
@@ -5232,7 +5637,8 @@ STUDY_PACKS.push((function () {
   P('Fortificados e doces', 'Regiões de botritizados', 'fatos', [
     ['Sauternes', 'França (Bordeaux): principalmente Sémillon'],
     ['Tokaj-Hegyalja', 'Hungria: Tokaji, principalmente de Furmint'],
-    ['Mosel', 'Alemanha: Riesling para colheita tardia e vinho do gelo']
+    ['Mosel', 'Alemanha: Riesling para colheita tardia e vinho do gelo'],
+    ['Clima', 'O clima de Bordeaux favorece a botrytis em Sauternes; Tokaj tem clima temperado propício ao fungo']
   ]);
   P('Fortificados e doces', 'Produtores de botritizados', 'fatos', [
     ['Château d\'Yquem', 'Sauternes: o mais prestigioso; um dos maiores vinhos de sobremesa do mundo'],
@@ -5242,7 +5648,8 @@ STUDY_PACKS.push((function () {
   P('Fortificados e doces', 'Vinhos de colheita tardia', 'lista', [
     ['', 'Uvas colhidas mais tarde que o normal: mais maduras, sabores intensos e muito açúcar'],
     ['', 'Seleção cuidadosa; às vezes desidratação controlada'],
-    ['', 'Açúcar residual alto, equilibrado pela acidez natural: doçura com frescor']
+    ['', 'Açúcar residual alto, equilibrado pela acidez natural: doçura com frescor'],
+    ['', 'Em inglês: "late harvest"']
   ]);
   P('Fortificados e doces', 'Vin Santo', 'fatos', [
     ['Origem', 'Doce de sobremesa italiano; nome "Vinho Santo" lembra os mosteiros e celebrações religiosas'],
@@ -5257,7 +5664,8 @@ STUDY_PACKS.push((function () {
     ['Fundador', 'Rudolf Steiner, filósofo austríaco'],
     ['Quando', 'Palestras no início do séc. XX, reunidas em 1924 em "As Palestras sobre Agricultura"'],
     ['Base', 'Antroposofia; a fazenda é vista como um organismo vivo'],
-    ['Motivo', 'Reação à degradação do solo e à qualidade dos alimentos']
+    ['Motivo', 'Reação à degradação do solo e à qualidade dos alimentos'],
+    ['Antroposofia', 'Sistema de pensamento que une ciência espiritual e prática agrícola']
   ]);
   P('Vinhos naturais', 'Como se pratica a biodinâmica', 'lista', [
     ['', 'Preparados biodinâmicos de ervas, minerais e esterco, aplicados ao solo e às plantas'],
@@ -5275,7 +5683,9 @@ STUDY_PACKS.push((function () {
     ['', 'Uvas cultivadas sem produtos químicos sintéticos, como pesticidas e herbicidas'],
     ['', 'Muitas vinícolas têm certificação orgânica'],
     ['', 'Adubo com compostos e esterco; controle de pragas com insetos benéficos e rotação de culturas'],
-    ['', 'Mais sustentabilidade, saúde do solo, biodiversidade e menor pegada de carbono']
+    ['', 'Mais sustentabilidade, saúde do solo, biodiversidade e menor pegada de carbono'],
+    ['', 'Importância crescente no mercado pela demanda por produtos mais saudáveis e ecológicos'],
+    ['', 'Muitos apreciadores acreditam que dão sabores mais puros e autênticos']
   ]);
   P('Vinhos naturais', 'Agrotóxicos na vinha', 'fatos', [
     ['Fungicidas', 'Contra míldio e oídio: oxicloreto de cobre e mancozebe'],
@@ -5287,7 +5697,9 @@ STUDY_PACKS.push((function () {
   P('Vinhos naturais', 'Vinhos naturais: a ideia', 'lista', [
     ['', 'Abordagem minimalista: simplicidade, não intervenção e expressão pura do terroir'],
     ['', 'Popularidade cresceu nas últimas duas a três décadas'],
-    ['', 'Resposta à busca por sabores genuínos e à preocupação com sustentabilidade']
+    ['', 'Resposta à busca por sabores genuínos e à preocupação com sustentabilidade'],
+    ['', 'Sem intervenção: evita produtos químicos e aditivos, e uvas e fermentação refletem o ambiente'],
+    ['', 'Origem de séculos atrás; surgiu como volta às raízes da vinificação']
   ]);
   P('Vinhos naturais', 'Práticas dos vinhos naturais', 'fatos', [
     ['Vinhedo', 'Uvas orgânicas ou biodinâmicas, sem pesticidas ou herbicidas'],
@@ -5374,12 +5786,32 @@ STUDY_PACKS.push((function () {
     ['Nova Zelândia', 'Marlborough, Central Otago, Hawke\'s Bay e Waipara; Sauvignon Blanc, Pinot Noir, Chardonnay e Riesling']
   ]);
 
+  P('Velho e Novo Mundo', 'Velho Mundo: características gerais', 'fatos', [
+    ['Berço', 'De muitas castas e técnicas de vinificação que definem a indústria moderna'],
+    ['Leis', 'Denominações de origem rigorosas, como AOC e DOCG, protegem a qualidade'],
+    ['Cotidiano', 'O consumo de vinho é parte da vida diária e a região exporta muito'],
+    ['França', 'Líder em exportação; o enoturismo é parte essencial da indústria'],
+    ['Espanha', 'Um dos maiores consumidores per capita do mundo, segundo o slide', 'conferir'],
+    ['Portugal', 'Consumo per capita notável; vinhos de alta qualidade a preços acessíveis']
+  ]);
+  P('Velho e Novo Mundo', 'Novo Mundo: características gerais', 'fatos', [
+    ['Tecnologia', 'Irrigação controlada e vinificação avançada permitem grande variedade de vinhos'],
+    ['Tradição', 'Mais recente, mas com regulamentações para garantir a qualidade'],
+    ['Economia', 'A indústria impulsiona economia e turismo, com consumo e exportações em alta'],
+    ['EUA', 'Consumo em alta; Califórnia e Oregon são populares na exportação; inovação e experimentação'],
+    ['Chile', 'Qualidade consistente nos tintos; viticultura e vinificação modernas premiadas'],
+    ['Argentina', 'Terroir dos Andes; exporta sobretudo Malbec'],
+    ['Brasil', 'Espumantes de alta qualidade, tintos e brancos; consumo em constante crescimento']
+  ]);
+
   // ======================= ANÁLISE SENSORIAL (Aula 5) =======================
   P('Análise sensorial', 'Análise sensorial: introdução', 'lista', [
     ['', 'Mistura de ciência, arte e técnica; com treino fica mais fácil'],
     ['', 'A análise organoléptica é a mais importante que existe para o vinho'],
     ['', 'O laboratório mede a química, mas não distingue a qualidade intrínseca do vinho'],
-    ['', 'Degustar é provar notando todas as características e anotando numa ficha ou mentalmente']
+    ['', 'Degustar é provar notando todas as características e anotando numa ficha ou mentalmente'],
+    ['', 'Aprender a degustar parece difícil no início, por causa do vocabulário e das abordagens novos'],
+    ['', 'Centros de estudos enológicos e grandes vinícolas têm laboratórios com análises químicas bem completas']
   ]);
   P('Análise sensorial', 'Os sentidos e o estímulo', 'fatos', [
     ['Visão', 'Estímulo físico'],
@@ -5398,14 +5830,16 @@ STUDY_PACKS.push((function () {
     ['Percepção', 'Julgamento e interpretação que cada pessoa faz do que os sentidos captaram']
   ]);
   P('Análise sensorial', 'A Roda de Aromas', 'fatos', [
-    ['Autora', 'Ann C. Noble, química americana nascida em 1931, de UC Davis'],
+    ['Autora', 'Ann C. Noble, engenheira química americana de UC Davis; o slide diz nascida em 1931', 'conferir'],
     ['Contratação', 'Em 1974, 1ª mulher contratada pelo Departamento de Viticultura e Enologia de Davis'],
     ['Roda', 'Criada em 1984 para agrupar aromas em categorias, com terminologia específica'],
-    ['Aposentadoria', '2002']
+    ['Aposentadoria', '2002'],
+    ['Utilidade', 'Ajuda iniciantes e especialistas a reconhecer aromas e a exercitar a memória olfativa']
   ]);
   P('Análise sensorial', 'Condições da degustação', 'fatos', [
     ['Local', 'Bem iluminado (luz do dia ou lâmpadas brancas), paredes e mesas claras, clima confortável, sem cheiros fortes'],
-    ['Degustador', 'Bem física e psicologicamente; sem perfume forte e cigarro; sem estômago cheio; água antes e durante']
+    ['Degustador', 'Bem física e psicologicamente; sem perfume forte e cigarro; sem estômago cheio; água antes e durante'],
+    ['Requisitos', 'Local adequado, copos apropriados, degustador em boas condições e vinhos na temperatura correta']
   ]);
   P('Análise sensorial', 'Temperatura de serviço', 'fatos', [
     ['6 a 8 °C', 'Champagnes e espumantes'],
@@ -5435,7 +5869,8 @@ STUDY_PACKS.push((function () {
     ['Flavonos', 'Cor amarela'],
     ['Leucoantocianos', 'Pigmento das uvas brancas: transparente'],
     ['Quercetina', 'Amarelo'],
-    ['Clorofila', 'Verde ou esverdeado']
+    ['Clorofila', 'Verde ou esverdeado'],
+    ['Onde ficam', 'Nas cascas das uvas tintas e na polpa das brancas; são polifenóis']
   ]);
   P('Análise sensorial', 'Cores dos vinhos brancos', 'fatos', [
     ['Branco papel', 'Brancos de regiões frias ou pouco ensolaradas, leves e acídulos; pouco contato com as cascas'],
@@ -5474,7 +5909,8 @@ STUDY_PACKS.push((function () {
   P('Análise sensorial', 'Olfato: o órgão', 'fatos', [
     ['Mucosa', 'Cerca de 5 cm², na parte alta da cavidade nasal, ligada ao bulbo olfativo na base do cérebro'],
     ['Cobertura', 'Película oleosa com filme de água: percebe substâncias solúveis em óleo ou em água'],
-    ['Treino', 'Narizes treinados distinguem de 1.500 a 2.000 aromas, segundo alguns autores', 'conferir']
+    ['Treino', 'Narizes treinados distinguem de 1.500 a 2.000 aromas, segundo alguns autores', 'conferir'],
+    ['Nervos', 'O slide fala em cinco filamentos nervosos; são muitos feixes que atravessam a placa crivosa do etmoide até o bulbo', 'corrigido']
   ]);
   P('Análise sensorial', 'Prisma do olfato', 'fatos', [
     ['Ideia', 'Vinho novo tem aromas frutados e florais; com o tempo as famílias evoluem'],
@@ -5511,10 +5947,11 @@ STUDY_PACKS.push((function () {
     ['Peso', 'A etapa mais importante da análise e a de maior peso nas fichas'],
     ['Gostos básicos', 'Doce, salgado, ácido e amargo, sentidos pelas papilas da língua'],
     ['Sensações cutâneas', 'Maciez, adstringência, picância, sentidas na língua e na boca'],
-    ['Retronasais', 'Aromas que sobem pelo nariz ao expirar após engolir: o "gosto" do vinho']
+    ['Retronasais', 'Aromas que sobem pelo nariz ao expirar após engolir: o "gosto" do vinho'],
+    ['Aspectos', 'O paladar é o conjunto de sensações da boca, dividido nesses três aspectos']
   ]);
   P('Análise sensorial', 'Tanicidade, acidez e maciez no tempo', 'fatos', [
-    ['Tanicidade', 'O que mais melhora: tintos jovens são adstringentes; carvalho e garrafa reduzem muito os taninos'],
+    ['Tanicidade', 'O que mais melhora: tintos jovens, sobretudo encorpados, são adstringentes e levemente amargos; carvalho e garrafa reduzem muito os taninos'],
     ['Acidez', 'Diminui pouco e devagar, por reações lentas entre ácidos orgânicos e outros compostos'],
     ['Maciez', 'Mascarada em vinhos jovens; açúcar residual e glicerina não mudam com o tempo'],
     ['Álcool', 'Surge na fermentação e fica até o vinho ser consumido']
@@ -5524,7 +5961,22 @@ STUDY_PACKS.push((function () {
     ['Tipo', 'Branco, rosé ou tinto'],
     ['Estrutura', 'Tanicidade, acidez e corpo'],
     ['Saúde', 'Bactérias, fungos e oxidação'],
-    ['Armazenamento', 'Temperatura, luz e posição']
+    ['Armazenamento', 'Temperatura, luz e posição'],
+    ['Ser vivo', 'O slide compara o vinho a seres vivos de escala um pouco abaixo dos vegetais, pelas mudanças contínuas']
+  ]);
+
+  P('Análise sensorial', 'Análise sensorial: definição', 'fatos', [
+    ['ABNT, 1993', 'Disciplina científica para evocar, medir, analisar e interpretar reações às características percebidas pelos sentidos'],
+    ['Sentidos', 'Visão, olfato, gosto, tato e audição'],
+    ['Degustar', 'Provar apreciando todas as características, qualidades e defeitos, e anotar numa ficha ou mentalmente']
+  ]);
+  P('Análise sensorial', 'Aroma × bouquet', 'fatos', [
+    ['Aroma primário', 'Vem das uvas; caráter frutado e floral'],
+    ['Aroma secundário', 'Vem da fermentação; caráter vinoso'],
+    ['Bouquet de carvalho', 'Do carvalho e dos compostos da tostagem'],
+    ['Bouquet de redução', 'Do envelhecimento dentro da garrafa, sem oxigênio'],
+    ['Bouquet de oxidação', 'De vinhos de longo envelhecimento em barrica, com contato prolongado com o oxigênio: Porto, Madeira, Jerez, Marsala'],
+    ['Regra', 'Só existe bouquet em vinhos evoluídos']
   ]);
 
   // ======================= FICHA DE DEGUSTAÇÃO (Aula 6) =======================
@@ -5532,7 +5984,9 @@ STUDY_PACKS.push((function () {
     ['', 'É um mapa sensorial que guia cada aspecto do vinho, da cor aos sabores'],
     ['', 'Permite comparar vinhos ao longo do tempo'],
     ['', 'Treina paladar e olfato; muitos críticos a usam para avaliações objetivas e justas'],
-    ['', 'Notas influenciam compras, reputação dos produtores e o mercado']
+    ['', 'Notas influenciam compras, reputação dos produtores e o mercado'],
+    ['', 'Uma ficha bem preenchida dá transparência e credibilidade às avaliações'],
+    ['', 'Afinar paladar e olfato leva anos de experiência; a ficha é aliada nesse aprendizado']
   ]);
   P('Ficha de degustação', 'Método Le Cordon Bleu', 'fatos', [
     ['Ficha', 'Inspirada no Método Giancarlo Bossi, no Diplôme Wine & Spirits'],
@@ -5546,12 +6000,14 @@ STUDY_PACKS.push((function () {
     ['Reflexos', 'Indicam estilo ou idade'],
     ['Limpidez', 'Indica técnicas e até saúde'],
     ['Transparência', 'Também indica técnicas e saúde'],
-    ['Cor', 'Indica tipicidade do vinho']
+    ['Cor', 'Indica tipicidade do vinho'],
+    ['Pistas', 'O exame visual dá pistas sobre história, personalidade e qualidade do vinho']
   ]);
   P('Ficha de degustação', 'Ficha: exame olfativo', 'fatos', [
     ['Caráter geral', 'Defeitos, notas predominantes e perfis'],
     ['Qualidade', 'Separa os aromas grosseiros dos finos'],
-    ['Intensidade', 'Indica a força dos aromas']
+    ['Intensidade', 'Indica a força dos aromas'],
+    ['Pistas', 'Os aromas dão pistas de origem, uva e técnicas de vinificação, do frutado ao herbáceo']
   ]);
   P('Ficha de degustação', 'Ficha: exame gustativo', 'fatos', [
     ['Açúcar', 'Indica o estilo do vinho pela doçura'],
@@ -5559,7 +6015,8 @@ STUDY_PACKS.push((function () {
     ['Álcool', 'Maturação, região e até safra'],
     ['Maciez', 'Indica, entre outras coisas, harmonia'],
     ['Corpo', 'Estrutura, perfil, safra e até região'],
-    ['Tanicidade', 'Indica casta, idade do vinho e maturação']
+    ['Tanicidade', 'Indica casta, idade do vinho e maturação'],
+    ['Revela', 'Estrutura e equilíbrio: acidez, doçura, taninos e corpo']
   ]);
   P('Ficha de degustação', 'A química da degustação', 'fatos', [
     ['Cor', 'Antocianinas das uvas dão as cores vibrantes dos tintos'],
@@ -5572,7 +6029,8 @@ STUDY_PACKS.push((function () {
   P('Ficha de degustação', 'Pontuação', 'lista', [
     ['', 'A nota resume aromas, sabores, equilíbrio e personalidade num número'],
     ['', 'Cada quesito da ficha recebe pontos; a soma dá a nota geral'],
-    ['', 'Permite comparar vinhos e embasa o mercado, influenciando preços e demanda']
+    ['', 'Permite comparar vinhos e embasa o mercado, influenciando preços e demanda'],
+    ['', 'Na aula prática: avaliar um vinho, pontuar cada quesito e somar tudo para a nota geral']
   ]);
 
   // Nível no quiz, por notoriedade (avaliação editorial; ajustável): medio = conhecido no mundo todo.
@@ -5712,9 +6170,17 @@ STUDY_PACKS.push((function () {
     'Ficha: exame olfativo': 'avancado',
     'Ficha: exame gustativo': 'avancado',
     'A química da degustação': 'avancado',
-    'Pontuação': 'medio'
+    'Pontuação': 'medio',
+    'Etapas dos brancos: detalhes': 'avancado',
+    'Casta, solo e clima': 'avancado',
+    'Etapas dos tintos: detalhes': 'avancado',
+    'Tanoarias pelo mundo': 'expert',
+    'Velho Mundo: características gerais': 'medio',
+    'Novo Mundo: características gerais': 'avancado',
+    'Análise sensorial: definição': 'avancado',
+    'Aroma × bouquet': 'avancado'
   };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'PRO', version: 1, cards: cards };
+  return { code: 'PRO', version: 2, cards: cards };
 })());

@@ -1,5 +1,5 @@
 /**
- * CARTÕES DE ESTUDO — França: panorama e Bordeaux (aulas 14, 15 e 16; v1).
+ * CARTÕES DE ESTUDO — França: panorama e Bordeaux (aulas 14, 15 e 16; v2).
  * Tópicos curtos; o material pode ter erros: "corrigido" = conferido em fonte aberta (Wikipedia) e o slide estava errado;
  * "conferir" = não confirmado (fica fora do quiz). Itens: [chave, texto, marca?]. Para 'denominacoes': [nome, descrição, classificação].
  */
@@ -54,7 +54,9 @@ STUDY_PACKS.push((function () {
     ['Produção', 'Mais de 700 milhões de litros por ano, segundo o slide', 'conferir'],
     ['Participação', 'Uma em cada três garrafas da França e uma em cada dez do mundo (Robert Joseph), segundo o slide', 'conferir'],
     ['Castas', 'Influência do Rhône: Syrah, Grenache, Carignan, Viognier e Clairette'],
-    ['Novidades', 'Com investidores estrangeiros (Austrália, Nova Zelândia), plantam e testam Cabernet Sauvignon, Merlot e Chardonnay']
+    ['Novidades', 'Com investidores estrangeiros (Austrália, Nova Zelândia), plantam e testam Cabernet Sauvignon, Merlot e Chardonnay'],
+    ['Estilos', 'Grande variedade de estilos e de uvas cultivadas'],
+    ['Objetivo', 'Movimento de produtores locais para criar uma identidade positiva para os vinhos da região']
   ]);
 
   // ---------- Champagne ----------
@@ -87,6 +89,7 @@ STUDY_PACKS.push((function () {
   R('Alsácia', '', 'Alsácia: perfil e castas', 'fatos', [
     ['Local', 'Nordeste, fronteira com a Alemanha; forte influência alemã'],
     ['Estilo', 'Brancos de mineralidade e elegância'],
+    ['Fama', 'Segundo o slide, a mais importante região produtora de vinhos brancos do mundo', 'conferir'],
     ['Uvas', 'Dez cultivadas, segundo o slide', 'conferir'],
     ['Nobres', 'Só 4 podem compor Grand Cru: Riesling, Gewurztraminer, Pinot Gris e Muscat']
   ]);
@@ -99,6 +102,7 @@ STUDY_PACKS.push((function () {
     ['100', 'AOCs na Borgonha (o slide diz 110)', 'corrigido']
   ]);
   R('Borgonha', '', 'Borgonha: classificação e castas', 'fatos', [
+    ['Fama', 'Cinco sub-regiões de vinhos de fama internacional, tidos como o ápice da enologia clássica; séculos de tradição'],
     ['Origem', 'Sistema histórico criado por monges cistercienses no fim da Idade Média'],
     ['Categorias', 'Grand Cru e Premier Cru (o slide simplifica: há também village e regional, 4 níveis)', 'corrigido'],
     ['Complicação', 'Pelo sistema napoleônico de herança, um vinhedo tem dezenas de donos: grande variação de qualidade num mesmo cru'],
@@ -133,11 +137,12 @@ STUDY_PACKS.push((function () {
     ['57', 'AOCs, segundo o slide; a Wikipedia cita 65', 'conferir'],
     ['7.000', 'Châteaux, segundo o slide; a Wikipedia cita cerca de 5.660 produtores', 'conferir'],
     ['12.000', 'Viticultores (produtores de uvas), segundo o slide', 'conferir'],
-    ['57', 'Cooperativas, segundo o slide', 'conferir'],
+    ['57', 'Cooperativas que apoiam o pequeno produtor, segundo o slide', 'conferir'],
     ['400 e 130', 'Negociantes e corretores que comercializam o vinho, segundo o slide', 'conferir']
   ]);
   R('Bordeaux', '', 'O nome Bordeaux', 'fatos', [
     ['Etimologia', 'Segundo o slide, de "au bord de l\'eau" (à beira d\'água); é etimologia popular', 'conferir'],
+    ['Local', 'Sudoeste da França, no Atlântico'],
     ['Água', 'Rios e afluentes serviram de rota de escoamento do vinho; região no Atlântico, com um dos portos mais movimentados da França'],
     ['Escala', 'Descrita como um "império": impressiona pela quantidade e pela qualidade']
   ]);
@@ -156,38 +161,62 @@ STUDY_PACKS.push((function () {
     ['Margem direita', 'Rios Dordogne e Gironde (o slide diz Garonne); Merlot predomina; vinhos suaves, frutados e de estrutura equilibrada', 'corrigido'],
     ['Margem direita: nomes', 'Saint-Émilion e Pomerol, além de Fronsac, Lalande-de-Pomerol, Côtes de Castillon e Côtes de Francs'],
     ['Margem esquerda', 'Médoc e Graves; Cabernet Sauvignon predomina; vinhos encorpados e de longa guarda'],
-    ['Margem esquerda: nomes', 'Graves, Haut-Médoc e as comunas Pauillac, Margaux, Saint-Julien e Saint-Estèphe']
+    ['Margem esquerda: nomes', 'Graves, Haut-Médoc e as comunas Pauillac, Margaux, Saint-Julien e Saint-Estèphe'],
+    ['Margem direita: perfil', 'Quase só tintos: taninos suaves, estrutura arredondada; cereja, ameixa, especiarias, tabaco e às vezes chocolate'],
+    ['Margem direita: público', 'Vinhos acessíveis, atraentes no mercado interno e no externo; as sub-regiões menos famosas dão opções para vários paladares e bolsos'],
+    ['Margem esquerda: rio', 'Ao longo do Gironde'],
+    ['Margem esquerda: fama', 'Lar de alguns dos vinhos mais prestigiosos (Lafite Rothschild, Margaux); garrafas muito valorizadas por colecionadores'],
+    ['Margem esquerda: perfil', 'Predomínio de tintas (Cabernet Sauvignon e Merlot): vinhos encorpados e de longa guarda'],
+    ['Margem esquerda: destaques', 'Pauillac e Margaux brilham no mundo; as demais sub-regiões também têm alta qualidade e estilos variados'],
+    ['Perfil no slide da margem esquerda', 'O slide repete o texto da margem direita (taninos suaves, cereja, ameixa, chocolate), o que destoa de "encorpados e de longa guarda"', 'conferir']
   ]);
   R('Bordeaux', '', 'Merlot', 'fatos', [
     ['Origem', 'Bordeaux; cultivada no mundo todo'],
     ['Cacho', 'Médio a grande, bagos de casca fina: vinhos de cor vermelha profunda'],
     ['Aromas', 'Cereja, ameixa, chocolate, tabaco e especiarias'],
     ['Papel', 'Rainha da margem direita; no Médoc entra nos cortes para dar suavidade'],
-    ['Perfil', 'Taninos suaves, adaptável a vários terroirs']
+    ['Perfil', 'Taninos suaves, adaptável a vários terroirs'],
+    ['Fama', 'Acessível e versátil: escolha popular entre iniciantes e apreciadores']
   ]);
   R('Bordeaux', '', 'Cabernet Sauvignon', 'fatos', [
     ['Origem', 'Cruzamento de Cabernet Franc com Sauvignon Blanc, entre o fim do séc. XVII e o início do XVIII, em Bordeaux'],
     ['Cacho', 'Casca espessa: vinhos encorpados, taninos robustos e grande longevidade'],
     ['Aromas', 'Cassis, amora e especiarias'],
-    ['Papel', 'Predomina na margem esquerda; base dos Grands Crus do Médoc']
+    ['Papel', 'Predomina na margem esquerda; base dos Grands Crus do Médoc'],
+    ['Perfil', 'Adaptável a vários climas; une elegância, complexidade e potência; presente em cortes renomados']
   ]);
   R('Bordeaux', '', 'Outras tintas de Bordeaux', 'fatos', [
-    ['Cabernet Franc', 'Complexidade, aromas herbáceos e de especiarias (o slide troca as descrições de Franc e Sauvignon)', 'corrigido'],
+    ['Cabernet Franc', 'Complexidade, aromas herbáceos e de especiarias; também comum na margem esquerda (o slide troca as descrições de Franc e Sauvignon)', 'corrigido'],
     ['Petit Verdot', 'Em pequena quantidade: cor profunda e notas de especiarias']
   ]);
   R('Bordeaux', '', 'Brancas de Bordeaux', 'fatos', [
-    ['Sauvignon Blanc', 'Acidez vibrante e aromas cítricos, que dão frescor (o slide troca com a Sémillon)', 'corrigido'],
+    ['Sauvignon Blanc', 'Acidez vibrante e aromas cítricos, como limão e grapefruit, que dão frescor (o slide troca com a Sémillon)', 'corrigido'],
     ['Sémillon', 'Corpo e textura aveludada; muito afetada por podridão nobre: complexidade e mel (o slide troca com a Sauvignon)', 'corrigido'],
     ['Muscadelle', 'Pouca quantidade: aromas florais e frutados; equilibra Sauvignon Blanc e Sémillon']
   ]);
 
+  R('Bordeaux', '', 'Mapa de Bordeaux: denominações', 'fatos', [
+    ['Médoc', 'Médoc, Haut-Médoc, Saint-Estèphe, Pauillac, Saint-Julien, Listrac-Médoc, Moulis e Margaux'],
+    ['Graves e doces', 'Pessac-Léognan, Graves, Cérons, Barsac e Sauternes; a leste Loupiac, Sainte-Croix-du-Mont e Saint-Macaire'],
+    ['Entre-Deux-Mers', 'Entre-Deux-Mers, Haut-Benauge, Graves de Vayres, Cadillac Côtes de Bordeaux e Sainte-Foy-Bordeaux'],
+    ['Perto de Libourne', 'Pomerol, Lalande-de-Pomerol, Fronsac, Canon-Fronsac e Saint-Émilion'],
+    ['Satélites de Saint-Émilion', 'Lussac, Montagne, Puisseguin e Saint-Georges, todos com "Saint-Émilion" no nome'],
+    ['Côtes', 'Blaye Côtes de Bordeaux, Côtes de Bourg, Francs Côtes de Bordeaux e Castillon Côtes de Bordeaux']
+  ]);
+  cards.push({ topic: 'producao', group: 'Espumantes', title: 'Método tradicional: como é feito (slide da França)', kind: 'lista', items: mk([
+    ['', 'O vinho base passa por uma segunda fermentação em garrafa'],
+    ['', 'Depois da fermentação, fica em contato com as leveduras por 1 a 10 anos, conforme a legislação, segundo o slide', 'conferir'],
+    ['', 'Terminado o amadurecimento, as leveduras são retiradas e o espumante tem seu estilo definido']
+  ]) });
+
   // ---------- Classificação de 1855 ----------
   R('Bordeaux', '', 'Classificação de 1855', 'fatos', [
     ['Contexto', 'Feita para a Exposição Universal de Paris; ainda em vigor'],
-    ['Propriedades', '61 châteaux, quase todos da margem esquerda (Médoc, mais Haut-Brion de Graves)'],
+    ['Propriedades', '61 châteaux, quase todos da margem esquerda do Gironde (Médoc, mais Haut-Brion de Graves)'],
     ['Categorias', 'Cinco, de Premiers Crus a Cinquièmes Crus'],
     ['Base', 'Reputação dos vinhos na época; muito estável desde então'],
     ['Mudança única', 'Mouton-Rothschild promovido a Premier Cru em 1973'],
+    ['Debate', 'Há debates sobre a imutabilidade do sistema, mas segue como referência fundamental e dá prestígio duradouro'],
     ['Contagem', '5 Premiers, 14 Deuxièmes, 14 Troisièmes, 10 Quatrièmes e 18 Cinquièmes']
   ]);
   R('Bordeaux', '', '1855: Premiers Crus', 'fatos', [
@@ -253,6 +282,7 @@ STUDY_PACKS.push((function () {
     ['Estilo', 'Alguns dos tintos mais prestigiosos do mundo; domina a Cabernet Sauvignon'],
     ['Solo', 'Cascalho, com drenagem excepcional'],
     ['Aromas', 'Cassis, grafite e tabaco; taninos firmes e longevidade'],
+    ['Perfil', 'Força, estrutura e complexidade; vinhos de classe mundial'],
     ['Ícones', 'Château Lafite Rothschild e Château Latour']
   ]);
   R('Bordeaux', 'Saint-Julien', 'Saint-Julien', 'fatos', [
@@ -272,6 +302,7 @@ STUDY_PACKS.push((function () {
   R('Bordeaux', 'Graves', 'Graves', 'fatos', [
     ['Nome', 'Do solo de cascalho, pedras e seixos, bem drenado'],
     ['Clima', 'Temperado, influenciado pelo rio Garonne'],
+    ['Terroir', 'Solo bem drenado: uvas concentradas e complexas'],
     ['Tintos', 'Liderados pela Cabernet Sauvignon: taninos estruturados e frutas escuras'],
     ['Brancos', 'Sauvignon Blanc e Sémillon: frescor, acidez vibrante e aromas cítricos']
   ]);
@@ -306,7 +337,7 @@ STUDY_PACKS.push((function () {
     ['Premier A hoje', 'Em 2022 só Château Figeac e Château Pavie ocupam o topo']
   ]);
   R('Bordeaux', 'Saint-Émilion', 'Grandes produtores de Saint-Émilion', 'produtores', [
-    ['Cheval Blanc', ''], ['Ausone', ''], ['Pavie', ''], ['Figeac', '']
+    ['Cheval Blanc', ''], ['Ausone', ''], ['Pavie', ''], ['Figeac', ''], ['Château Angélus', '']
   ]);
   R('Bordeaux', 'Pomerol', 'Pomerol', 'fatos', [
     ['Local', 'Pequena sub-região na margem direita do Dordogne, a nordeste de Libourne (o slide diz Garonne e a oeste)', 'corrigido'],
@@ -319,6 +350,7 @@ STUDY_PACKS.push((function () {
     ['Aromas', 'Frutas vermelhas, ameixa, alcaçuz, tabaco e toques de terra'],
     ['Guarda', 'Envelhecem bem e ganham profundidade'],
     ['Vinificação', 'Fermentação em aço inox e envelhecimento em carvalho francês'],
+    ['Fama', 'Pétrus, Le Pin e Lafleur estão entre os vinhos mais cobiçados do mundo, cada château com estilo próprio; atrai colecionadores'],
     ['Classificação', 'Pomerol não tem classificação oficial (nenhuma das de Bordeaux inclui a região)']
   ]);
   R('Bordeaux', 'Pomerol', 'Grandes produtores de Pomerol', 'produtores', [
@@ -332,20 +364,21 @@ STUDY_PACKS.push((function () {
     ['Preço', 'Excelente relação qualidade-preço: tintos de Bordeaux sem os preços das sub-regiões famosas']
   ]);
   R('Bordeaux', '', 'Outras sub-regiões da margem direita', 'lista', [
-    ['', 'Lalande-de-Pomerol'], ['', 'Côtes de Castillon'], ['', 'Côtes de Francs'], ['', 'Fronsac e Canon-Fronsac']
+    ['', 'Lalande-de-Pomerol'], ['', 'Côtes de Castillon'], ['', 'Côtes de Francs'], ['', 'Fronsac e Canon-Fronsac'],
+    ['', 'Vinhos de alta qualidade a preços mais acessíveis, também com Merlot nos cortes']
   ]);
 
   // =====================  HARMONIZAÇÕES  =====================
   H('Bordeaux', 'Cozinha de Bordeaux: margem direita', [
     ['Ingredientes locais', 'Carnes, peixes, cogumelos, alcachofras, echalota e hortaliças (Pomerol e Saint-Émilion)'],
-    ['Entrecôte bordelaise', 'Entrecôte grelhada com molho bordelaise (vinho tinto da região, gordura, caldo de carne e echalotas); vem com batatas'],
+    ['Entrecôte bordelaise', 'Entrecôte grelhada com molho bordelaise (vinho tinto da região, gordura, caldo de carne e echalotas); acompanha batatas fritas ou sauté'],
     ['Lamproie à la bordelaise', 'Lampreia em molho de vinho tinto de Bordeaux, alho, cebola e especiarias; só na temporada de lampreias', 'conferir']
   ]);
   H('Bordeaux', 'Cozinha de Bordeaux: margem esquerda', [
     ['Ingredientes locais', 'Carnes, peixes, cogumelos, alcachofras, ostras, nozes e castanhas'],
     ['Canard aux pruneaux', 'Pato dourado e cozido lentamente com ameixas, cebola, alho e ervas; rico e doce, com tinto da região'],
-    ['Huîtres d\'Arcachon', 'Ostras da Baía de Arcachon, cruas com limão; vinho branco seco'],
-    ['Canelé de Bordeaux', 'Sobremesa de casca caramelizada e crocante e miolo macio: farinha, leite, ovos, açúcar, baunilha e às vezes rum']
+    ['Huîtres d\'Arcachon', 'Ostras da Baía de Arcachon (sudoeste da cidade): carnudas e salgadas; cruas com limão; vinho branco seco'],
+    ['Canelé de Bordeaux', 'Sobremesa de casca caramelizada e crocante e miolo macio: farinha, leite, ovos, açúcar, baunilha e às vezes rum; aromas intensos de baunilha e rum']
   ]);
 
   // Nível no quiz, por notoriedade (avaliação editorial; ajustável): medio = conhecido no mundo todo.
@@ -375,6 +408,8 @@ STUDY_PACKS.push((function () {
     'Cabernet Sauvignon': 'medio',
     'Outras tintas de Bordeaux': 'avancado',
     'Brancas de Bordeaux': 'avancado',
+    'Mapa de Bordeaux: denominações': 'expert',
+    'Método tradicional: como é feito (slide da França)': 'avancado',
     'Classificação de 1855': 'medio',
     '1855: Premiers Crus': 'medio',
     '1855: Deuxièmes Crus': 'avancado',
@@ -406,5 +441,5 @@ STUDY_PACKS.push((function () {
   };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'FR1', version: 1, cards: cards };
+  return { code: 'FR1', version: 2, cards: cards };
 })());

@@ -1,5 +1,5 @@
 /**
- * CARTÕES DE ESTUDO — França: Vale do Loire, Vale do Rhône e Sul da França (material de aula, v1).
+ * CARTÕES DE ESTUDO — França: Vale do Loire, Vale do Rhône e Sul da França (material de aula, v2).
  * Tópicos curtos; o material pode ter erros: "corrigido" = conferido em fonte aberta (Wikipedia); "conferir" = não confirmado (fica fora do quiz).
  * Itens: [chave, texto, marca?]. Para 'denominacoes': [nome, descrição, classificação].
  */
@@ -33,18 +33,29 @@ STUDY_PACKS.push((function () {
     ['Tinel-Blondelet', ''], ['Nicolas Joly', ''], ['Domaine Baumard', ''], ['Famille Bougrier', ''], ['Château des Gillières', ''], ['Domaine du Sauvard', '']
   ]);
 
+  R(L, '', 'Loire no mapa do slide', 'lista', [
+    ['', 'Pays Nantais: Muscadet, Muscadet Sèvre-et-Maine, Muscadet Coteaux de la Loire, Muscadet Côtes de Grand Lieu, Fiefs Vendéens'],
+    ['', 'Anjou-Saumur: Savennières, Anjou, Coteaux de l\'Aubance, Coteaux du Layon, Saumur, Saumur-Champigny, Bonnezeaux'],
+    ['', 'Touraine: Vouvray, Montlouis, Chinon, Bourgueil, Cheverny, Cour-Cheverny, Jasnières, Coteaux du Vendômois, Haut-Poitou'],
+    ['', 'Centre: Sancerre, Pouilly-Fumé, Menetou-Salon, Quincy, Reuilly, Coteaux du Giennois, Châteaumeillant']
+  ]);
+
   // Centre
   R(L, 'Sancerre', 'Centre: terroir e uvas', 'fatos', [
     ['Solos', 'Variam de calcário a argila; clima continental, com invernos frios e verões moderadamente quentes'],
     ['Calcário', 'Ideal para a Sauvignon Blanc'],
     ['Argila', 'Favorece a Pinot Noir'],
     ['Sauvignon Blanc', 'Acidez elevada, notas cítricas e florais e mineralidade'],
-    ['Pinot Noir', 'Tintos de frutas vermelhas frescas, taninos suaves e elegância'],
-    ['Vinificação', 'Brancos em aço inox; tintos podem passar por barris de carvalho']
+    ['Pinot Noir', 'Tintos de frutas vermelhas frescas, taninos suaves e elegância estruturada'],
+    ['Vinificação', 'Brancos em aço inox; tintos podem passar por barris de carvalho'],
+    ['Estilos', 'De Sauvignon Blancs frescos a Pinot Noirs complexos'],
+    ['Filosofia', 'Vinificação que preserva a autenticidade da uva e do terroir'],
+    ['Maturação', 'O clima continental favorece maturação gradual']
   ]);
   R(L, 'Sancerre', 'Sancerre', 'fatos', [
     ['Solos', 'Sílex, calcário e argila'],
     ['Branco', 'Sauvignon Blanc de mineralidade marcante, com limão, grapefruit e notas herbáceas'],
+    ['Sílex', 'A mineralidade marcante vem do solo de sílex'],
     ['Tinto', 'Também faz tintos elegantes, sobretudo de Pinot Noir']
   ]);
   R(L, 'Pouilly-Fumé', 'Pouilly-Fumé', 'fatos', [
@@ -52,7 +63,8 @@ STUDY_PACKS.push((function () {
     ['Uva', 'Sauvignon Blanc, casta dominante'],
     ['Estilo', 'Brancos mais intensos que os de Sancerre, com toques defumados'],
     ['Vinificação', 'Aço inox, para preservar a fruta e a pureza'],
-    ['Fama', 'Um dos grandes Sauvignon Blancs do mundo']
+    ['Fama', 'Um dos grandes Sauvignon Blancs do mundo, com reconhecimento internacional'],
+    ['Local', 'AOC no coração do Vale do Loire, na sub-região Centre']
   ]);
   // Touraine
   R(L, 'Vouvray e Montlouis', 'Touraine: terroir e castas', 'fatos', [
@@ -111,7 +123,8 @@ STUDY_PACKS.push((function () {
     ['Área', 'Cerca de 78 mil ha segundo o slide; a Wikipedia traz 83,8 mil ha na AOC Côtes du Rhône (2008)', 'conferir'],
     ['Solos', 'Argila, calcário e pedregulhos'],
     ['Clima', 'Mediterrâneo, com verões quentes e secos e invernos suaves'],
-    ['Norte e sul', 'Dois blocos: Rhône Setentrional (norte) e Meridional (sul)']
+    ['Norte e sul', 'Dois blocos: Rhône Setentrional (norte) e Meridional (sul)'],
+    ['Regulação', 'AOCs rigorosamente regulamentadas, para garantir autenticidade e qualidade']
   ]);
   R(RH, '', 'Estrelas do Rhône', 'fatos', [
     ['Tintos robustos', 'Châteauneuf-du-Pape e Gigondas'],
@@ -121,7 +134,13 @@ STUDY_PACKS.push((function () {
   R(RH, '', 'Produtores do Rhône', 'produtores', [
     ['Château de Beaucastel', ''], ['E. Guigal', ''], ['Michel Chapoutier', ''], ['Château Rayas', ''], ['Domaine Durieu', ''], ['Domaine Clos des Papes', '']
   ]);
+  R(RH, '', 'Rhône no mapa do slide', 'lista', [
+    ['', 'Norte: Côte-Rôtie, Condrieu, Château-Grillet, Saint-Joseph, Crozes-Hermitage, Hermitage, Cornas, Saint-Péray'],
+    ['', 'Sul: Châteauneuf-du-Pape, Gigondas, Vacqueyras, Rasteau, Beaumes-de-Venise, Lirac, Tavel, Côtes du Ventoux, Côtes du Luberon, Costières de Nîmes, Coteaux du Tricastin'],
+    ['', 'Genéricas: Côtes du Rhône e Côtes du Rhône Villages; Diois: Clairette de Die e Châtillon-en-Diois']
+  ]);
   R(RH, '', 'Syrah', 'fatos', [
+    ['Fama', 'Casta com história centenária, redescoberta e espalhada pelo mundo; adapta-se a vários estilos e regiões'],
     ['Origem', 'Norte do Rhône; a Syrah é a grande uva tinta do norte'],
     ['Vinhas', 'Videira vigorosa, cachos pequenos e bagos escuros; sensível ao clima'],
     ['Aromas', 'Especiarias, pimenta preta e frutas escuras (amora, ameixa)'],
@@ -131,7 +150,8 @@ STUDY_PACKS.push((function () {
   R(RH, '', 'Viognier', 'fatos', [
     ['Origem', 'Norte do Rhône; redescoberta e espalhada pelo mundo'],
     ['Vinhas', 'Videira vigorosa, cachos pequenos e bagos dourados; sensível ao clima'],
-    ['Aromas', 'Violeta e flor de laranjeira; pêssego e damasco'],
+    ['Aromas', 'Violeta e flor de laranjeira; frutas de polpa branca, pêssego e damasco'],
+    ['Estilo', 'Brancos aromáticos e encorpados'],
     ['Textura', 'Sedosa e aveludada'],
     ['Terroir', 'Prefere granito decomposto e clima moderadamente quente']
   ]);
@@ -146,19 +166,22 @@ STUDY_PACKS.push((function () {
     ['Condrieu', 'Brancos de Viognier em encostas íngremes de granito decomposto e mica'],
     ['Estilo', 'Intensidade aromática, florais marcantes e textura sedosa'],
     ['Château-Grillet', 'AOC autônoma dentro de Condrieu, só de Viognier'],
+    ['Solos', 'Em Château-Grillet, solos xistosos que dão mineralidade única'],
+    ['Microclima', 'Exposição solar máxima e microclima local, de vinhos excepcionais'],
     ['Perfil', 'Viognier concentrado, elegante e expressivo']
   ]);
   R(RH, 'Hermitage', 'Hermitage', 'fatos', [
     ['Vinhas', 'Encostas íngremes com exposições variadas'],
     ['Solos', 'Granito desintegrado, argila, calcário e pedregulhos'],
-    ['Clima', 'Continental moderado, com grande oscilação térmica'],
+    ['Clima', 'Continental moderado, de verões quentes e invernos frios, com grande oscilação térmica que retém acidez'],
     ['Tintos', 'Syrah: encorpados, complexos e de grande potencial de guarda'],
     ['Brancos', 'Marsanne e Roussanne']
   ]);
   R(RH, 'Crozes-Hermitage', 'Crozes-Hermitage', 'fatos', [
     ['Vinhas', 'Extensa área ao norte do Rhône, em encostas suaves e planícies'],
     ['Solos', 'De granito a argila e pedregulhos'],
-    ['Clima', 'Continental moderado, com marcante oscilação térmica: acidez equilibrada']
+    ['Clima', 'Continental moderado, de verões quentes e invernos frios; marcante oscilação térmica: acidez equilibrada'],
+    ['Expressão', 'Solos diversos dão mineralidade e estrutura notáveis']
   ]);
   R(RH, 'Saint-Joseph', 'Saint-Joseph', 'fatos', [
     ['Vinhas', 'Encostas íngremes, com exposições variadas'],
@@ -175,7 +198,7 @@ STUDY_PACKS.push((function () {
   R(RH, '', 'Saint-Péray', 'fatos', [
     ['Estilo', 'Brancos exclusivos, de Marsanne e Roussanne'],
     ['Solos', 'Calcários e argilosos'],
-    ['Perfil', 'Frescos, minerais e elegantes']
+    ['Perfil', 'Frescos, minerais e elegantes, com exposição solar bem regulada']
   ]);
   // Sul
   R(RH, 'Châteauneuf-du-Pape', 'Châteauneuf-du-Pape: terroir', 'fatos', [
@@ -183,7 +206,8 @@ STUDY_PACKS.push((function () {
     ['Solos', 'Galets (pedras roladas), arenito e argila'],
     ['Galets', 'Retêm calor de dia e o irradiam à noite, ajudando a maturação'],
     ['Clima', 'Mediterrâneo, de verões quentes e secos'],
-    ['Mistral', 'Vento forte que controla a umidade e previne doenças']
+    ['Mistral', 'Vento forte que controla a umidade e previne doenças'],
+    ['Relevo', 'Encostas suaves; argila e arenito dão riqueza, estrutura e mineralidade']
   ]);
   R(RH, 'Châteauneuf-du-Pape', 'Uvas de Châteauneuf-du-Pape', 'fatos', [
     ['Brancas', 'Grenache Blanc, Clairette, Roussanne, Bourboulenc, Picpoul e Picardan'],
@@ -193,6 +217,7 @@ STUDY_PACKS.push((function () {
   R(RH, 'Châteauneuf-du-Pape', 'Grenache', 'fatos', [
     ['Origem', 'Natural de Aragão, na Espanha; associada ao sul da França e ao nordeste espanhol'],
     ['Clima', 'Videiras vigorosas que preferem clima quente e seco'],
+    ['Cachos', 'Cachos e bagos de tamanho médio a grande'],
     ['Perfil', 'Cereja, morango e amora maduros, com especiarias como pimenta e algo herbáceo']
   ]);
   R(RH, 'Côtes du Rhône e Villages', 'Côtes du Rhône-Villages', 'fatos', [
@@ -208,7 +233,8 @@ STUDY_PACKS.push((function () {
   ]);
   R(RH, 'Tavel e Lirac', 'Lirac', 'fatos', [
     ['Estilos', 'Tintos e brancos; mais conhecida pelos tintos robustos'],
-    ['Tintos', 'Dominados pela Grenache: frutas intensas, taninos bem integrados e elegância'],
+    ['Tintos', 'Dominados pela Grenache: frutas intensas, taninos bem integrados e elegância que melhora com o envelhecimento'],
+    ['Terroir', 'Solo diversificado e influência mediterrânea'],
     ['Brancos', 'Muitas vezes de Clairette e Viognier']
   ]);
   R(RH, '', 'Côtes du Ventoux', 'fatos', [
@@ -230,7 +256,8 @@ STUDY_PACKS.push((function () {
     ['Peso', 'Maior região francesa em área e em volume'],
     ['Mudança', 'Reduziu muito o volume nas últimas décadas e passou a focar qualidade'],
     ['Investimento', 'Capital estrangeiro (australiano e americano) modernizou a indústria'],
-    ['Castas', 'Plantio amplo de Chardonnay, Cabernet Sauvignon e Merlot'],
+    ['Castas', 'Plantio amplo de Chardonnay, Cabernet Sauvignon e Merlot (castas "mais comerciais")'],
+    ['Tecnologia', 'Uso da tecnologia incentivado'],
     ['Solos', 'Variados; predominam xisto, calcário e argila'],
     ['Clima', 'Mediterrâneo: verões quentes e secos, influência marítima e amplitude térmica']
   ]);
@@ -240,16 +267,21 @@ STUDY_PACKS.push((function () {
     ['', 'Collioure, Côtes du Roussillon Villages, Côtes du Roussillon, Maury Sec, Rivesaltes, Maury, Banyuls']
   ]);
   R(LR, '', 'Denominações do Languedoc', 'denominacoes', [
-    ['Clairette du Languedoc', 'Brancos secos e espumantes aromáticos de Clairette, perto de Montpellier', 'AOC'],
+    ['Clairette du Languedoc', 'Brancos secos e espumantes aromáticos de Clairette (acidez equilibrada), perto de Montpellier', 'AOC'],
     ['Fitou', 'Tintos potentes, muitas vezes com Carignan; entre Narbonne e Perpignan', 'AOC'],
-    ['Muscat de Frontignan', 'Vinho doce natural (VDN) de Muscat: aromas intensos e florais', 'AOC'],
-    ['Muscat de Mireval', 'Vinho doce natural (VDN) de Muscat, de doçura equilibrada', 'AOC']
+    ['Muscat de Frontignan', 'Vinho doce natural (VDN) de Muscat, em Frontignan, perto de Montpellier: aromas intensos e florais', 'AOC'],
+    ['Muscat de Mireval', 'Vinho doce natural (VDN) de Muscat, perto de Mireval: doçura equilibrada e aromas envolventes', 'AOC']
   ]);
   R(LR, '', 'Denominações do Roussillon', 'denominacoes', [
-    ['Côtes du Roussillon', 'Tintos (Syrah, Grenache, Carignan), brancos e rosés', 'AOC'],
+    ['Côtes du Roussillon', 'Tintos (Syrah, Grenache, Carignan), brancos e rosés; abrange áreas no Roussillon e no Languedoc', 'AOC'],
     ['Rivesaltes', 'De tintos e brancos a doces fortificados; Grenache e Macabeu', 'AOC'],
     ['Maury Sec', 'Tintos secos e encorpados de Grenache, Syrah e Carignan', 'AOC'],
     ['Muscat de Rivesaltes', 'Doce natural de Muscat: aromas florais e frutados', 'AOC']
+  ]);
+  R(LR, '', 'Languedoc-Roussillon no mapa do slide', 'lista', [
+    ['', 'Languedoc: Coteaux du Languedoc, Saint-Chinian, Faugères, Minervois, Corbières, Fitou, Blanquette de Limoux, Picpoul de Pinet, Muscat (Frontignan e Mireval)'],
+    ['', 'Roussillon: Maury, Côtes du Roussillon, Rivesaltes, Côtes du Roussillon Villages, Banyuls'],
+    ['', 'Cidades no mapa: Montpellier, Béziers, Narbonne, Perpignan, Nîmes']
   ]);
   R(LR, 'Corbières', 'Corbières', 'fatos', [
     ['Onde', 'Vasta área do Languedoc, de solos e climas diversos'],
@@ -285,6 +317,8 @@ STUDY_PACKS.push((function () {
     ['História', 'Tradição vitivinícola de mais de 2.600 anos'],
     ['Rosés', 'Cerca de 80% da produção, segundo o slide', 'conferir'],
     ['Uvas', 'Grenache, Syrah e Vermentino'],
+    ['Rosés', 'Reconhecidos pela elegância e pelo frescor; a região também faz brancos e tintos'],
+    ['Tradição', 'Métodos tradicionais combinados com inovações contemporâneas'],
     ['Solos e clima', 'Argila, calcário e xisto; clima mediterrâneo'],
     ['Números', 'Quase 28 mil ha e cerca de 120 milhões de litros por ano'],
     ['Além do vinho', 'Azeites, alhos, ervas e lavanda']
@@ -305,10 +339,10 @@ STUDY_PACKS.push((function () {
   R(PV, 'Palette', 'Palette', 'fatos', [
     ['Onde', 'Pequena AOC ao redor de Aix-en-Provence'],
     ['Estilos', 'Tintos, brancos e rosés'],
-    ['Tintos', 'Frequentemente de Grenache e Mourvèdre, encorpados']
+    ['Tintos', 'Frequentemente de Grenache e Mourvèdre, encorpados e com boa capacidade (o slide corta a frase)', 'conferir']
   ]);
   R(PV, 'Côtes de Provence', 'Côtes de Provence', 'fatos', [
-    ['Peso', 'Maior AOC da Provença'],
+    ['Peso', 'Maior AOC da Provença, abrangendo várias sub-regiões'],
     ['Rosés', 'Pálidos, frescos e elegantes; frequentemente com Grenache, Cinsault, Syrah e Mourvèdre'],
     ['Outros', 'Também faz tintos e brancos']
   ]);
@@ -322,7 +356,7 @@ STUDY_PACKS.push((function () {
     ['Sandre au beurre blanc', 'Peixe de água doce do Loire com beurre blanc (manteiga, vinho branco, chalota e redução de vinagre); o slide o chama de lavaret', 'corrigido'],
     ['Poulet de Bresse', 'Frango de carne tenra com molho cremoso rico; a Bresse fica no leste da França, não no Loire', 'conferir'],
     ['Moules à la marinière', 'Mexilhões cozidos com vinho branco, alho, cebola e ervas; o caldo serve para molhar o pão'],
-    ['Tarte Tatin', 'Torta de maçã caramelizada, servida de cabeça para baixo']
+    ['Tarte Tatin', 'Torta de maçã caramelizada, servida de cabeça para baixo; as maçãs caramelizam antes de receber a massa e ir ao forno']
   ]);
   H('Vale do Rhône', 'Cozinha do Rhône', [
     ['Ingredientes', 'Alho, azeites, chalotas, queijo Banon, truta, embutidos e mel de lavanda'],
@@ -344,6 +378,7 @@ STUDY_PACKS.push((function () {
     'Vale do Loire: visão geral': 'medio',
     'Sub-regiões do Loire e suas estrelas': 'medio',
     'Produtores do Loire': 'expert',
+    'Loire no mapa do slide': 'expert',
     'Centre: terroir e uvas': 'avancado',
     'Sancerre': 'medio',
     'Pouilly-Fumé': 'medio',
@@ -358,6 +393,7 @@ STUDY_PACKS.push((function () {
     'Muscadet Sèvre-et-Maine': 'avancado',
     'Vale do Rhône: visão geral': 'medio',
     'Estrelas do Rhône': 'medio',
+    'Rhône no mapa do slide': 'expert',
     'Produtores do Rhône': 'avancado',
     'Syrah': 'medio',
     'Viognier': 'medio',
@@ -385,6 +421,7 @@ STUDY_PACKS.push((function () {
     'Limoux': 'avancado',
     'Banyuls e Collioure': 'avancado',
     'Maury': 'expert',
+    'Languedoc-Roussillon no mapa do slide': 'expert',
     'Produtores do Languedoc-Roussillon': 'expert',
     'Provença: visão geral': 'medio',
     'Denominações da Provença': 'avancado',
@@ -399,5 +436,5 @@ STUDY_PACKS.push((function () {
   };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'FR3', version: 1, cards: cards };
+  return { code: 'FR3', version: 2, cards: cards };
 })());

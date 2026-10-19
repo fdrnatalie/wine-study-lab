@@ -239,6 +239,11 @@ test('cartões de estudo: membro lê, aparecem em país/região e no quiz', () =
 test('fotos das uvas: só a administradora envia; imagem inválida é recusada', () => {
   const g = ok(post('grapes.list', {}, owner.token))[0];
   assert.ok(Array.isArray(ok(post('grapes.get', { id: g.id }, ana.token)).photos));
+  const cab = ok(post('grapes.list', {}, ana.token)).find((x) => x.name === 'Cabernet Sauvignon');
+  const cabFull = ok(post('grapes.get', { id: cab.id }, ana.token));
+  assert.ok(cabFull.photos.length >= 1 && cabFull.photos[0].credit && cabFull.photos[0].license && /^uvas\//.test(cabFull.photos[0].url) && cabFull.photos[0].locked);
+  assert.ok(/^uvas\//.test(cab.photo));
+  assert.strictEqual(post('grapes.photoRemove', { id: cabFull.photos[0].id }, owner.token).ok, false);
   assert.strictEqual(post('grapes.photoAdd', { grape_id: g.id, image: 'data:image/jpeg;base64,AAAA' }, ana.token).ok, false);
   const bad = post('grapes.photoAdd', { grape_id: g.id, image: 'não é imagem' }, owner.token);
   assert.strictEqual(bad.ok, false);

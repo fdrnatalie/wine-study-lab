@@ -1,5 +1,5 @@
 /**
- * CARTÕES DE ESTUDO — Alemanha, Áustria, Grécia, Líbano e Eslovênia (aulas 30 e 31; v1).
+ * CARTÕES DE ESTUDO — Alemanha, Áustria, Grécia, Líbano e Eslovênia (aulas 30 e 31; v2).
  * Tópicos curtos; o material pode ter erros: "corrigido" = conferido em fonte aberta e diferente do slide;
  * "conferir" = não confirmado em fonte aberta (fica fora do quiz).
  * Itens: [chave, texto, marca?]. Para 'denominacoes': [nome, descrição, classificação].
@@ -37,6 +37,7 @@ STUDY_PACKS.push((function () {
     ['Nome', 'Vem da igreja Liebfrauenstift-Kirche, em Worms (Rheinhessen)'],
     ['Origem', 'Müller-Thurgau, Silvaner, Kerner e outras, em vinhedos ao redor de Worms'],
     ['Fama', 'Popular no séc. XIX e início do XX; virou sinônimo de vinho genérico e de massa'],
+    ['Popularização', 'Cresceu com a chegada das garrafas de vidro e dos rótulos padronizados'],
     ['Regras', 'Entre 18 e 40 g/L de açúcar residual; 70% de Riesling, Silvaner, Kerner ou Müller-Thurgau'],
     ['Onde', 'Rheinhessen, Nahe, Rheingau e Pfalz']
   ]);
@@ -49,22 +50,23 @@ STUDY_PACKS.push((function () {
   P('Outras brancas da Alemanha', 'fatos', [
     ['Müller-Thurgau', 'Cruzamento de Riesling e Madeleine Royale; leve, aromática e menos ácida que a Riesling'],
     ['Silvaner', 'Maturação precoce; aromas sutis e frescos, notas herbáceas; de seco a ligeiramente doce'],
-    ['Grauburgunder', 'Pinot Gris; corpo médio, boa acidez, frutas maduras, às vezes especiarias e frutas secas']
+    ['Grauburgunder', 'Pinot Gris, parente da Pinot Noir; corpo médio, boa acidez, frutas maduras, às vezes especiarias e frutas secas']
   ]);
   P('Tintas da Alemanha', 'fatos', [
-    ['Spätburgunder', 'Pinot Noir, a tinta mais importante; elegante e complexa, frutas vermelhas e notas terrosas'],
-    ['Dornfelder', 'Cruzamento de Helfensteiner e Heroldrebe; tintos profundos, frutas escuras e especiarias'],
+    ['Spätburgunder', 'Pinot Noir, a tinta mais importante; elegante e complexa, frutas vermelhas e notas terrosas; sensível ao terroir e à vinificação'],
+    ['Dornfelder', 'Cruzamento de Helfensteiner e Heroldrebe; tintos profundos, frutas escuras e especiarias; popular em tintos secos e suaves'],
     ['Blauer Portugieser', 'Maturação precoce; tintos leves e frutados, pouco tanino; entra em blends e rosés']
   ]);
   P('Eiswein', 'fatos', [
     ['O que é', 'Vinho de uvas superamadurecidas congeladas naturalmente na vinha'],
     ['Como', 'Prensadas ainda congeladas, a água fica no gelo e o açúcar sai mais fácil'],
     ['Resultado', 'Extremamente doce, raro e sofisticado'],
-    ['Destaques', 'Mosel, Pfalz e Franken']
+    ['Destaques', 'Mosel, Pfalz e Franken'],
+    ['Fama', 'Muitas regiões produzem; é considerado uma joia alemã']
   ]);
   P('Outras regiões alemãs', 'lista', [
     ['', 'Franken (Francônia)'], ['', 'Ahr'], ['', 'Nahe'], ['', 'Mittelrhein'],
-    ['', 'Hessische Bergstrasse'], ['', 'Württemberg'], ['', 'Baden']
+    ['', 'Hessische Bergstrasse'], ['', 'Württemberg'], ['', 'Baden'], ['', 'Saale-Unstrut'], ['', 'Sachsen']
   ]);
   P('Grandes produtores da Alemanha', 'produtores', [
     ['Meyer-Näkel', ''], ['Dr. Loosen', ''], ['Hermann Dönnhoff', ''], ['Eugen Müller', ''], ['August Eser', ''], ['Hupfeld', '']
@@ -72,7 +74,7 @@ STUDY_PACKS.push((function () {
 
   R('Mosel', '', 'Mosel em resumo', 'fatos', [
     ['Onde', 'Sudoeste, na fronteira com Luxemburgo'],
-    ['Nome', 'Vem de três rios (Mosel, Saar e Ruwer), sendo o Mosel o maior'],
+    ['Nome', 'Mosel-Saar-Ruwer: vem de três rios, sendo o Mosel o maior'],
     ['Área', 'Cerca de 9.000 ha'],
     ['Brancos', '90% do vinho é branco; Riesling dominante'],
     ['Bereiche', 'Cinco sub-regiões, segundo o slide', 'conferir'],
@@ -128,7 +130,7 @@ STUDY_PACKS.push((function () {
   ]);
 
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
-  return { code: 'DE', version: 1, cards: cards };
+  return { code: 'DE', version: 2, cards: cards };
 })());
 
 // ======================  ÁUSTRIA  ======================
@@ -199,7 +201,8 @@ STUDY_PACKS.push((function () {
   R('Viena (Wien)', '', 'Viena', 'fatos', [
     ['Curiosidade', 'Capital com vinhedos dentro dos limites urbanos (o slide diz ser a única capital europeia)', 'conferir'],
     ['Castas', 'Grüner Veltliner, Riesling, Zweigelt e Blaufränkisch'],
-    ['Vinhedos', 'Nas colinas ao redor da cidade, com encostas íngremes e boa exposição ao sol']
+    ['Vinhedos', 'Nas colinas ao redor da cidade, com encostas íngremes e boa exposição ao sol'],
+    ['Fama', 'Conhecida também por vinícolas pitorescas e tradições vinícolas antigas']
   ]);
   R('Burgenland', '', 'Burgenland em resumo', 'fatos', [
     ['Onde', 'Leste, na fronteira com a Hungria'],
@@ -212,7 +215,8 @@ STUDY_PACKS.push((function () {
     ['Onde', 'Sudeste; paisagem montanhosa com vinhas em encostas'],
     ['Brancos', 'Frescos e aromáticos, sobretudo de Sauvignon Blanc e Welschriesling'],
     ['Laranja', 'Também vinhos laranja, de brancas com maceração prolongada'],
-    ['Tintos', 'Blauer Wildbacher e Zweigelt']
+    ['Tintos', 'Blauer Wildbacher e Zweigelt'],
+    ['Welschriesling', 'O slide a chama de autóctone; origem não confirmada em fonte aberta', 'conferir']
   ]);
 
   var LEVELS = { 'A Áustria em números': 'avancado',
@@ -238,7 +242,7 @@ STUDY_PACKS.push((function () {
   ]);
 
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
-  return { code: 'AT', version: 1, cards: cards };
+  return { code: 'AT', version: 2, cards: cards };
 })());
 
 // ======================  GRÉCIA  ======================
@@ -251,6 +255,12 @@ STUDY_PACKS.push((function () {
   }
   function H(group, title, items) { cards.push({ topic: 'harmonizacao', group: group, title: title, kind: 'fatos', items: mk(items) }); }
 
+  P('A Grécia em resumo', 'fatos', [
+    ['Raízes', 'Vitivinicultura milenar, com ampla variedade de uvas nativas e regiões únicas'],
+    ['Paisagem', 'Das encostas vulcânicas de Santorini às colinas verdes da Macedônia'],
+    ['Hoje', 'Ressurgimento nas últimas décadas e reconhecimento internacional por qualidade, originalidade e caráter'],
+    ['Ícones', 'Assyrtiko mineral de Santorini e Xinomavro robusto da Macedônia']
+  ]);
   P('A Grécia em números', 'numeros', [
     ['96 mil ha', 'Vinhedos'],
     ['Mais de 300', 'Castas nativas, segundo o slide (a Wikipedia cita cerca de 200 variedades)', 'conferir'],
@@ -271,15 +281,18 @@ STUDY_PACKS.push((function () {
     ['1821', 'Turcos perdem e destroem vinhedos; segue vinho de baixa qualidade'],
     ['1898-1920', 'Filoxera, seguida de investimento em cooperativas e quantidade'],
     ['Pós-guerras', 'Cinco grupos dominam: Achaia, Cambas, Kourtakis, Boutaris e Tsantalis'],
-    ['A partir de 1980', 'Regulamentação e melhora da qualidade, com padrões europeus'],
+    ['A partir de 1980', 'Regulamentação e melhora da qualidade, com padrões europeus, mas com muitos problemas econômicos'],
     ['1990-2000', 'Mercado amadurece; crescem vinícolas independentes de pequena produção'],
-    ['Hoje', 'Único setor agrícola do país totalmente autofinanciado']
+    ['Hoje', 'Mais saudável e consistente; único setor agrícola do país totalmente autofinanciado']
   ]);
   P('Geografia da Grécia', 'fatos', [
     ['Ilhas', 'Cerca de 3.000 ilhas, 63 habitadas, segundo o slide; a Wikipedia cita até 227 habitadas', 'corrigido'],
     ['Latitude', '34º a 42º N'],
-    ['Mares', 'Egeu a leste, Jônico a oeste'],
+    ['Mares', 'Egeu a leste, Jônico a oeste e mar da Líbia ao sul'],
+    ['Mar Jônico', 'O slide o diz parte do Adriático; é uma baía do Mediterrâneo ligada ao Adriático (Wikipedia)', 'corrigido'],
     ['Relevo', 'Muito montanhosa, com terras baixas só perto da costa; Pindos é a espinha dorsal'],
+    ['Cordilheiras', 'O slide as diz extensão dos Alpes da Europa Central; a Wikipedia diz que os Pindos prolongam os Alpes Dináricos', 'corrigido'],
+    ['Peloponeso', 'Uma longa e estreita faixa de mar o separa quase por completo do resto do país; as montanhas seguem até o fim dele'],
     ['Monte Olimpo', '2.917 m, o pico mais alto, perto do Egeu'],
     ['Planícies', 'Três importantes: Tessália, Macedônia e Trácia'],
     ['Ilhas do Egeu', 'Cordilheiras submersas emergem nos pontos mais altos e formam as ilhas do sul do Egeu']
@@ -299,8 +312,8 @@ STUDY_PACKS.push((function () {
   ]);
   P('Tintas da Grécia', 'fatos', [
     ['Xinomavro', 'Sobretudo da Macedônia; tintos encorpados, taninos firmes, bons para envelhecer'],
-    ['Agiorgitiko', 'Sobretudo do Peloponeso; versátil, de tintos leves a encorpados'],
-    ['Mavrodaphne', 'Sobretudo do Peloponeso; tintos doces, aromáticos e encorpados, também fortificados']
+    ['Agiorgitiko', 'Sobretudo do Peloponeso; versátil, de tintos leves a encorpados; amplamente cultivada e apreciada'],
+    ['Mavrodaphne', 'Sobretudo do Peloponeso; tintos doces, aromáticos e encorpados, também fortificados; valorizada localmente']
   ]);
   P('Brancas da Grécia', 'fatos', [
     ['Assyrtiko', 'Sobretudo de Santorini; seca, fresca e mineral; reconhecida no mundo'],
@@ -375,7 +388,8 @@ STUDY_PACKS.push((function () {
     ['Castas', 'Vilana e Vidiano, brancas']
   ]);
 
-  var LEVELS = { 'A Grécia em números': 'avancado',
+  var LEVELS = { 'A Grécia em resumo': 'avancado',
+    'A Grécia em números': 'avancado',
     'Marcos do vinho grego': 'avancado',
     'Geografia da Grécia': 'expert',
     'Solo e clima da Grécia': 'avancado',
@@ -404,7 +418,7 @@ STUDY_PACKS.push((function () {
   ]);
 
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
-  return { code: 'GR', version: 1, cards: cards };
+  return { code: 'GR', version: 2, cards: cards };
 })());
 
 // ======================  LÍBANO  ======================
@@ -419,6 +433,8 @@ STUDY_PACKS.push((function () {
   P('O Líbano em resumo', 'fatos', [
     ['História', 'Mais de 5.000 anos de vinho, ligados aos fenícios (Byblos, Sidon e Tyre), que o espalharam pelo Mediterrâneo'],
     ['Otomanos', 'A tradição foi preservada por comunidades cristãs, sobretudo no Vale do Bekaa'],
+    ['Comércio', 'Fenícios vendiam vinho a Egito, Grécia e Roma, ajudando a expandir a Vitis vinifera no mundo antigo'],
+    ['Notoriedade', 'Pouco conhecido no cenário global até tempos recentes'],
     ['Área', 'Cerca de 2.000 ha de vinhedos'],
     ['Produção', '8 a 10 milhões de garrafas por ano'],
     ['Estilo', 'Forte vocação para tintos estruturados, de estilo mediterrâneo']
@@ -430,6 +446,7 @@ STUDY_PACKS.push((function () {
     ['Tintas', 'Cabernet Sauvignon, Cinsault, Carignan, Syrah, Grenache e Mourvèdre'],
     ['Brancas', 'Chardonnay, Sauvignon Blanc, Viognier e Muscat'],
     ['Cinsault', 'Por décadas, a espinha dorsal dos vinhos libaneses, antes das bordalesas'],
+    ['Perfil', 'Predominam castas internacionais, bem adaptadas ao terroir local'],
     ['Autóctones', 'Obaideh e Merwah (renascimento recente)'],
     ['Parentesco', 'Obaideh e Merwah seriam parentes antigas de Chardonnay e Sémillon', 'conferir']
   ]);
@@ -450,11 +467,16 @@ STUDY_PACKS.push((function () {
     ['Colheita', 'Manual, obrigatória pelo relevo'],
     ['Irrigação', 'Raramente necessária (vinhas profundas)'],
     ['Cinsault', 'Vinhas antigas, com mais de 60 anos'],
-    ['Resiliência', 'Produção mantida mesmo na guerra civil']
+    ['Resiliência', 'Produção mantida mesmo na guerra civil'],
+    ['Identidade', 'Forte identidade fenícia; o vinho é mais que agricultura, é patrimônio cultural milenar']
   ]);
 
+  P('Vinícolas no mapa do Líbano', 'lista', [
+    ['', 'Batroun: Château Marsyas'], ['', 'Château Musar e Château St Thomas'], ['', 'Bekaa: Château Ksara, Château Kefraya e Massaya'], ['', 'Jezzine: Karam Wines']
+  ]);
   R('Vale do Bekaa', '', 'Vale do Bekaa', 'fatos', [
     ['Peso', 'Mais de 80% da produção nacional, segundo o slide', 'conferir'],
+    ['Proteção', 'Vale protegido por montanhas, a cerca de 1.000 m; dias quentes e noites frias'],
     ['Altitude', 'Média de 900 a 1.200 m'],
     ['Clima', 'Mediterrâneo continentalizado: verões quentes e secos, invernos frios com neve, grande amplitude térmica'],
     ['Solos', 'Calcário, cascalho, argila e pedra'],
@@ -481,13 +503,14 @@ STUDY_PACKS.push((function () {
     'Estilo dos vinhos libaneses': 'avancado',
     'Château Musar': 'avancado',
     'Classificação e particularidades': 'expert',
+    'Vinícolas no mapa do Líbano': 'expert',
     'Vale do Bekaa': 'avancado',
     'Produtores históricos do Bekaa': 'avancado',
     'Monte Líbano': 'expert',
     'Sul do Líbano': 'expert' };
 
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
-  return { code: 'LB', version: 1, cards: cards };
+  return { code: 'LB', version: 2, cards: cards };
 })());
 
 // ======================  ESLOVÊNIA  ======================
@@ -499,6 +522,12 @@ STUDY_PACKS.push((function () {
     cards.push({ topic: 'regiao', ref: sub ? ['Eslovênia', region, sub] : ['Eslovênia', region], title: title, kind: kind, items: mk(items) });
   }
 
+  P('A Eslovênia em resumo', 'fatos', [
+    ['Origem', 'Vitivinicultura remonta aos tempos romanos, nas encostas dos Alpes Julianos e nas colinas de Brda (segundo o slide, em outro ponto, há 2.500 anos)'],
+    ['Estilos', 'Grande variedade, refletindo microclimas e solos diversos'],
+    ['Regiões', 'Três principais: Primorska, Podravje e Posavje'],
+    ['Sustentabilidade', 'Abordagem sustentável, com muitos produtores orgânicos e biodinâmicos']
+  ]);
   P('A Eslovênia em números', 'numeros', [
     ['14.900 ha', 'Vinhedos, segundo o slide (a Wikipedia cita 22.300 ha)', 'conferir'],
     ['55 mi L', 'Produção média anual, segundo o slide (a Wikipedia cita 80 a 90 mi L)', 'conferir'],
@@ -540,20 +569,24 @@ STUDY_PACKS.push((function () {
   R('Primorska (Litoral)', '', 'Primorska', 'fatos', [
     ['Local', 'Oeste; influência do Adriático e dos Alpes Julianos'],
     ['Clima e solo', 'Mediterrâneo e calcário'],
-    ['Castas', 'Rebula, Malvazija Istarska e Refošk']
+    ['Castas', 'Rebula, Malvazija Istarska e Refošk'],
+    ['Sustentabilidade', 'Muitos produtores adotam práticas sustentáveis']
   ]);
   R('Podravje (Drava)', '', 'Podravje', 'fatos', [
     ['Clima', 'Continental: invernos frios e verões quentes'],
     ['Solos', 'Variados e férteis'],
-    ['Castas', 'Sauvignon Blanc, Chardonnay, Riesling, Pinot Gris, Pinot Noir e Blaufränkisch']
+    ['Castas', 'Sauvignon Blanc, Chardonnay, Riesling, Pinot Gris, Pinot Noir e Blaufränkisch'],
+    ['Tradição', 'Rica tradição vinícola e adoção de práticas sustentáveis']
   ]);
   R('Posavje (Baixo Sava)', '', 'Posavje', 'fatos', [
     ['Clima', 'Mais temperado'],
     ['Paisagem', 'Vales férteis, colinas suaves e planícies fluviais'],
-    ['Castas', 'Riesling, Sauvignon Blanc, Chardonnay, Blaufränkisch e Zweigelt']
+    ['Castas', 'Riesling, Sauvignon Blanc, Chardonnay, Blaufränkisch e Zweigelt'],
+    ['Sustentabilidade', 'Produtores visam preservar o ambiente e fazer vinhos de alta qualidade']
   ]);
 
-  var LEVELS = { 'A Eslovênia em números': 'expert',
+  var LEVELS = { 'A Eslovênia em resumo': 'avancado',
+    'A Eslovênia em números': 'expert',
     'Marcos do vinho esloveno': 'expert',
     'Três regiões da Eslovênia': 'avancado',
     'Brancas da Eslovênia': 'avancado',
@@ -564,5 +597,5 @@ STUDY_PACKS.push((function () {
     'Posavje': 'expert' };
 
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
-  return { code: 'SI', version: 1, cards: cards };
+  return { code: 'SI', version: 2, cards: cards };
 })());

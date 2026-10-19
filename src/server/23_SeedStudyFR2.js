@@ -85,7 +85,19 @@ STUDY_PACKS.push((function () {
     ['La Moutonne', 'Cerca de 2,5 ha, segundo o slide']
   ]);
   R('Borgonha', 'Chablis', 'Produtores de Chablis (rótulos do slide)', 'produtores', [
-    ['Domaine William Fèvre', ''], ['Domaine Long-Depaquit', ''], ['Louis Michel & Fils', '']
+    ['Domaine William Fèvre', ''], ['Domaine Long-Depaquit', ''], ['Louis Michel & Fils', ''],
+    ['Albert Bichot', ''], ['La Chablisienne', '']
+  ]);
+  R('Borgonha', 'Chablis', 'Rótulos de Chablis no slide', 'fatos', [
+    ['Les Clos', 'Chablis Grand Cru de Domaine William Fèvre e de Louis Michel & Fils'],
+    ['Moutonne', 'Chablis Grand Cru de Domaine Long-Depaquit; o rótulo traz Albert Bichot, e diz "seul propriétaire" (monopólio)'],
+    ['Les Preuses', 'Chablis Grand Cru no rótulo de La Chablisienne']
+  ]);
+  R('Borgonha', 'Chablis', 'Premier Crus de Chablis no mapa', 'lista', [
+    ['', 'Fourchaume'], ['', 'Montée de Tonnerre'], ['', 'Mont de Milieu'], ['', 'Vaillons'], ['', 'Montmains'],
+    ['', 'Côte de Léchet'], ['', 'Beauroy'], ['', 'Vau Ligneau'], ['', 'Vau de Vey'], ['', 'Berdiot'],
+    ['', 'Côte de Vaubarousse'], ['', 'Les Fourneaux'], ['', 'Vaucoupin'], ['', 'Vosgros'],
+    ['', 'Chaume de Talvat'], ['', 'Côte de Jouan'], ['', 'Les Beauregards']
   ]);
 
   // ---------- Côte de Nuits ----------
@@ -101,6 +113,12 @@ STUDY_PACKS.push((function () {
   R('Borgonha', 'Côte de Nuits', 'Produtores da Côte de Nuits (rótulos do slide)', 'produtores', [
     ['Domaine de la Romanée-Conti', ''], ['Joseph Drouhin', ''], ['Domaine Dujac', '']
   ]);
+  R('Borgonha', 'Côte de Nuits', 'Rótulos da Côte de Nuits no slide', 'fatos', [
+    ['Romanée-Conti', 'Rótulo do Domaine de la Romanée-Conti (Vosne-Romanée), safra 2000'],
+    ['La Tâche', 'Também do Domaine de la Romanée-Conti'],
+    ['Grands-Échezeaux', 'Grand Cru de Joseph Drouhin'],
+    ['Clos de la Roche', 'Grand Cru de Domaine Dujac (Morey-Saint-Denis)']
+  ]);
 
   // ---------- Côte de Beaune ----------
   R('Borgonha', 'Côte de Beaune', 'Côte de Beaune em resumo', 'fatos', [
@@ -109,7 +127,7 @@ STUDY_PACKS.push((function () {
     ['Extensão', 'Cerca de 25 km, de Ladoix-Serrigny às colinas de Maranges (o slide diz 20 km)', 'corrigido'],
     ['Vinhedos', 'Voltados para o sol da manhã'],
     ['Uvas', 'Brancos de Chardonnay e tintos de Pinot Noir'],
-    ['História', 'Um dos territórios mais antigos da França; vinificação desde a Alta Idade Média'],
+    ['História', 'Um dos territórios mais antigos da França; vinificação desde a Alta Idade Média, e os duques da Borgonha já apreciavam seus vinhos'],
     ['AOC', 'Classificada como AOC em 1936, segundo o slide', 'conferir']
   ]);
   R('Borgonha', 'Côte de Beaune', 'AOCs da Côte de Beaune', 'lista', [
@@ -129,6 +147,10 @@ STUDY_PACKS.push((function () {
   R('Borgonha', 'Côte de Beaune', 'Produtores da Côte de Beaune (rótulos do slide)', 'produtores', [
     ['Domaine Leflaive', ''], ['Louis Latour', ''], ['Henri Boillot', ''], ['Louis Jadot', '']
   ]);
+  R('Borgonha', 'Côte de Beaune', 'Rótulos da Côte de Beaune no slide', 'fatos', [
+    ['Montrachet', 'Grand Cru nos rótulos de Domaine Leflaive, Louis Latour e Henri Boillot'],
+    ['Bâtard-Montrachet', 'Grand Cru de Louis Jadot (Beaune)']
+  ]);
 
   // ---------- Côte Chalonnaise ----------
   R('Borgonha', 'Côte Chalonnaise', 'Côte Chalonnaise em resumo', 'fatos', [
@@ -147,6 +169,9 @@ STUDY_PACKS.push((function () {
   ]);
   R('Borgonha', 'Côte Chalonnaise', 'Produtores da Côte Chalonnaise (rótulo do slide)', 'produtores', [
     ['Domaine Joblot', '']
+  ]);
+  R('Borgonha', 'Côte Chalonnaise', 'Rótulo de Givry no slide', 'fatos', [
+    ['Mademoiselle', 'Givry Premier Cru, rótulo do Domaine Joblot']
   ]);
 
   // ---------- Mâconnais ----------
@@ -169,6 +194,10 @@ STUDY_PACKS.push((function () {
   ]);
   R('Borgonha', 'Mâconnais', 'Produtores do Mâconnais (rótulos do slide)', 'produtores', [
     ['Bouchard Père & Fils', ''], ['Domaines Leflaive', '']
+  ]);
+  R('Borgonha', 'Mâconnais', 'Rótulos de Pouilly-Fuissé no slide', 'fatos', [
+    ['Bouchard Père & Fils', 'Pouilly-Fuissé, "Grand Vin de Bourgogne"; casa fundada em 1731, em Beaune'],
+    ['Domaines Leflaive', 'Pouilly-Fuissé; a casa fica em Puligny-Montrachet']
   ]);
 
   // =====================  BEAUJOLAIS (aula 18)  =====================
@@ -263,6 +292,11 @@ STUDY_PACKS.push((function () {
   ]);
   R('Beaujolais', '', 'Produtores do Beaujolais (rótulos do slide)', 'produtores', [
     ['Philippe Pacalet', ''], ['Mommessin', ''], ['Pierre Cotton', '']
+  ]);
+  R('Beaujolais', '', 'Rótulos do Beaujolais no slide', 'fatos', [
+    ['Philippe Pacalet', 'Rótulo de Moulin-à-Vent'],
+    ['Mommessin', 'AOC Beaujolais; négociant-éleveur de Mâcon, casa fundada em 1865'],
+    ['Pierre Cotton', 'AOC Côte de Brouilly, safra 2014']
   ]);
 
   // =====================  CHAMPAGNE (aula 19)  =====================
@@ -383,6 +417,13 @@ STUDY_PACKS.push((function () {
     'Os 7 Grand Crus de Chablis': 'avancado',
     'Tamanho dos Grand Crus de Chablis': 'expert',
     'Produtores de Chablis (rótulos do slide)': 'expert',
+    'Rótulos de Chablis no slide': 'expert',
+    'Premier Crus de Chablis no mapa': 'expert',
+    'Rótulos da Côte de Nuits no slide': 'avancado',
+    'Rótulos da Côte de Beaune no slide': 'avancado',
+    'Rótulo de Givry no slide': 'expert',
+    'Rótulos de Pouilly-Fuissé no slide': 'expert',
+    'Rótulos do Beaujolais no slide': 'expert',
     'Côte de Nuits em resumo': 'medio',
     'Comunas da Côte de Nuits': 'avancado',
     'Produtores da Côte de Nuits (rótulos do slide)': 'avancado',
@@ -434,5 +475,5 @@ STUDY_PACKS.push((function () {
   };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'FR2', version: 1, cards: cards };
+  return { code: 'FR2', version: 2, cards: cards };
 })());

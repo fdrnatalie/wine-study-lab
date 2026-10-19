@@ -1,5 +1,5 @@
 /**
- * CARTÕES DE ESTUDO — Brasil (Rio Grande do Sul e outras regiões) e Uruguai (material de aula, v1).
+ * CARTÕES DE ESTUDO — Brasil (Rio Grande do Sul e outras regiões) e Uruguai (material de aula, v2).
  * Tópicos curtos; o material pode ter erros: "corrigido" = conferido em fonte aberta e o slide estava errado;
  * "conferir" = não confirmado (fica fora do quiz).
  * Itens: [chave, texto, marca?]. Para 'denominacoes': [nome, descrição, classificação].
@@ -63,12 +63,29 @@ STUDY_PACKS.push((function () {
     ['Expectativa', 'Produção média de 60 mil garrafas de vinho por ano']
   ]);
 
+  P('Indicações geográficas de vinhos do Brasil', 'fatos', [
+    ['IP Vale do São Francisco', 'Associação Vinhovasf (PE e BA)'],
+    ['IP Vinhos de Bituruna', 'Associação Apruvibi (PR)'],
+    ['IP Vales da Uva Goethe', 'Associação Progoethe (SC)'],
+    ['IP Vinhos de Altitude de Santa Catarina', 'Associação Vinhos de Altitude P&A (SC)'],
+    ['IP Altos Montes', 'Associação Apromontes (RS)'],
+    ['IP Farroupilha', 'Associação Afavin (RS)'],
+    ['IP Monte Belo', 'Associação Aprobelo (RS)'],
+    ['IP Pinto Bandeira', 'Associação Asprovinho (RS)'],
+    ['DO Altos de Pinto Bandeira', 'Associação Asprovinho (RS)'],
+    ['IP Vale dos Vinhedos', 'Associação Aprovale (RS)'],
+    ['DO Vale dos Vinhedos', 'Associação Aprovale (RS)'],
+    ['IP Campanha Gaúcha', 'Vinhos da Campanha Gaúcha (RS)'],
+    ['Fonte do mapa', 'IGs registradas no INPI; IP = Indicação de Procedência, DO = Denominação de Origem (Embrapa Uva e Vinho e UCS, dez/2022)']
+  ]);
+
   // ---------- Rio Grande do Sul ----------
   R('Rio Grande do Sul', '', 'Rio Grande do Sul: panorama', 'fatos', [
     ['Peso', 'Maior polo de produção de Vitis vinifera do Brasil'],
     ['Clima', 'Subtropical úmido, verões quentes e invernos moderados'],
     ['Viníferas', 'Cerca de 15% das uvas cultivadas são Vitis vinifera: foco em vinhos finos'],
-    ['Sub-regiões', 'Três importantes: Serra Gaúcha, Campanha Gaúcha e Serra do Sudeste']
+    ['Sub-regiões', 'Três importantes: Serra Gaúcha, Campanha Gaúcha e Serra do Sudeste'],
+    ['Mapa do slide', 'Mostra também Campos de Cima da Serra, junto à Serra Gaúcha, e o Planalto Catarinense logo ao norte']
   ]);
   R('Rio Grande do Sul', '', 'Castas do Rio Grande do Sul', 'fatos', [
     ['As 6 principais', 'Dezenas de variedades, mas a produção se concentra em 6 castas'],
@@ -163,7 +180,7 @@ STUDY_PACKS.push((function () {
   R('Santa Catarina', '', 'Santa Catarina em resumo', 'fatos', [
     ['Fama', 'Brancos de qualidade em regiões de alta altitude e a histórica uva Goethe (com selo de IP)'],
     ['IP de 2021', 'Segunda indicação geográfica para vinhos do estado: Vinhos de Altitude de Santa Catarina'],
-    ['Solo', 'Mistura de argila, areia e matéria orgânica; profundo, bem drenado e fértil nas melhores áreas'],
+    ['Solo', 'Mistura de argila, areia e matéria orgânica; profundo, bem drenado e fértil nas melhores áreas (Vale do Rio do Peixe e Planalto Catarinense)'],
     ['Clima', 'Ameno, com oscilações térmicas que ajudam a qualidade'],
     ['Área', '2.300 ha: Vale do Rio do Peixe 2.100 ha e Planalto Serrano 200 ha']
   ]);
@@ -208,6 +225,7 @@ STUDY_PACKS.push((function () {
     ['Área', '10.000 ha cultivados'],
     ['Condução', 'Principalmente latada; as uvas vão sobretudo ao consumo in natura'],
     ['Estilos', 'Destaque para tintos e espumantes moscatéis; vinhos frutados e frescos'],
+    ['Evolução', 'Viticultura para vinhos e sucos é mais recente; os vinhos de qualidade vêm sobretudo de vinícolas da Bahia e de Pernambuco'],
     ['Paralelo 8', 'A Rio Sol, em Lagoa Grande (PE), faz vinhos e espumantes premiados no Brasil e no exterior']
   ]);
   R('Vale do São Francisco', '', 'Uvas do Vale do São Francisco', 'fatos', [
@@ -224,7 +242,8 @@ STUDY_PACKS.push((function () {
     ['Galeto ao primo canto', 'Frango de leite de cerca de 25 dias (500 a 700 g), assado no espeto; "primo canto" é o primeiro canto'],
     ['Costela fogo de chão', 'Surgiu nas fazendas, quando as costelas, cortes não nobres, ficavam para os peões'],
     ['Matambre recheado', 'De "mata el hambre"; corte de flanco típico do RS, Uruguai e Argentina, trazido pela colonização espanhola'],
-    ['Sagu ao creme', 'Também citado entre os pratos de destaque da cozinha regional']
+    ['Sagu ao creme', 'Também citado entre os pratos de destaque da cozinha regional'],
+    ['Outros pratos populares', 'Carreteiro, puchero, quibebe, mandioca e batata-doce também são comuns nas mesas gaúchas']
   ]);
   H('Santa Catarina', 'Cozinha catarinense', [
     ['Tainha', 'Peixe típico do inverno, pescado de forma artesanal de maio a julho; assada na brasa, no forno, na telha ou na folha de bananeira, ou frita; às vezes recheada com a ova ou farofa']
@@ -249,6 +268,7 @@ STUDY_PACKS.push((function () {
   ]);
 
   var LEVELS = {
+    'Indicações geográficas de vinhos do Brasil': 'expert',
     'O Brasil em resumo': 'medio',
     'Marcos do vinho no Brasil': 'avancado',
     'Vinhedos e produção do Brasil (2022)': 'avancado',
@@ -291,7 +311,7 @@ STUDY_PACKS.push((function () {
     'Cozinha fluminense': 'expert' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'BR', version: 1, cards: cards };
+  return { code: 'BR', version: 2, cards: cards };
 })());
 
 // =====================  URUGUAI  =====================
@@ -331,6 +351,7 @@ STUDY_PACKS.push((function () {
     ['Origem', 'Região de Madiran, na França'],
     ['Chegada', 'Por volta de 1870, com imigrantes franceses; Pascual Harriague plantou as primeiras mudas'],
     ['Estilo', 'Mais frutado e menos rústico que o francês, pelo clima e solo locais'],
+    ['Reconhecimento', 'O Uruguai é visto como um dos principais produtores da variedade; casta emblemática e símbolo das vinícolas do país'],
     ['Influências', 'Rios Uruguai e da Prata e Oceano Atlântico: clima temperado, vinhos estruturados e de taninos macios']
   ]);
   P('Castas brancas do Uruguai', 'fatos', [
@@ -340,8 +361,10 @@ STUDY_PACKS.push((function () {
   ]);
   P('Castas tintas do Uruguai', 'fatos', [
     ['Merlot', '2ª casta mais plantada; versátil e fácil de beber'],
+    ['Merlot: cor', 'Cor azul intensa que lhe daria o nome, segundo o slide', 'conferir'],
     ['Cabernet Sauvignon', 'Originária de Bordeaux; cor rubi intensa e aromas suaves'],
-    ['Cabernet Franc', 'Brotação e maturação precoces; aromas vegetais']
+    ['Cabernet Franc', 'Brotação e maturação precoces; aromas vegetais'],
+    ['Cabernet Franc: origem', 'Do Médoc, segundo o slide', 'conferir']
   ]);
   P('Clima e solo do Uruguai', 'fatos', [
     ['Altitude', 'Média de cerca de 200 m'],
@@ -351,6 +374,15 @@ STUDY_PACKS.push((function () {
   P('Regiões vinícolas do Uruguai', 'fatos', [
     ['INAVI', 'Divide o país em seis grandes zonas; a Metropolitana e a Oceânica seriam as mais importantes, segundo o slide', 'conferir'],
     ['Regiões-chave', 'Canelones, San José e Maldonado']
+  ]);
+  P('As seis zonas vinícolas do Uruguai (mapa)', 'fatos', [
+    ['Litoral Norte', 'Artigas, Salto e Paysandú'],
+    ['Litoral Sul', 'Río Negro, Soriano e Colonia'],
+    ['Metropolitana', 'San José, Canelones e Montevidéu'],
+    ['Centro', 'Durazno, Florida e Lavalleja'],
+    ['Oceânica', 'Maldonado e Rocha'],
+    ['Norte', 'Rivera e Tacuarembó'],
+    ['Sem zona no mapa', 'Flores, Cerro Largo e Treinta y Tres aparecem em branco']
   ]);
   P('Grandes produtores do Uruguai', 'produtores', [
     ['Bodegas Carrau', ''], ['Bodega Garzón', ''], ['Giménez Méndez', ''], ['Bodega Bouza', ''],
@@ -400,6 +432,7 @@ STUDY_PACKS.push((function () {
     'Castas tintas do Uruguai': 'medio',
     'Clima e solo do Uruguai': 'avancado',
     'Regiões vinícolas do Uruguai': 'avancado',
+    'As seis zonas vinícolas do Uruguai (mapa)': 'expert',
     'Grandes produtores do Uruguai': 'avancado',
     'Canelones': 'avancado',
     'Grandes produtores de Canelones': 'expert',
@@ -409,5 +442,5 @@ STUDY_PACKS.push((function () {
     'Cozinha do Uruguai': 'medio' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'UY', version: 1, cards: cards };
+  return { code: 'UY', version: 2, cards: cards };
 })());

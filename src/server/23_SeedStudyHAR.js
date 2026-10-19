@@ -1,5 +1,5 @@
 /**
- * CARTÕES DE ESTUDO — Harmonização geral (material de aula: brancos, tintos, espumantes, fortificados e doces; v1).
+ * CARTÕES DE ESTUDO — Harmonização geral (material de aula: brancos, tintos, espumantes, fortificados e doces; v2).
  * Condensado em tópicos curtos. Onde conferi com fonte aberta o dado foi corrigido e marcado "corrigido".
  * Cozinha regional por país/região fica nos cartões de cada país. Itens: [chave, texto, marca?].
  */
@@ -83,6 +83,7 @@ STUDY_PACKS.push((function () {
   ]);
   C('Espumantes', 'Espumantes leves (Prosecco)', 'fatos', [
     ['Aperitivos leves', 'Prosecco com canapés, bruschettas e crostini'],
+    ['Refeições leves', 'O Prosecco é versátil: serve de aperitivo ou acompanha refeições leves'],
     ['Frutos do mar', 'Camarões grelhados, ostras e ceviche são realçados pela frescura do Prosecco'],
     ['Comida italiana', 'Massas leves e antipastos'],
     ['Saladas', 'Frescas, de preferência cítricas (rúcula com grapefruit): combinam com a acidez de um espumante jovem e leve'],
@@ -98,6 +99,7 @@ STUDY_PACKS.push((function () {
   C('Fortificados e doces', 'Ice Wine, Vin Santo e Porto', 'fatos', [
     ['Ice Wine', 'Sobremesas de frutas, queijos suaves e frutas frescas; uvas congeladas dão doçura intensa e sabor frutado'],
     ['Vin Santo', 'Biscotti, sobremesas com nozes e queijos curados; caráter amendoado e notas de caramelo'],
+    ['Vin Santo (tradição toscana)', 'Muito apreciado com biscoitos cantuccini, famosos na Toscana, ou em sobremesas como tiramisù'],
     ['Vinho do Porto', 'Queijos duros, chocolate, frutas secas e carnes defumadas; versátil: antes, durante ou depois da refeição']
   ]);
 
@@ -110,5 +112,5 @@ STUDY_PACKS.push((function () {
   };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'HAR', version: 1, cards: cards };
+  return { code: 'HAR', version: 2, cards: cards };
 })());

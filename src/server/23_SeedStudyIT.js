@@ -18,7 +18,13 @@ STUDY_PACKS.push((function () {
     ['718 mil ha', 'Área plantada: 3ª do mundo (Espanha 955 mil, França 812 mil)'],
     ['4,9 bi L', 'Produção: 1ª do mundo (França 4,5 bi, Espanha 3,5 bi)'],
     ['2,3 bi L', 'Consumo: 2º maior da União Europeia'],
-    ['33,9 L', 'Consumo por habitante (Portugal lidera, com 67,5 L)']
+    ['33,9 L', 'Consumo por habitante (Portugal lidera, com 67,5 L)'],
+    ['193 mil ha', 'Portugal, para comparação (o Chile tem 196 mil ha)'],
+    ['3º', 'Consumo mundial em volume absoluto: atrás de EUA e França']
+  ]);
+  P('Importações brasileiras (2021)', 'numeros', [
+    ['158 mi L', 'Total importado pelo Brasil; cerca de 7,9 milhões vieram da França'],
+    ['48%', 'Chile'], ['16%', 'Portugal'], ['14%', 'Argentina'], ['7%', 'Itália'], ['5%', 'França'], ['10%', 'Outros']
   ]);
   P('Marcos do vinho italiano', 'linha', [
     ['Séc. I a.C.', 'Romanos introduzem a videira, segundo o slide', 'conferir'],
@@ -47,6 +53,9 @@ STUDY_PACKS.push((function () {
     ['2', 'Zonas: costa e colinas'],
     ['Sangiovese', 'Casta mais importante; Chianti e Brunello são os mais famosos']
   ]);
+  R('Toscana', '', 'Províncias da Toscana', 'lista', [
+    ['', 'Massa-Carrara, Lucca, Pistoia, Prato, Firenze'], ['', 'Pisa, Arezzo, Siena, Livorno, Grosseto']
+  ]);
   R('Toscana', '', 'Sangiovese', 'fatos', [
     ['Origem', 'Natural da Toscana; 1º registro no séc. XV'],
     ['Nome', 'De "sanguis Jovis": sangue de Júpiter'],
@@ -55,11 +64,13 @@ STUDY_PACKS.push((function () {
   ]);
   R('Toscana', 'Montalcino', 'Brunello di Montalcino', 'fatos', [
     ['Criador', 'Ferruccio Biondi-Santi, propriedade Il Greppo'],
+    ['Primeiras vinhas', 'Sangiovese Grosso plantada por Biondi-Santi em 1870'],
     ['1ª safra', '1888; até 1950 só os Biondi-Santi o faziam'],
     ['Uva', 'Sangiovese Grosso: 65 ha até 1970, cerca de 1.600 ha hoje'],
     ['Estágio', 'Mínimo 24 meses em barril; Riserva, 30 meses'],
     ['Volume', 'Cerca de 7 milhões de litros por ano'],
-    ['Curiosidade', 'Em 2012 um ex-funcionário da Case Basse (Soldera) abriu os tanques: 62 mil litros perdidos (safras 2007 a 2012)']
+    ['Curiosidade', 'Em 2 de dezembro de 2012 um ex-funcionário da Case Basse (de Giancarlo Soldera) abriu os tanques: 62 mil litros perdidos (safras 2007 a 2012)'],
+    ['Preço', 'Uma garrafa de Brunello Soldera custava em média R$ 8.000 na importadora Mistral, segundo o slide']
   ]);
   R('Toscana', 'Chianti (e subzonas)', 'Chianti', 'fatos', [
     ['Nome', 'Vem de uma cadeia de montanhas; área demarcada pelo Duque da Toscana em 1716'],
@@ -179,12 +190,12 @@ STUDY_PACKS.push((function () {
   ]);
   P('Cozinha do Norte', 'fatos', [
     ['Piemonte', 'Risotto al Barolo; vitello tonnato (vitelo frio com molho cremoso de atum); trufas, carne bovina e queijos envelhecidos'],
-    ['Vêneto', 'Polenta; risotto al nero di seppia (arroz com tinta de lula); frutos do mar'],
-    ['Lombardia', 'Ossobuco alla milanese (vitelo com vinho branco, tomate e açafrão); risoto milanês com açafrão'],
+    ['Vêneto', 'Polenta; risotto al nero di seppia (Carnaroli ou Arborio, tinta de lula, caldo de peixe, alho e cebola; influência do Adriático); frutos do mar frescos'],
+    ['Lombardia', 'Ossobuco alla milanese (vitelo com vinho branco, tomate e açafrão); risoto milanês com açafrão e gremolata'],
     ['Trentino', 'Canederli'],
     ['Vale d\'Aosta', 'Fonduta'],
     ['Ligúria', 'Pesto'],
-    ['Friuli', 'Frico: queijo Montasio com batatas, crosta crocante']
+    ['Friuli', 'Frico: queijo Montasio (semiduro) com batatas, crosta crocante e dourada']
   ]);
   P('Grandes produtores do Norte', 'produtores', [
     ['Giuseppe Mascarello', ''], ['Giacomo Conterno', ''], ['Angelo Gaja', ''], ['La Spinetta', ''], ['Zenato', ''],
@@ -206,7 +217,8 @@ STUDY_PACKS.push((function () {
     ['Nome', 'De "nebbia": névoa que cobre os vinhedos de manhã'],
     ['Cultivo', 'Delicada e difícil; amadurecimento tardio e rendimento baixo (vinhos caros)'],
     ['Estilo', 'Casca grossa: muito tanino; acidez alta; cor clara (pouca antocianina)'],
-    ['Aromas', 'Terrosos, florais e frutados']
+    ['Aromas', 'Terrosos, florais e frutados'],
+    ['Clima e solo', 'Cresce melhor em climas frescos e solos bem drenados; colhida tardiamente']
   ]);
   R('Piemonte', '', 'Castas do Piemonte', 'lista', [
     ['', 'Brancas: Cortese, Moscato, Arneis'], ['', 'Tintas: Croatina (Bonarda), Dolcetto, Barbera, Nebbiolo']
@@ -215,22 +227,24 @@ STUDY_PACKS.push((function () {
     ['Apelido', '"Rei dos vinhos e vinho dos reis"'],
     ['Uva', 'Só Nebbiolo'],
     ['Denominação', 'DOC em 1966 e DOCG em 1980 (o slide diz DOCG em 1966)', 'corrigido'],
-    ['Estágio', 'Mínimo 3 anos em barril; Riserva, 5 anos'],
+    ['Perfil', 'Vinho "para iniciados": exige conhecimento e paciência (Saul Galvão, "Tintos e Brancos")'],
+    ['Aldeias', 'Barolo, La Morra, Monforte d\'Alba, Serralunga d\'Alba e Castiglione Falletto'],
+    ['Estágio', 'Mínimo 3 anos, ao menos 18 meses em madeira (o slide diz 3 anos em barril); Riserva, 5 anos', 'corrigido'],
     ['Álcool', 'Mínimo 13%'],
     ['Extrato seco', 'Mínimo 22 g/L'],
     ['Comunas', 'Barolo, Castiglione Falletto e Serralunga d\'Alba inteiras, mais parcelas de outras oito aldeias; La Morra é a mais importante']
   ]);
   R('Piemonte', 'Barolo', 'Três zonas do Barolo', 'fatos', [
-    ['Vale de Serralunga', 'Vinhos encorpados e potentes, taninos marcados, longa guarda'],
+    ['Vale de Serralunga', 'Vinhos encorpados e potentes, taninos marcados, longa guarda; vinhedos de prestígio: Serralunga d\'Alba e Monforte d\'Alba'],
     ['Vale do Barolo', 'Barolo e La Morra: mais delicados, elegantes e macios, com grande estrutura'],
     ['Castiglione Falletto', 'Entre os dois vales; solo parecido com o de Serralunga: elegância do Barolo com potência de Serralunga']
   ]);
   R('Piemonte', 'Barbaresco', 'Barbaresco', 'fatos', [
     ['Apelido', '"Irmão mais novo" do Barolo; produção iniciada nos primeiros anos depois da 2ª guerra'],
     ['Uva', 'Só Nebbiolo; menos longevo que o Barolo'],
-    ['Denominação', 'DOCG em 1968, segundo o slide', 'conferir'],
+    ['Denominação', 'DOC em 1966 e DOCG em 1980 (o slide diz DOCG em 1968)', 'corrigido'],
     ['Área', 'Pouco mais de 680 ha'],
-    ['Estágio', 'Mínimo 3 anos em barril; Riserva, 5 anos'],
+    ['Estágio', 'Mínimo 2 anos, 9 meses em madeira; Riserva, 4 anos (o slide diz 3 e 5 anos em barril)', 'corrigido'],
     ['Álcool', 'Mínimo 12,5%'],
     ['Extrato seco', 'Mínimo 20 g/L'],
     ['Comunas', 'Barbaresco, Neive e Treiso; destaques: Santo Stefano e Bricco di Neive']
@@ -348,7 +362,7 @@ STUDY_PACKS.push((function () {
     ['Perfil', 'Estrutura encorpada e fortes notas defumadas e tostadas, vindas das cascas']
   ]);
   R('Basilicata', '', 'Denominação da Basilicata', 'denominacoes', [
-    ['Aglianico del Vulture', 'Única DOCG da Basilicata: só tintos de Aglianico', 'DOCG']
+    ['Aglianico del Vulture', 'Única DOCG da Basilicata: só tintos de Aglianico; a DOCG é a versão Superiore (2011), o slide diz apenas Aglianico del Vulture', 'DOCG']
   ]);
   R('Basilicata', '', 'Grandes produtores da Basilicata', 'produtores', [
     ['Cantina di Venosa', ''], ['Paternoster', ''], ['D\'Angelo', ''], ['Damaschito', '']
@@ -366,8 +380,8 @@ STUDY_PACKS.push((function () {
     ['', 'Tintas: Aglianico, Merlot, Cabernet Sauvignon'], ['', 'Brancas: Fiano, Greco, Falanghina']
   ]);
   R('Campânia', '', 'Denominações da Campânia', 'denominacoes', [
-    ['Taurasi', 'Tinto de Aglianico; 3 anos em barris, segundo o slide', 'DOCG'],
-    ['Aglianico del Taburno', 'Tintos e rosés de Aglianico', 'DOCG'],
+    ['Taurasi', 'Tinto de Aglianico; 3 anos em barris, segundo o slide; DOCG desde 1993', 'DOCG'],
+    ['Aglianico del Taburno', 'Tintos e rosés de Aglianico; DOCG desde 2011', 'DOCG'],
     ['Fiano di Avellino', 'Branco de Fiano', 'DOCG'],
     ['Greco di Tufo', 'Branco de Greco', 'DOCG']
   ]);
@@ -438,6 +452,8 @@ STUDY_PACKS.push((function () {
   // Nível no quiz, por notoriedade (avaliação editorial; ajustável): medio = conhecido no mundo todo.
   var LEVELS = { 'A Itália em números (2022)': 'avancado',
     'Marcos do vinho italiano': 'avancado',
+    'Importações brasileiras (2021)': 'avancado',
+    'Províncias da Toscana': 'expert',
     'Estilos de destaque': 'medio',
     'Norte da Itália: vinhos de cada região': 'medio',
     'Cozinha do Norte': 'avancado',
@@ -507,5 +523,5 @@ STUDY_PACKS.push((function () {
     'Grandes produtores da Sardenha': 'expert' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'IT', version: 3, cards: cards };
+  return { code: 'IT', version: 4, cards: cards };
 })());

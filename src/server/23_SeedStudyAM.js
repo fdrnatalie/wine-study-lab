@@ -42,18 +42,27 @@ STUDY_PACKS.push((function () {
   ]);
   P('Castas tintas do Chile', 'fatos', [
     ['Cabernet Sauvignon', 'Cerca de 37 mil ha; 29% do vinho fino; chegou em meados do séc. XIX'],
+    ['Cabernet: origem e papel', 'Casta bordalesa, uma das mais importantes do mundo e a grande joia da vitivinicultura chilena'],
+    ['Cabernet: por que dá certo', 'Adapta-se fácil e é rica em polifenóis, acidez e taninos, base de grandes vinhos'],
     ['Merlot', '2ª tinta em área, mais de 10 mil ha: vinhos elegantes e aromáticos'],
     ['Carménère', 'Redescoberta em meados dos anos 1990; quase 10 mil ha; robustez e notas vegetais'],
-    ['Syrah', 'Pouco mais de 6 mil ha; equilíbrio e notas de especiarias']
+    ['Syrah', 'Pouco mais de 6 mil ha; equilíbrio e notas de especiarias'],
+    ['Syrah: origem', 'Côtes du Rhône, sul da França, segundo o slide']
   ]);
   P('Castas brancas do Chile', 'fatos', [
     ['Sauvignon Blanc', 'Pouco mais de 11 mil ha, segundo o slide; é a branca mais plantada (cerca de 14 mil ha em 2022)', 'corrigido'],
+    ['Sauvignon Blanc: presença', 'Destaca-se em diversas regiões chilenas'],
     ['Chardonnay', 'O slide a dá como a mais plantada (13 mil ha); em 2022 eram cerca de 10 mil ha', 'corrigido'],
+    ['Chardonnay: estilo', 'Vinhos de enorme intensidade aromática'],
     ['Moscatel de Alexandria', '3ª branca, 6 mil ha: vinhos simples em grande quantidade, não de destaque em qualidade']
   ]);
   P('Cozinha do Chile', 'fatos', [
     ['Origem', 'Fusão de imigrantes árabes, britânicos, italianos, indianos e espanhóis'],
     ['Pratos citados', 'Empanadas, ceviche, curanto, choripán e charquicán']
+  ]);
+  P('Outras regiões do Chile', 'fatos', [
+    ['Quais', 'Coquimbo, Aconcágua, Bío-Bío e Itata: entre as mais importantes áreas produtoras do país'],
+    ['Onde', 'Concentradas nas partes norte e sul do Chile, fora do Vale Central']
   ]);
   P('Grandes produtores do Chile', 'produtores', [
     ['De Martino', ''], ['Concha y Toro', ''], ['Anakena', ''], ['Ventisquero', ''], ['Casa Lapostolle', ''],
@@ -140,16 +149,16 @@ STUDY_PACKS.push((function () {
 
   // ---------- Harmonização ----------
   H('Cozinha do Chile', [
-    ['Empanadas', 'Pastéis de massa recheados com carne, azeitonas, cebola e temperos como páprica e cominho'],
-    ['Ceviche', 'Peixe cru marinado em limão ou lima, com cebola roxa, pimentão, coentro e pimenta'],
+    ['Empanadas', 'Pastéis de massa recheados com carne, azeitonas, cebola e temperos como páprica e cominho; populares no Chile e em outros países da América Latina'],
+    ['Ceviche', 'Peixe cru marinado em limão ou lima, que "cozinha" a carne e a deixa macia; leva cebola roxa, pimentão, coentro e pimenta'],
     ['Curanto', 'Evento comunitário: frutos do mar, batatas, legumes e pães cozidos em buraco, com pedras vulcânicas e folhas de nalca'],
-    ['Choripán', 'Chorizo no pão, muito popular também no Chile'],
-    ['Charquicán', 'Ensopado de carne e legumes com coentro, orégano, cominho, batata, abóbora e cebola']
+    ['Choripán', 'Chorizo no pão; mais popular na Argentina, mas tradicional e muito apreciado também no Chile'],
+    ['Charquicán', 'Ensopado de carne e legumes com coentro, orégano, cominho, batata, abóbora e cebola; as versões variam pelo país conforme a sazonalidade']
   ]);
 
   var LEVELS = {
     'Marcos do vinho chileno': 'avancado', 'O Chile em números': 'medio', 'Clima e solo do Chile': 'avancado',
-    'Castas tintas do Chile': 'medio', 'Castas brancas do Chile': 'medio', 'Cozinha do Chile': 'avancado',
+    'Castas tintas do Chile': 'medio', 'Castas brancas do Chile': 'medio', 'Cozinha do Chile': 'avancado', 'Outras regiões do Chile': 'avancado',
     'Grandes produtores do Chile': 'avancado', 'Vale Central em resumo': 'medio', 'Vale do Maipo': 'medio',
     'Produtores do Maipo': 'avancado', 'Vale do Rapel (Cachapoal)': 'avancado', 'Produtores do Rapel': 'expert',
     'Vale do Curicó': 'avancado', 'Produtores do Curicó': 'expert', 'Vale do Maule': 'avancado', 'Produtores do Maule': 'expert',
@@ -157,7 +166,7 @@ STUDY_PACKS.push((function () {
     'Vale do Itata': 'expert', 'Produtores do Itata': 'expert', 'Vale do Bío-Bío': 'expert', 'Produtores do Bío-Bío': 'expert' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'CL', version: 1, cards: cards };
+  return { code: 'CL', version: 2, cards: cards };
 })());
 
 // ======================= ARGENTINA =======================
@@ -204,11 +213,13 @@ STUDY_PACKS.push((function () {
     ['Origem', 'Cahors, sudoeste da França; levada à Argentina em 1852'],
     ['Área', '45.657 ha: o maior produtor mundial; 23% dos vinhedos do país'],
     ['Entre as tintas', 'Representa 39% do total produzido, segundo o slide', 'conferir'],
-    ['Estilo', 'Cor profunda, aromas frutados e taninos suaves']
+    ['Estilo', 'Cor profunda, aromas frutados e taninos suaves'],
+    ['Perfil', 'Conhecida por vinhos encorpados e intensos; chegou no séc. XIX'],
+    ['Lar', 'Mendoza virou o lar da Malbec: clima seco e solos propícios']
   ]);
   P('Castas brancas da Argentina', 'fatos', [
     ['Torrontés Riojano', 'Mais de 9 mil ha; branca mais importante; cruzamento de Moscatel de Alexandria com Criolla'],
-    ['Chardonnay', 'Pouco menos de 6 mil ha; robusto, amadeirado e aromático'],
+    ['Chardonnay', 'Pouco menos de 6 mil ha; robusto, amadeirado e aromático; 2ª branca em área, mas a preferida de muitos'],
     ['Sauvignon Blanc', '1.900 ha: fresca, leve, versátil; muito apreciada pelos brasileiros'],
     ['Chenin Blanc', '1.744 ha'],
     ['Semillón', '653 ha'],
@@ -216,8 +227,8 @@ STUDY_PACKS.push((function () {
   ]);
   P('Castas tintas da Argentina', 'fatos', [
     ['Bonarda', 'Mais de 18 mil ha, 2ª mais plantada: vinhos frutados e de bom corpo'],
-    ['Cabernet Sauvignon', 'Mais de 14 mil ha: encorpados, complexos e longevos'],
-    ['Syrah', '11 mil ha: complexos, com especiarias e encorpados'],
+    ['Cabernet Sauvignon', 'Mais de 14 mil ha, considerada a 2ª casta mais importante do país: encorpados, complexos e longevos'],
+    ['Syrah', '11 mil ha: complexos, com especiarias e encorpados; uma das melhores castas do mundo, achou na Argentina o terroir perfeito'],
     ['Merlot', '5.062 ha'],
     ['Cabernet Franc', '1.352 ha'],
     ['Pinot Noir', '1.992 ha']
@@ -273,7 +284,7 @@ STUDY_PACKS.push((function () {
   ]);
   R(MZ, 'Luján de Cuyo', 'Luján de Cuyo', 'fatos', [
     ['Fama', 'Considerada a melhor sub-região de Mendoza e da Argentina'],
-    ['Pioneirismo', 'Primeira DOC da Argentina (1989); o slide diz do continente americano', 'conferir'],
+    ['Pioneirismo', 'Primeira DOC da Argentina (1993, segundo a Wikipédia); o slide diz "do continente americano", que não consegui confirmar', 'conferir'],
     ['Distritos', 'Perdriel, Vistalba, Agrelo, Las Compuertas, Carrodilla e Mayor Drummond'],
     ['Produtores', 'Nieto Senetiner, Kaiken, Weinert, Norton, Terrazas de los Andes, Achaval Ferrer, Viña Cobos, Mendel e Catena Zapata']
   ]);
@@ -295,7 +306,7 @@ STUDY_PACKS.push((function () {
     ['Área', '30.856 ha: 2ª província do país, com 16% da área plantada'],
     ['Vales (IGs)', 'Pedernal, Calingasta, Zonda, Ullum, Iglesia e Jáchal'],
     ['Clima e solo', 'Quente e seco; solos aluviais de areia e argila'],
-    ['Tintas', 'Syrah é a casta típica; também Malbec, Cabernet Sauvignon e Bonarda'],
+    ['Tintas', 'Syrah é a casta típica; também Malbec (com diferenças interessantes de outras regiões), Cabernet Sauvignon e Bonarda'],
     ['Brancas', 'Torrontés e castas criollas como Pedro Giménez e Moscatel de Alexandria']
   ]);
   R(SJ, 'La Rioja (Chilecito)', 'La Rioja', 'fatos', [
@@ -330,12 +341,13 @@ STUDY_PACKS.push((function () {
     ['San Patricio del Chañar', 'Surge no fim dos anos 1990 como centro e diversifica os vinhos'],
     ['Área e altitude', '1.764 ha entre 270 e 415 m; a latitude compensa a baixa altitude'],
     ['Clima', 'Quente, noites muito frias, seco, ventos constantes: uvas muito sãs'],
-    ['Castas', 'Malbec, Cabernet Sauvignon, Merlot, Pinot Noir e Chardonnay']
+    ['Castas', 'Malbec, Cabernet Sauvignon, Merlot, Pinot Noir e Chardonnay'],
+    ['Vinhos', 'Notável concentração de cor, aromas muito frutados, grande corpo e estrutura']
   ]);
   R(PT, 'Alto Valle del Río Negro', 'Río Negro', 'fatos', [
     ['Local', 'Vales das bacias dos rios Colorado e Negro; cerca de 1.455 ha'],
     ['Altitude', 'De 370 m nos vales altos a oeste até 4 m perto do Atlântico'],
-    ['Oeste', 'Continental e seco; invernos frios, verões quentes e secos; ventos da cordilheira dão sanidade'],
+    ['Oeste', 'Continental e seco; invernos frios, verões quentes e secos, com muita luminosidade e grande amplitude térmica; ventos da cordilheira dão sanidade'],
     ['Leste', 'San Javier, no Vale Inferior: planície de 4 a 16 m, clima moderado pelo mar (viticultura atlântica)'],
     ['Castas', 'Chardonnay, Malbec, Merlot e Pinot Noir']
   ]);
@@ -363,5 +375,5 @@ STUDY_PACKS.push((function () {
     'Cafayate': 'avancado', 'Catamarca': 'expert', 'Neuquén': 'avancado', 'Río Negro': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'AR', version: 1, cards: cards };
+  return { code: 'AR', version: 2, cards: cards };
 })());

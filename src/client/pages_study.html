@@ -388,7 +388,7 @@ Pages.grapes = {
       if (!list.length) return html + Components.empty('Nenhuma uva ainda.', 'Elas são criadas pela sincronização ou pelo cadastro.');
       html += '<div class="grid auto">' + list.map(function (g) {
         return '<a class="panel" href="#/uvas/' + g.id + '" style="text-decoration:none;color:inherit;display:block">' +
-          (g.photo ? '<img class="gp-thumb" loading="lazy" alt="" src="' + esc(g.photo) + '">' : '') +
+          (g.photo ? '<img class="gp-thumb" loading="lazy" alt="" src="' + esc(/^https?:/.test(g.photo) ? g.photo : (window.WSL_ASSETS || '') + g.photo) + '">' : '') +
           '<div class="eyebrow">' + esc(g.color ? (g.color === 'tinta' ? 'Tinta' : g.color === 'branca' ? 'Branca' : g.color) : 'Uva') + '</div>' +
           '<div class="serif" style="font-size:1.7rem;line-height:1.1;margin:4px 0 8px">' + esc(g.name) + '</div>' +
           '<div class="small muted" style="margin-bottom:10px">' + esc(g.origin || '') + (g.wines ? (g.origin ? ' · ' : '') + plural(g.wines, 'vinho', 'vinhos') + ' no estudo' : '') + '</div>' +
@@ -412,9 +412,13 @@ Pages.grape = {
   /** Fotos da uva ("como ela é"). Só a administradora envia e remove. */
   photosPanel: function (g) {
     var admin = Store.lookups && Store.lookups.is_admin, list = g.photos || [];
+    var base = window.WSL_ASSETS || '';
     var imgs = list.map(function (p) {
-      return '<figure class="gp"><a href="' + esc(p.url) + '" target="_blank" rel="noopener"><img loading="lazy" alt="' + esc(g.name) + '" src="' + esc(p.url) + '"></a>' +
-        (admin ? '<button class="btn small gp-del" data-action="photo-del" data-id="' + esc(p.id) + '">Remover</button>' : '') + '</figure>';
+      var url = /^https?:/.test(p.url) ? p.url : base + p.url;
+      var credit = p.credit ? '<figcaption class="gp-credit">Foto: ' + esc(p.credit) + (p.license ? ' · ' + esc(p.license) : '') +
+        (p.source ? ' · <a href="' + esc(p.source) + '" target="_blank" rel="noopener">Wikimedia Commons</a>' : '') + '</figcaption>' : '';
+      return '<figure class="gp"><a href="' + esc(url) + '" target="_blank" rel="noopener"><img loading="lazy" alt="' + esc(g.name) + '" src="' + esc(url) + '"></a>' + credit +
+        (admin && !p.locked ? '<button class="btn small gp-del" data-action="photo-del" data-id="' + esc(p.id) + '">Remover</button>' : '') + '</figure>';
     }).join('');
     return '<section class="panel gp-panel"><div class="page-head" style="margin-bottom:8px"><h3 style="margin:0">Como ela é</h3>' +
       (admin ? '<label class="btn small">+ Adicionar foto<input type="file" accept="image/*" data-change="photo-add" hidden></label>' : '') + '</div>' +

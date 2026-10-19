@@ -13,6 +13,11 @@ STUDY_PACKS.push((function () {
       var o = { k: i[0], v: i[1] }; if (i[2]) o.tag = i[2]; return o; }) });
   }
 
+  C('Antiguidade', 'Vinho e sociedade', 'lista', [
+    ['', 'Uma das bebidas mais antigas e reverenciadas da humanidade'],
+    ['', 'Papel vital em rituais religiosos, no comércio e no convívio social'],
+    ['', 'Mostra a evolução das técnicas de vinificação e das culturas que moldaram a apreciação atual']
+  ]);
   C('Antiguidade', 'Os primeiros vinhos', 'linha', [
     ['6000 a.C.', 'Geórgia: primeiras evidências arqueológicas de produção de vinho (achado de 2017)'],
     ['4100 a.C.', 'Armênia: vinificação (vinícola mais antiga conhecida, Areni-1); o slide traz 5000 a.C.', 'corrigido'],
@@ -36,13 +41,14 @@ STUDY_PACKS.push((function () {
   ]);
   C('França', 'Marcos da França', 'linha', [
     ['1100', 'Vinhas se expandem além do sul, puxadas pelo comércio'],
-    ['1309', 'Châteauneuf-du-Pape, perto de Avignon, nasce com o papado e vira região importante'],
+    ['1309', 'Châteauneuf-du-Pape, perto de Avignon, nasce com o papado (Papa João XXII, segundo o slide) e vira região importante'],
     ['1443', 'Hospices de Beaune (Borgonha) é fundado por Nicolas Rolin e esposa como hospital'],
     ['1855', 'Classificação dos vinhos de Bordeaux para a Exposição Universal de Paris'],
-    ['1932', 'Bordeaux responde com a classificação Cru Bourgeois, revista a cada década']
+    ['1932', 'Bordeaux responde com a classificação Cru Bourgeois, revista a cada década'],
+    ['', 'Cru Bourgeois: cinco níveis, segundo o slide', 'conferir']
   ]);
   C('Novo Mundo', 'Américas', 'linha', [
-    ['1492', 'Colombo chega ao Novo Mundo; videiras nas ilhas do Caribe (o slide cita Colombo plantando)', 'conferir'],
+    ['1492', 'Colombo, explorador genovês, chega ao Novo Mundo; videiras nas ilhas do Caribe (o slide cita Colombo plantando)', 'conferir'],
     ['1513', 'Panamá: Vasco Núñez de Balboa introduz a viticultura na América Central'],
     ['1524', 'México: videiras atribuídas ao conquistador Hernán Cortés'],
     ['1554', 'Peru: frei Francisco de Carabantes; a uva se adapta bem ao clima andino'],
@@ -68,5 +74,5 @@ STUDY_PACKS.push((function () {
     'Américas': 'avancado', 'Oceania e Canadá': 'expert', 'Vinho no Brasil': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'HIS', version: 2, cards: cards };
+  return { code: 'HIS', version: 3, cards: cards };
 })());

@@ -10,15 +10,30 @@ var GrapePhotos = (function () {
 
   function url_(fileId) { return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w1400'; }
 
+  /**
+   * Fotos prontas, de fontes abertas (Wikimedia Commons), com crédito e licença. Arquivos em src/photos/uvas/
+   * (publicados junto com o site); os dados em 38_GrapePhotoSeed.js, por nome da uva.
+   */
+  function seedFor_(name) {
+    var list = (typeof GRAPE_PHOTO_SEED !== 'undefined' && GRAPE_PHOTO_SEED[Util.normKey(name)]) || [];
+    return list.map(function (x) {
+      return { id: 'seed:' + x.f, url: 'uvas/' + x.f, caption: '', credit: x.by, license: x.lic, source: x.src, locked: true };
+    });
+  }
+
   function listFor(grapeId) {
-    return Repo.where('grape_photos', { grape_id: grapeId })
+    var g = Repo.get('grapes', grapeId);
+    var mine = Repo.where('grape_photos', { grape_id: grapeId })
       .sort(function (a, b) { return (a.sort || 0) - (b.sort || 0); })
-      .map(function (p) { return { id: p.id, url: url_(p.file_id), caption: p.caption || '' }; });
+      .map(function (p) { return { id: p.id, url: url_(p.file_id), caption: p.caption || '', locked: false }; });
+    return (g ? seedFor_(g.name) : []).concat(mine);
   }
 
   /** Primeira foto de cada uva (para os cartões da lista). */
   function covers() {
     var out = {};
+    var seed = typeof GRAPE_PHOTO_SEED !== 'undefined' ? GRAPE_PHOTO_SEED : {};
+    Repo.all('grapes').forEach(function (g) { var l = seed[Util.normKey(g.name)]; if (l && l.length) out[g.id] = 'uvas/' + l[0].f; });
     Repo.all('grape_photos').sort(function (a, b) { return (a.sort || 0) - (b.sort || 0); }).forEach(function (p) { if (!out[p.grape_id]) out[p.grape_id] = url_(p.file_id); });
     return out;
   }
@@ -54,6 +69,7 @@ var GrapePhotos = (function () {
 
   function remove(a) {
     Ctx.requireAdmin();
+    if (/^seed:/.test(String(a.id || ''))) throw new Error('Esta foto vem da enciclopédia e não pode ser removida aqui.');
     var p = Repo.get('grape_photos', Validate.id(a.id, 'grape_photos'));
     if (!p) throw new Error('Foto não encontrada.');
     try { Drive.Files.remove(p.file_id); } catch (e) { console.error('foto uva: remover do Drive', e); }   // se já sumiu do Drive, segue

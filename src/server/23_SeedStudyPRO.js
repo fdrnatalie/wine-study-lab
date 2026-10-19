@@ -1,5 +1,5 @@
 /**
- * CARTÕES DE ESTUDO — Produção de vinho (material de aula 3 a 13, v1).
+ * CARTÕES DE ESTUDO — Produção de vinho (material de aula 3 a 13, v2).
  * Panorama, viticultura, vinificação (brancos, tintos), amadurecimento, espumantes, fortificados e doces, naturais,
  * Velho e Novo Mundo, análise sensorial e ficha de degustação. Trechos de harmonização ficam com o pacote de harmonização.
  * O material pode ter erros: "corrigido" = conferi em fonte aberta e o slide estava errado; "conferir" = não consegui
@@ -38,7 +38,7 @@ STUDY_PACKS.push((function () {
     ['718 mil ha', 'Itália: estabilizada após a expansão de 2016 a 2020']
   ]);
   P('Panorama', 'Vinhedos da América do Sul (2022)', 'numeros', [
-    ['207 mil ha', 'Argentina: em queda desde 2015 (-2% em 2022); seca, calor e falta de água podem explicar'],
+    ['207 mil ha', 'Argentina: em queda desde 2015 (-4 mil ha, -2% em 2022); escassez de água, calor e seca podem explicar'],
     ['196 mil ha', 'Chile: quase inalterado em relação a 2021'],
     ['81 mil ha', 'Brasil: +0,8% em 2022, depois de oito anos de queda']
   ]);
@@ -52,13 +52,16 @@ STUDY_PACKS.push((function () {
     ['258 mhl', 'Produção mundial, sem sucos e mostos (-1% sobre 2021); estável perto de 260 mhl nos últimos quatro anos'],
     ['161,1 mhl', 'Produção da UE (+4% sobre 2021, alinhada à média de cinco anos)'],
     ['51%', 'Parte da produção mundial feita por Itália, França e Espanha juntas'],
-    ['Causas da queda', 'Colheita menor que o esperado na Europa e nos EUA e produção média no Hemisfério Sul']
+    ['Causas da queda', 'Colheita menor que o esperado na Europa e nos EUA e produção média no Hemisfério Sul'],
+    ['Clima 2022', 'Condições secas e quentes levaram a colheitas precoces e volumes médios'],
+    ['Média de 20 anos', 'A produção estável perto de 260 mhl fica ligeiramente abaixo da média de 20 anos']
   ]);
   P('Panorama', 'Produção na Europa em 2022', 'fatos', [
-    ['Itália', '-1% em relação a 2021'],
+    ['Itália', '-1% em relação a 2021 e +2% sobre a média de cinco anos'],
     ['França', '+21% em relação a 2021 e +7% sobre a média de cinco anos'],
     ['Espanha', '+1% sobre 2021, mas 5% abaixo da média de cinco anos'],
     ['Alemanha', '+6% sobre 2021'],
+    ['Demais da UE', 'Variações negativas na maioria dos outros países da UE'],
     ['Clima', 'Geada, granizo e calor excessivo marcaram a safra europeia']
   ]);
   P('Panorama', 'Produção fora da UE: Hemisfério Norte', 'fatos', [
@@ -98,7 +101,9 @@ STUDY_PACKS.push((function () {
     ['232 mhl', 'Consumo mundial estimado (-1% sobre 2021); queda regular desde 2018'],
     ['111 mhl', 'Consumo da UE: 48% do mundial (era 59% em 2000)'],
     ['-2 mhl/ano', 'Perda média da China desde 2018, principal causa da queda global'],
-    ['Consumo aparente', 'Método das estimativas; não conta bem estoques, perdas e usos industriais']
+    ['Consumo aparente', 'Método das estimativas; não conta bem estoques, perdas e usos industriais'],
+    ['2020', 'A queda se acentuou com a pandemia de Covid-19, que afetou muitos mercados'],
+    ['UE', 'Consumo -2% sobre 2021 e abaixo da média dos últimos dez anos']
   ]);
   P('Panorama', 'Desafios do consumo', 'lista', [
     ['', '2020: pandemia e confinamento; canal HoReCa (hotelaria, restaurantes e catering) e turismo interrompidos'],
@@ -108,7 +113,7 @@ STUDY_PACKS.push((function () {
   ]);
   P('Panorama', 'Consumo na Europa (2022)', 'numeros', [
     ['25,3 mhl', 'França: maior consumo da UE, em alta após a Covid'],
-    ['23,0 mhl', 'Itália (-5% sobre 2021)'],
+    ['23,0 mhl', 'Itália (-5% sobre 2021, alinhado à média de cinco anos)'],
     ['19,4 mhl', 'Alemanha (-3%)'],
     ['12,8 mhl', 'Reino Unido (-2%)'],
     ['10,8 mhl', 'Rússia (+3% desde 2018)'],
@@ -120,16 +125,17 @@ STUDY_PACKS.push((function () {
     ['34,0 mhl', 'EUA: maior consumidor do mundo (+3%), de volta ao nível pré-pandemia'],
     ['8,8 mhl', 'China (-16%, por demanda interna)'],
     ['8,3 mhl', 'Argentina (-1,3%)'],
-    ['5,5 mhl', 'Austrália (-3%, segundo ano de queda)'],
+    ['5,5 mhl', 'Austrália (-3%, segundo ano de queda; 2% abaixo da média de cinco anos)'],
     ['4,6 mhl', 'África do Sul (+16%)'],
     ['3,6 mhl', 'Brasil (-12,9%)'],
-    ['3,4 mhl', 'Japão (+2% sobre 2021)']
+    ['3,4 mhl', 'Japão (+2% sobre 2021, mas 3% abaixo da média de cinco anos)']
   ]);
   P('Panorama', 'Comércio mundial de vinho (2022)', 'numeros', [
     ['107 mhl', 'Volume exportado no mundo (-5% sobre 2021)'],
     ['37,6 bi €', 'Valor das exportações (+9%), puxado pelo aumento dos preços médios'],
     ['21,9 mhl', 'Itália, maior exportadora em volume (20% do total mundial)'],
-    ['12,3 bi €', 'França, maior exportadora em valor (cerca de um terço do total)']
+    ['12,3 bi €', 'França, maior exportadora em valor (cerca de um terço do total)'],
+    ['Exceções', 'A maioria dos países exportou menos em volume; Austrália e Canadá foram exceções']
   ]);
   P('Panorama', 'Os três maiores exportadores', 'fatos', [
     ['Volume', 'Itália 21,9 mhl (-0,6%), Espanha 21,2 (-10%), França 14,0 (-5%): juntas 57 mhl, 53% do mundo'],
@@ -140,10 +146,13 @@ STUDY_PACKS.push((function () {
     ['53%', 'Do volume exportado é vinho engarrafado (< 2 L), 68% do valor; preço médio 4,5 €/L'],
     ['11%', 'Do volume são espumantes, mas 23% do valor; preço médio 7,7 €/L'],
     ['+5% / +18%', 'Espumantes em 2022: volume e valor; única categoria a crescer nos dois'],
-    ['4%', 'Do volume é bag-in-box (> 2 L e < 10 L), 2% do valor; preço médio 1,8 €/L']
+    ['4%', 'Do volume é bag-in-box (> 2 L e < 10 L), 2% do valor; preço médio 1,8 €/L'],
+    ['-4% / +7%', 'Vinho engarrafado em 2022: volume e valor em relação a 2021'],
+    ['-4% / +6%', 'Bag-in-box em 2022: volume e valor em relação a 2021'],
+    ['2ª em valor', 'Espumantes: segunda categoria em valor, depois dos engarrafados; França, Itália e Espanha lideram']
   ]);
   P('Panorama', 'Maiores importadores (2022)', 'fatos', [
-    ['EUA', '14,4 mhl (+3%); líder em valor, 7,0 bi € (+17%)'],
+    ['EUA', '14,4 mhl (+3%); líder em valor, 7,0 bi € (+17%), com alta em todas as categorias'],
     ['Alemanha', '13,4 mhl (-9,3%) e 2,7 bi € (-4%): 2º em volume'],
     ['Reino Unido', '13,0 mhl (-2%), mas valor em alta: 4,8 bi € (+22,1%)'],
     ['Juntos', '41 mhl: 38% do volume importado no mundo']
@@ -192,7 +201,7 @@ STUDY_PACKS.push((function () {
     ['Regiões chuvosas', 'Em Borgonha, Champagne e Serra Gaúcha, os melhores vinhedos ficam nas encostas']
   ]);
   P('Viticultura', 'Condução: latada e espaldeira', 'fatos', [
-    ['Latada', 'Planta fixada em arames sobre mourões a 1,50 a 1,60 m; dá para andar por baixo; trazida ao Brasil pelos italianos'],
+    ['Latada', 'Planta fixada em arames sobre mourões de pedra ou cimento a 1,50 a 1,60 m; dá para andar por baixo; trazida ao Brasil pelos italianos'],
     ['Espaldeira', 'Arames na vertical e linhas separadas: sol dos dois lados, manhã e tarde, e melhor amadurecimento'],
     ['Guyot', 'O slide trata como sinônimo de espaldeira, mas Guyot é um sistema de poda', 'conferir']
   ]);
@@ -206,25 +215,30 @@ STUDY_PACKS.push((function () {
     ['O que é', 'Pulgão (Phylloxera vastatrix, cerca de 1 mm) que suga as raízes da videira'],
     ['Origem', 'Vivia nas raízes das videiras americanas, robustas e adaptadas a ele'],
     ['Chegada à Europa', 'Meados do séc. XIX, após a navegação a vapor: mudas americanas levadas com terra a jardins botânicos'],
-    ['Alvo', 'As viníferas europeias, que não resistem ao pulgão']
+    ['Alvo', 'As viníferas europeias, que não resistem ao pulgão'],
+    ['Tamanho', 'Cerca de 1 mm de comprimento por 0,5 mm de largura'],
+    ['Navegação a vapor', 'Começou por volta de 1850 a 1860 e facilitou o transporte das mudas americanas']
   ]);
   P('Viticultura', 'Inimigo: míldio', 'fatos', [
     ['O que é', 'Praga fúngica da videira'],
     ['Data', 'Primeira observação em 1834, nos EUA; o slide traz a Europa por volta de 1835', 'corrigido'],
     ['Remédio', 'Calda bordalesa: sulfato de cobre e cal'],
-    ['Descoberta', 'Millardet, de Bordeaux, notou seu efeito em 1882 (o slide não traz a data)', 'corrigido']
+    ['Descoberta', 'Millardet, de Bordeaux, notou seu efeito em 1882 (o slide não traz a data)', 'corrigido'],
+    ['Sequência', 'O slide diz que a filoxera veio logo após o controle do míldio; a ordem não foi confirmada', 'conferir']
   ]);
   P('Viticultura', 'Botrytis cinerea', 'fatos', [
     ['Podridão nobre', 'Em certas regiões ataca os cachos de modo desigual e fura as cascas'],
     ['Efeito', 'Só a água evapora, concentrando açúcares e sais: vinho doce de sobremesa'],
     ['Onde', 'Sauternes (Bordeaux), Tokaj (Hungria), Mosel e Reno (Alemanha)'],
-    ['Lado ruim', 'Na maior parte dos casos é praga: a podridão cinza']
+    ['Lado ruim', 'Na maior parte dos casos é praga: a podridão cinza'],
+    ['Mistério', 'Fenômeno ainda não muito bem explicado']
   ]);
   P('Viticultura', 'Terroir', 'lista', [
     ['', 'Palavra francesa: originalmente uma extensão delimitada de terra'],
     ['', 'Hoje reúne geografia, geologia e clima de um lugar'],
     ['', 'Define a singularidade que cada uva ganha em cada região (Malbec argentino e francês diferem em aromas)'],
-    ['', 'O slide cita o Master of Wine Alexander Hunt: o terroir molda até diferenças dentro de um mesmo vinhedo', 'conferir']
+    ['', 'O slide cita o Master of Wine Alexander Hunt: o terroir molda até diferenças dentro de um mesmo vinhedo', 'conferir'],
+    ['', 'Atua também no desenvolvimento das uvas durante o cultivo; algumas regiões ficaram famosas por microclimas únicos']
   ]);
   P('Viticultura', 'Castas de regiões francesas', 'fatos', [
     ['Champagne', 'Chardonnay, Pinot Noir, Pinot Meunier, Pinot Blanc, Pinot Gris, Arbane, Petit Meslier'],
@@ -261,7 +275,8 @@ STUDY_PACKS.push((function () {
     ['Ésteres', 'Aromas frutados'],
     ['Terpenos', 'Notas florais'],
     ['Aldeídos e cetonas', 'Nuances de nozes e caramelo'],
-    ['Outros álcoois', 'Metanol, propanol e butanol, em quantidades mínimas']
+    ['Outros álcoois', 'Metanol, propanol e butanol, em quantidades mínimas'],
+    ['Grupo', 'Saccharomyces: as "leveduras do açúcar"']
   ]);
   P('Vinificação de brancos', 'Acidez e malolática nos brancos', 'lista', [
     ['', 'O ácido málico da uva pode virar ácido lático, o que suaviza a acidez e muda a textura'],
@@ -306,13 +321,28 @@ STUDY_PACKS.push((function () {
     ['7 a 20 dias', 'Duração média da fermentação'],
     ['2 a 4 °C', 'Temperatura do tanque de espera após a filtragem, para homogeneizar e evitar a malolática'],
     ['Acima de 18 °C', 'Substâncias aromáticas e voláteis se dispersam com o gás carbônico'],
-    ['Abaixo de 13 °C', 'A fermentação fica muito difícil']
+    ['Abaixo de 13 °C', 'A fermentação fica muito difícil'],
+    ['Constante', 'Temperatura ajustada à uva e ao produto final e mantida constante até o fim']
   ]);
   P('Vinificação de brancos', 'Fim da fermentação do branco', 'lista', [
     ['', 'Quando o açúcar acaba, as leveduras morrem e a fermentação termina'],
     ['', 'Vinho seco: as leveduras consumiram toda a glicose e a frutose'],
     ['', 'O vinho novo traz sólidos em suspensão: mucilagens, leveduras, restos de casca'],
     ['', 'É bombeado para outro tanque de aço, com filtro, e fica semanas até o engarrafamento']
+  ]);
+
+  P('Vinificação de brancos', 'Etapas dos brancos: detalhes', 'fatos', [
+    ['Colheita', 'Cada região fixa, pelas próprias regras, o limite de uvas por hectare; a temperatura da fruta também influencia'],
+    ['Desengace', 'Separar cachos e bagos evita taninos e outros elementos indesejáveis'],
+    ['Esmagamento', 'Pode ser feito para liberar suco e polpa, onde ficam açúcares, enzimas e outros componentes'],
+    ['Fermentação', 'Libera calor e gás carbônico; controlar a temperatura evita calor excessivo, que prejudica aromas e sabores'],
+    ['Remontagem', 'Também prevista: remontagem ou punching down levam as partes sólidas de volta ao mosto'],
+    ['Estabilização', 'Pode incluir clarificação, filtragem e, em alguns casos, filtração esterilizante'],
+    ['Mercado', 'Na grande maioria dos casos o vinho é feito sob demanda ou para um mercado específico']
+  ]);
+  P('Vinificação de brancos', 'Casta, solo e clima', 'lista', [
+    ['', 'A escolha da casta deve considerar o terroir (solo e clima) para maximizar a expressão aromática e gustativa'],
+    ['', 'Solos ricos, clima moderado e a casta certa dão vinhos que carregam o terroir e a paixão do produtor']
   ]);
 
   // ======================= VINIFICAÇÃO DE TINTOS (Aula 8) =======================
@@ -350,7 +380,9 @@ STUDY_PACKS.push((function () {
     ['10 a 18 dias', 'Duração da fermentação'],
     ['23 a 30 °C', 'Faixa do slide; fonte aberta cita 22 a 25 °C como típico, e o calor demais cozinha o aroma', 'conferir'],
     ['1 a 2 por dia', 'Remontagens, para romper o chapéu de cascas e extrair a cor'],
-    ['A cada 2 h', 'Amostras para controlar cor, pH, densidade, açúcares e álcool']
+    ['A cada 2 h', 'Amostras para controlar cor, pH, densidade, açúcares e álcool'],
+    ['Mínimo 23 °C e máx. ~30 °C', 'Segundo o slide: abaixo de 23 a extração de pigmentos fica muito difícil; acima de 30 os aromas se perdem e surge cheiro de cozido', 'conferir'],
+    ['Padrão de cor', 'As vinícolas mantêm um padrão de cor para cada linha de produto']
   ]);
   P('Vinificação de tintos', 'Chapéu e remontagem', 'lista', [
     ['', 'A fermentação tumultuosa levanta as cascas e forma uma camada grossa: o chapéu'],
@@ -360,7 +392,8 @@ STUDY_PACKS.push((function () {
   P('Vinificação de tintos', 'Do tinto leve ao encorpado', 'fatos', [
     ['Mais leve', 'Ao atingir a cor desejada, o enólogo drena o mosto para outro tanque, longe das cascas'],
     ['Mais encorpado', 'O mosto fica em contato com as cascas por mais tempo, até o fim da fermentação'],
-    ['Vinho de prensa', 'Das cascas prensadas, muito escuro; usado para corrigir a cor do vinho principal']
+    ['Vinho de prensa', 'Das cascas prensadas, muito escuro; usado para corrigir a cor do vinho principal'],
+    ['Vinho-flor', 'Vinho que escorre das cascas antes da prensagem; as cascas ainda guardam vinho para o vinho de prensa']
   ]);
   P('Vinificação de tintos', 'Clarificação (colagem)', 'lista', [
     ['', 'Usa cola de peixe, clara de ovo, albumina, gelatina, caseína do leite'],
@@ -380,6 +413,14 @@ STUDY_PACKS.push((function () {
     ['Bandol', 'Rosés de alta qualidade, principalmente de Mourvèdre']
   ]);
 
+  P('Vinificação de tintos', 'Etapas dos tintos: detalhes', 'fatos', [
+    ['Colheita', 'Cada região fixa, pelas próprias regras, o limite de uvas por hectare; alguns colhem à noite pela temperatura da fruta'],
+    ['Desengace', 'Separar cachos e bagos evita excesso de taninos e outros elementos indesejáveis'],
+    ['Malolática', 'Em alguns vinhos, bactérias convertem o ácido málico em lático, o que suaviza a acidez'],
+    ['Estabilização', 'Pode incluir clarificação, filtragem e, em alguns casos, filtração esterilizante'],
+    ['Mercado', 'Na grande maioria dos casos o vinho é feito sob demanda ou para um mercado específico']
+  ]);
+
   // ======================= AMADURECIMENTO (Aula 9) =======================
   P('Amadurecimento', 'Amadurecimento × envelhecimento', 'fatos', [
     ['Amadurecimento', 'Em barris de carvalho ou tanques de aço inox, antes do lançamento'],
@@ -394,7 +435,7 @@ STUDY_PACKS.push((function () {
   ]);
   P('Amadurecimento', 'Espécies de carvalho', 'fatos', [
     ['Quercus petraea', 'Carvalho sessile, da Europa central e ocidental: frutas secas, especiarias e estrutura sólida'],
-    ['Quercus robur', 'Pedunculado, comum na França: influência mais suave, menos baunilha que o americano'],
+    ['Quercus robur', 'Pedunculado (ou inglês), comum na França e na Europa: influência mais suave, menos baunilha que o americano'],
     ['Quercus alba', 'Carvalho branco americano: baunilha, coco e especiarias; marca de muitos vinhos americanos']
   ]);
   P('Amadurecimento', 'Benefícios técnicos do carvalho', 'fatos', [
@@ -402,7 +443,8 @@ STUDY_PACKS.push((function () {
     ['Estabilização', 'Certos ácidos e aldeídos voláteis indesejados podem diminuir'],
     ['Clarificação', 'A estrutura porosa age como filtro natural e reduz a filtração'],
     ['Complexidade', 'Lignina e hemicelulose se degradam na tosta: baunilha, coco, especiarias e tostados'],
-    ['Longevidade', 'Condições ideais para vinhos de guarda evoluírem']
+    ['Longevidade', 'Condições ideais para vinhos de guarda evoluírem'],
+    ['Perfis', 'Carvalho francês, americano, húngaro e esloveno têm sabores e aromas próprios; a escolha personaliza o vinho']
   ]);
   P('Amadurecimento', 'Origem do carvalho', 'fatos', [
     ['França', 'Limousin, Allier, Nevers e Vosges: muito valorizado'],
@@ -414,7 +456,8 @@ STUDY_PACKS.push((function () {
   P('Amadurecimento', 'Tipos de barril (1)', 'fatos', [
     ['Barrica bordalesa', 'Bordeaux: cerca de 225 L (300 garrafas); tintos de Bordeaux e outras regiões'],
     ['Barrica borgonhesa', 'Borgonha: cerca de 228 L (304 garrafas); forma mais larga'],
-    ['Pipa', 'Portugal: 550 a 620 L; Porto e fortificados']
+    ['Pipa', 'Portugal: 550 a 620 L; Porto e fortificados'],
+    ['Escolha', 'Cada barril afeta o vinho pela relação entre superfície interna e volume e pelo tipo de carvalho']
   ]);
   P('Amadurecimento', 'Tipos de barril (2)', 'fatos', [
     ['Gönc', 'Tokaj, Hungria: frequentemente 136 L; para o Tokaji Aszú'],
@@ -423,7 +466,7 @@ STUDY_PACKS.push((function () {
   ]);
   P('Amadurecimento', 'Barris franceses grandes', 'fatos', [
     ['Foudre', 'França: milhares de litros; vinhos tranquilos em grande escala'],
-    ['Tonneau', 'França: de 350 a 500 L segundo o slide, valor que parece baixo', 'conferir'],
+    ['Tonneau', 'França: de 350 a 500 L segundo o slide, para vinhos finos de envelhecimento intermediário; o valor parece baixo', 'conferir'],
     ['Demi-muid', 'França: 600 a 700 L segundo o slide; fontes abertas costumam citar menos', 'conferir']
   ]);
   P('Amadurecimento', 'Dentro da garrafa', 'lista', [
@@ -454,12 +497,20 @@ STUDY_PACKS.push((function () {
     ['Brasil', 'Reservado deve ser indicado para consumo jovem e ter ao menos 10% de álcool, segundo o slide', 'conferir']
   ]);
 
+  P('Amadurecimento', 'Tanoarias pelo mundo', 'produtores', [
+    ['Tanoaria Ramalho', 'Esmoriz, Portugal'],
+    ['Trust Cooperage', 'Szigetvár, Hungria'],
+    ['Tonnellerie Remond', 'Ladoix-Serrigny, França'],
+    ['Tanoaria Espanha', 'Santa Catarina, Brasil'],
+    ['Canton Cooperage', 'Kentucky, EUA']
+  ]);
+
   // ======================= ESPUMANTES (Aula 11) =======================
   P('Espumantes', 'História dos espumantes', 'linha', [
     ['1531', 'Método ancestral: fermentação primária em garrafa, no sul da França (Limoux)'],
     ['1662', 'Champagne vira famosa por seus espumantes; Dom Pérignon não os inventou: foi encarregado de eliminar as bolhas', 'corrigido'],
     ['1710', 'Método champenoise (tradicional), de segunda fermentação em garrafa, é aprimorado em Champagne'],
-    ['1870', 'Método Asti, criado na Itália para o Moscato d\'Asti, segundo o slide', 'conferir'],
+    ['1870', 'Método Asti, criado na Itália para o Moscato d\'Asti, preservando doçura e frutado da uva; segundo o slide', 'conferir'],
     ['1895', 'Federico Martinotti patenteia a segunda fermentação em tanque; Charmat a aprimora e patenteia em 1907', 'corrigido']
   ]);
   P('Espumantes', 'Método ancestral', 'fatos', [
@@ -495,7 +546,8 @@ STUDY_PACKS.push((function () {
   P('Espumantes', 'Método Charmat', 'fatos', [
     ['Nomes', 'Também chamado método italiano; fermentação secundária em tanques de aço'],
     ['Vantagem', 'Mais rápido e econômico; preserva o frescor e o frutado'],
-    ['Perfil', 'Espumantes frescos e acessíveis']
+    ['Perfil', 'Espumantes frescos e acessíveis'],
+    ['Surgimento', 'Final do séc. XIX: segunda fermentação em tanques de aço, produção mais rápida e econômica']
   ]);
   P('Espumantes', 'Método Charmat: etapas', 'linha', [
     ['1', 'Fermentação primária em tanques de aço a temperatura controlada: vinho-base'],
@@ -514,12 +566,14 @@ STUDY_PACKS.push((function () {
   P('Espumantes', 'Cava', 'fatos', [
     ['Método', 'Tradicional, o mesmo do Champagne: 2ª fermentação na garrafa'],
     ['Uvas', 'Macabeo, Xarel-lo e Parellada, com Chardonnay, Pinot Noir e outras autorizadas'],
-    ['Região', 'Penedès, que o slide chama de a melhor']
+    ['Região', 'Penedès, que o slide chama de a melhor'],
+    ['Fama', 'O espumante mais renomado da Espanha']
   ]);
   P('Espumantes', 'Franciacorta', 'fatos', [
     ['Onde', 'Lombardia, Itália'],
     ['Método', 'Tradicional, 2ª fermentação na garrafa'],
-    ['Uvas', 'Chardonnay (cítrico, elegância), Pinot Noir e Pinot Blanc']
+    ['Uvas', 'Chardonnay (cítrico, elegância), Pinot Noir e Pinot Blanc'],
+    ['Papel das uvas', 'A Chardonnay é central; as uvas tintas adicionam complexidade']
   ]);
   P('Espumantes', 'Sekt', 'fatos', [
     ['O que é', 'O espumante alemão'],
@@ -549,13 +603,16 @@ STUDY_PACKS.push((function () {
     ['1865', 'Filoxera chega ao Douro por Sabrosa, segundo o slide; na Europa ela surge em 1863', 'conferir'],
     ['1933', 'Criado o instituto que regula o Porto, hoje IVDP, segundo o slide', 'conferir'],
     ['Séc. XX', 'Categorias Ruby, Tawny, Vintage e LBV são definidas'],
-    ['2001', 'Alto Douro Vinhateiro é Patrimônio Mundial da UNESCO']
+    ['1990', 'O slide diz que o Porto ganha reconhecimento internacional', 'conferir'],
+    ['2001', 'Alto Douro Vinhateiro é Patrimônio Mundial da UNESCO'],
+    ['2003', 'Segundo o slide, a indústria foca em sustentabilidade, conversão de manejo e modernização', 'conferir'],
+    ['Hoje', 'Estilos mais diversos e conquista de novos mercados']
   ]);
   P('Fortificados e doces', 'Como se faz o Porto', 'linha', [
     ['1', 'Colheita entre setembro e outubro, com seleção cuidadosa dos cachos'],
-    ['2', 'Desengace e esmagamento'],
-    ['3', 'Fermentação alcoólica em tanques'],
-    ['4', 'Adição de aguardente vínica, que interrompe a fermentação e guarda o açúcar'],
+    ['2', 'Desengace e esmagamento, que liberam o mosto'],
+    ['3', 'Fermentação alcoólica em tanques, com leveduras naturais ou adicionadas; gera calor e aromas'],
+    ['4', 'Adição de aguardente vínica (brandy de uva) de alto teor alcoólico: interrompe a fermentação e guarda o açúcar'],
     ['5', 'Maturação em barris de carvalho, com oxidação lenta (Ruby, Tawny, LBV ou Vintage)'],
     ['6', 'Blending de safras e barris (comum em Tawny, Ruby e Old Tawny)'],
     ['7', 'Filtração e engarrafamento; os Vintages seguem evoluindo na garrafa']
@@ -574,7 +631,8 @@ STUDY_PACKS.push((function () {
   P('Fortificados e doces', 'Regiões de botritizados', 'fatos', [
     ['Sauternes', 'França (Bordeaux): principalmente Sémillon'],
     ['Tokaj-Hegyalja', 'Hungria: Tokaji, principalmente de Furmint'],
-    ['Mosel', 'Alemanha: Riesling para colheita tardia e vinho do gelo']
+    ['Mosel', 'Alemanha: Riesling para colheita tardia e vinho do gelo'],
+    ['Clima', 'O clima de Bordeaux favorece a botrytis em Sauternes; Tokaj tem clima temperado propício ao fungo']
   ]);
   P('Fortificados e doces', 'Produtores de botritizados', 'fatos', [
     ['Château d\'Yquem', 'Sauternes: o mais prestigioso; um dos maiores vinhos de sobremesa do mundo'],
@@ -584,7 +642,8 @@ STUDY_PACKS.push((function () {
   P('Fortificados e doces', 'Vinhos de colheita tardia', 'lista', [
     ['', 'Uvas colhidas mais tarde que o normal: mais maduras, sabores intensos e muito açúcar'],
     ['', 'Seleção cuidadosa; às vezes desidratação controlada'],
-    ['', 'Açúcar residual alto, equilibrado pela acidez natural: doçura com frescor']
+    ['', 'Açúcar residual alto, equilibrado pela acidez natural: doçura com frescor'],
+    ['', 'Em inglês: "late harvest"']
   ]);
   P('Fortificados e doces', 'Vin Santo', 'fatos', [
     ['Origem', 'Doce de sobremesa italiano; nome "Vinho Santo" lembra os mosteiros e celebrações religiosas'],
@@ -599,7 +658,8 @@ STUDY_PACKS.push((function () {
     ['Fundador', 'Rudolf Steiner, filósofo austríaco'],
     ['Quando', 'Palestras no início do séc. XX, reunidas em 1924 em "As Palestras sobre Agricultura"'],
     ['Base', 'Antroposofia; a fazenda é vista como um organismo vivo'],
-    ['Motivo', 'Reação à degradação do solo e à qualidade dos alimentos']
+    ['Motivo', 'Reação à degradação do solo e à qualidade dos alimentos'],
+    ['Antroposofia', 'Sistema de pensamento que une ciência espiritual e prática agrícola']
   ]);
   P('Vinhos naturais', 'Como se pratica a biodinâmica', 'lista', [
     ['', 'Preparados biodinâmicos de ervas, minerais e esterco, aplicados ao solo e às plantas'],
@@ -617,7 +677,9 @@ STUDY_PACKS.push((function () {
     ['', 'Uvas cultivadas sem produtos químicos sintéticos, como pesticidas e herbicidas'],
     ['', 'Muitas vinícolas têm certificação orgânica'],
     ['', 'Adubo com compostos e esterco; controle de pragas com insetos benéficos e rotação de culturas'],
-    ['', 'Mais sustentabilidade, saúde do solo, biodiversidade e menor pegada de carbono']
+    ['', 'Mais sustentabilidade, saúde do solo, biodiversidade e menor pegada de carbono'],
+    ['', 'Importância crescente no mercado pela demanda por produtos mais saudáveis e ecológicos'],
+    ['', 'Muitos apreciadores acreditam que dão sabores mais puros e autênticos']
   ]);
   P('Vinhos naturais', 'Agrotóxicos na vinha', 'fatos', [
     ['Fungicidas', 'Contra míldio e oídio: oxicloreto de cobre e mancozebe'],
@@ -629,7 +691,9 @@ STUDY_PACKS.push((function () {
   P('Vinhos naturais', 'Vinhos naturais: a ideia', 'lista', [
     ['', 'Abordagem minimalista: simplicidade, não intervenção e expressão pura do terroir'],
     ['', 'Popularidade cresceu nas últimas duas a três décadas'],
-    ['', 'Resposta à busca por sabores genuínos e à preocupação com sustentabilidade']
+    ['', 'Resposta à busca por sabores genuínos e à preocupação com sustentabilidade'],
+    ['', 'Sem intervenção: evita produtos químicos e aditivos, e uvas e fermentação refletem o ambiente'],
+    ['', 'Origem de séculos atrás; surgiu como volta às raízes da vinificação']
   ]);
   P('Vinhos naturais', 'Práticas dos vinhos naturais', 'fatos', [
     ['Vinhedo', 'Uvas orgânicas ou biodinâmicas, sem pesticidas ou herbicidas'],
@@ -716,12 +780,32 @@ STUDY_PACKS.push((function () {
     ['Nova Zelândia', 'Marlborough, Central Otago, Hawke\'s Bay e Waipara; Sauvignon Blanc, Pinot Noir, Chardonnay e Riesling']
   ]);
 
+  P('Velho e Novo Mundo', 'Velho Mundo: características gerais', 'fatos', [
+    ['Berço', 'De muitas castas e técnicas de vinificação que definem a indústria moderna'],
+    ['Leis', 'Denominações de origem rigorosas, como AOC e DOCG, protegem a qualidade'],
+    ['Cotidiano', 'O consumo de vinho é parte da vida diária e a região exporta muito'],
+    ['França', 'Líder em exportação; o enoturismo é parte essencial da indústria'],
+    ['Espanha', 'Um dos maiores consumidores per capita do mundo, segundo o slide', 'conferir'],
+    ['Portugal', 'Consumo per capita notável; vinhos de alta qualidade a preços acessíveis']
+  ]);
+  P('Velho e Novo Mundo', 'Novo Mundo: características gerais', 'fatos', [
+    ['Tecnologia', 'Irrigação controlada e vinificação avançada permitem grande variedade de vinhos'],
+    ['Tradição', 'Mais recente, mas com regulamentações para garantir a qualidade'],
+    ['Economia', 'A indústria impulsiona economia e turismo, com consumo e exportações em alta'],
+    ['EUA', 'Consumo em alta; Califórnia e Oregon são populares na exportação; inovação e experimentação'],
+    ['Chile', 'Qualidade consistente nos tintos; viticultura e vinificação modernas premiadas'],
+    ['Argentina', 'Terroir dos Andes; exporta sobretudo Malbec'],
+    ['Brasil', 'Espumantes de alta qualidade, tintos e brancos; consumo em constante crescimento']
+  ]);
+
   // ======================= ANÁLISE SENSORIAL (Aula 5) =======================
   P('Análise sensorial', 'Análise sensorial: introdução', 'lista', [
     ['', 'Mistura de ciência, arte e técnica; com treino fica mais fácil'],
     ['', 'A análise organoléptica é a mais importante que existe para o vinho'],
     ['', 'O laboratório mede a química, mas não distingue a qualidade intrínseca do vinho'],
-    ['', 'Degustar é provar notando todas as características e anotando numa ficha ou mentalmente']
+    ['', 'Degustar é provar notando todas as características e anotando numa ficha ou mentalmente'],
+    ['', 'Aprender a degustar parece difícil no início, por causa do vocabulário e das abordagens novos'],
+    ['', 'Centros de estudos enológicos e grandes vinícolas têm laboratórios com análises químicas bem completas']
   ]);
   P('Análise sensorial', 'Os sentidos e o estímulo', 'fatos', [
     ['Visão', 'Estímulo físico'],
@@ -740,14 +824,16 @@ STUDY_PACKS.push((function () {
     ['Percepção', 'Julgamento e interpretação que cada pessoa faz do que os sentidos captaram']
   ]);
   P('Análise sensorial', 'A Roda de Aromas', 'fatos', [
-    ['Autora', 'Ann C. Noble, química americana nascida em 1931, de UC Davis'],
+    ['Autora', 'Ann C. Noble, engenheira química americana de UC Davis; o slide diz nascida em 1931', 'conferir'],
     ['Contratação', 'Em 1974, 1ª mulher contratada pelo Departamento de Viticultura e Enologia de Davis'],
     ['Roda', 'Criada em 1984 para agrupar aromas em categorias, com terminologia específica'],
-    ['Aposentadoria', '2002']
+    ['Aposentadoria', '2002'],
+    ['Utilidade', 'Ajuda iniciantes e especialistas a reconhecer aromas e a exercitar a memória olfativa']
   ]);
   P('Análise sensorial', 'Condições da degustação', 'fatos', [
     ['Local', 'Bem iluminado (luz do dia ou lâmpadas brancas), paredes e mesas claras, clima confortável, sem cheiros fortes'],
-    ['Degustador', 'Bem física e psicologicamente; sem perfume forte e cigarro; sem estômago cheio; água antes e durante']
+    ['Degustador', 'Bem física e psicologicamente; sem perfume forte e cigarro; sem estômago cheio; água antes e durante'],
+    ['Requisitos', 'Local adequado, copos apropriados, degustador em boas condições e vinhos na temperatura correta']
   ]);
   P('Análise sensorial', 'Temperatura de serviço', 'fatos', [
     ['6 a 8 °C', 'Champagnes e espumantes'],
@@ -777,7 +863,8 @@ STUDY_PACKS.push((function () {
     ['Flavonos', 'Cor amarela'],
     ['Leucoantocianos', 'Pigmento das uvas brancas: transparente'],
     ['Quercetina', 'Amarelo'],
-    ['Clorofila', 'Verde ou esverdeado']
+    ['Clorofila', 'Verde ou esverdeado'],
+    ['Onde ficam', 'Nas cascas das uvas tintas e na polpa das brancas; são polifenóis']
   ]);
   P('Análise sensorial', 'Cores dos vinhos brancos', 'fatos', [
     ['Branco papel', 'Brancos de regiões frias ou pouco ensolaradas, leves e acídulos; pouco contato com as cascas'],
@@ -816,7 +903,8 @@ STUDY_PACKS.push((function () {
   P('Análise sensorial', 'Olfato: o órgão', 'fatos', [
     ['Mucosa', 'Cerca de 5 cm², na parte alta da cavidade nasal, ligada ao bulbo olfativo na base do cérebro'],
     ['Cobertura', 'Película oleosa com filme de água: percebe substâncias solúveis em óleo ou em água'],
-    ['Treino', 'Narizes treinados distinguem de 1.500 a 2.000 aromas, segundo alguns autores', 'conferir']
+    ['Treino', 'Narizes treinados distinguem de 1.500 a 2.000 aromas, segundo alguns autores', 'conferir'],
+    ['Nervos', 'O slide fala em cinco filamentos nervosos; são muitos feixes que atravessam a placa crivosa do etmoide até o bulbo', 'corrigido']
   ]);
   P('Análise sensorial', 'Prisma do olfato', 'fatos', [
     ['Ideia', 'Vinho novo tem aromas frutados e florais; com o tempo as famílias evoluem'],
@@ -853,10 +941,11 @@ STUDY_PACKS.push((function () {
     ['Peso', 'A etapa mais importante da análise e a de maior peso nas fichas'],
     ['Gostos básicos', 'Doce, salgado, ácido e amargo, sentidos pelas papilas da língua'],
     ['Sensações cutâneas', 'Maciez, adstringência, picância, sentidas na língua e na boca'],
-    ['Retronasais', 'Aromas que sobem pelo nariz ao expirar após engolir: o "gosto" do vinho']
+    ['Retronasais', 'Aromas que sobem pelo nariz ao expirar após engolir: o "gosto" do vinho'],
+    ['Aspectos', 'O paladar é o conjunto de sensações da boca, dividido nesses três aspectos']
   ]);
   P('Análise sensorial', 'Tanicidade, acidez e maciez no tempo', 'fatos', [
-    ['Tanicidade', 'O que mais melhora: tintos jovens são adstringentes; carvalho e garrafa reduzem muito os taninos'],
+    ['Tanicidade', 'O que mais melhora: tintos jovens, sobretudo encorpados, são adstringentes e levemente amargos; carvalho e garrafa reduzem muito os taninos'],
     ['Acidez', 'Diminui pouco e devagar, por reações lentas entre ácidos orgânicos e outros compostos'],
     ['Maciez', 'Mascarada em vinhos jovens; açúcar residual e glicerina não mudam com o tempo'],
     ['Álcool', 'Surge na fermentação e fica até o vinho ser consumido']
@@ -866,7 +955,22 @@ STUDY_PACKS.push((function () {
     ['Tipo', 'Branco, rosé ou tinto'],
     ['Estrutura', 'Tanicidade, acidez e corpo'],
     ['Saúde', 'Bactérias, fungos e oxidação'],
-    ['Armazenamento', 'Temperatura, luz e posição']
+    ['Armazenamento', 'Temperatura, luz e posição'],
+    ['Ser vivo', 'O slide compara o vinho a seres vivos de escala um pouco abaixo dos vegetais, pelas mudanças contínuas']
+  ]);
+
+  P('Análise sensorial', 'Análise sensorial: definição', 'fatos', [
+    ['ABNT, 1993', 'Disciplina científica para evocar, medir, analisar e interpretar reações às características percebidas pelos sentidos'],
+    ['Sentidos', 'Visão, olfato, gosto, tato e audição'],
+    ['Degustar', 'Provar apreciando todas as características, qualidades e defeitos, e anotar numa ficha ou mentalmente']
+  ]);
+  P('Análise sensorial', 'Aroma × bouquet', 'fatos', [
+    ['Aroma primário', 'Vem das uvas; caráter frutado e floral'],
+    ['Aroma secundário', 'Vem da fermentação; caráter vinoso'],
+    ['Bouquet de carvalho', 'Do carvalho e dos compostos da tostagem'],
+    ['Bouquet de redução', 'Do envelhecimento dentro da garrafa, sem oxigênio'],
+    ['Bouquet de oxidação', 'De vinhos de longo envelhecimento em barrica, com contato prolongado com o oxigênio: Porto, Madeira, Jerez, Marsala'],
+    ['Regra', 'Só existe bouquet em vinhos evoluídos']
   ]);
 
   // ======================= FICHA DE DEGUSTAÇÃO (Aula 6) =======================
@@ -874,7 +978,9 @@ STUDY_PACKS.push((function () {
     ['', 'É um mapa sensorial que guia cada aspecto do vinho, da cor aos sabores'],
     ['', 'Permite comparar vinhos ao longo do tempo'],
     ['', 'Treina paladar e olfato; muitos críticos a usam para avaliações objetivas e justas'],
-    ['', 'Notas influenciam compras, reputação dos produtores e o mercado']
+    ['', 'Notas influenciam compras, reputação dos produtores e o mercado'],
+    ['', 'Uma ficha bem preenchida dá transparência e credibilidade às avaliações'],
+    ['', 'Afinar paladar e olfato leva anos de experiência; a ficha é aliada nesse aprendizado']
   ]);
   P('Ficha de degustação', 'Método Le Cordon Bleu', 'fatos', [
     ['Ficha', 'Inspirada no Método Giancarlo Bossi, no Diplôme Wine & Spirits'],
@@ -888,12 +994,14 @@ STUDY_PACKS.push((function () {
     ['Reflexos', 'Indicam estilo ou idade'],
     ['Limpidez', 'Indica técnicas e até saúde'],
     ['Transparência', 'Também indica técnicas e saúde'],
-    ['Cor', 'Indica tipicidade do vinho']
+    ['Cor', 'Indica tipicidade do vinho'],
+    ['Pistas', 'O exame visual dá pistas sobre história, personalidade e qualidade do vinho']
   ]);
   P('Ficha de degustação', 'Ficha: exame olfativo', 'fatos', [
     ['Caráter geral', 'Defeitos, notas predominantes e perfis'],
     ['Qualidade', 'Separa os aromas grosseiros dos finos'],
-    ['Intensidade', 'Indica a força dos aromas']
+    ['Intensidade', 'Indica a força dos aromas'],
+    ['Pistas', 'Os aromas dão pistas de origem, uva e técnicas de vinificação, do frutado ao herbáceo']
   ]);
   P('Ficha de degustação', 'Ficha: exame gustativo', 'fatos', [
     ['Açúcar', 'Indica o estilo do vinho pela doçura'],
@@ -901,7 +1009,8 @@ STUDY_PACKS.push((function () {
     ['Álcool', 'Maturação, região e até safra'],
     ['Maciez', 'Indica, entre outras coisas, harmonia'],
     ['Corpo', 'Estrutura, perfil, safra e até região'],
-    ['Tanicidade', 'Indica casta, idade do vinho e maturação']
+    ['Tanicidade', 'Indica casta, idade do vinho e maturação'],
+    ['Revela', 'Estrutura e equilíbrio: acidez, doçura, taninos e corpo']
   ]);
   P('Ficha de degustação', 'A química da degustação', 'fatos', [
     ['Cor', 'Antocianinas das uvas dão as cores vibrantes dos tintos'],
@@ -914,7 +1023,8 @@ STUDY_PACKS.push((function () {
   P('Ficha de degustação', 'Pontuação', 'lista', [
     ['', 'A nota resume aromas, sabores, equilíbrio e personalidade num número'],
     ['', 'Cada quesito da ficha recebe pontos; a soma dá a nota geral'],
-    ['', 'Permite comparar vinhos e embasa o mercado, influenciando preços e demanda']
+    ['', 'Permite comparar vinhos e embasa o mercado, influenciando preços e demanda'],
+    ['', 'Na aula prática: avaliar um vinho, pontuar cada quesito e somar tudo para a nota geral']
   ]);
 
   // Nível no quiz, por notoriedade (avaliação editorial; ajustável): medio = conhecido no mundo todo.
@@ -1054,9 +1164,17 @@ STUDY_PACKS.push((function () {
     'Ficha: exame olfativo': 'avancado',
     'Ficha: exame gustativo': 'avancado',
     'A química da degustação': 'avancado',
-    'Pontuação': 'medio'
+    'Pontuação': 'medio',
+    'Etapas dos brancos: detalhes': 'avancado',
+    'Casta, solo e clima': 'avancado',
+    'Etapas dos tintos: detalhes': 'avancado',
+    'Tanoarias pelo mundo': 'expert',
+    'Velho Mundo: características gerais': 'medio',
+    'Novo Mundo: características gerais': 'avancado',
+    'Análise sensorial: definição': 'avancado',
+    'Aroma × bouquet': 'avancado'
   };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'PRO', version: 1, cards: cards };
+  return { code: 'PRO', version: 2, cards: cards };
 })());

@@ -72,6 +72,15 @@ STUDY_PACKS.push((function () {
     ['Adega de Borba', ''], ['Quinta do Serrado', ''], ['Pêra Grave', ''], ['Vinha do Contador', ''], ['Justino\'s', '']
   ]);
 
+  P('Cidades-símbolo das regiões (paisagens)', 'fatos', [
+    ['Minho', 'Melgaço'],
+    ['Bairrada', 'Aveiro'],
+    ['Dão', 'Viseu'],
+    ['Alentejo', 'Évora'],
+    ['Ilha da Madeira', 'Funchal'],
+    ['Douro', 'Cima Corgo (vinhedos em socalcos)']
+  ]);
+
   // ---------- Vinho Verde ----------
   R('Vinho Verde (Minho)', '', 'Vinho Verde em resumo', 'fatos', [
     ['Perfil', 'Vinho extremamente fresco, com características específicas'],
@@ -130,6 +139,11 @@ STUDY_PACKS.push((function () {
     ['Posição', 'Parte alta do rio, com pouca chuva'],
     ['Vinhos', 'Tendem a ser mais alcoólicos e potentes'],
     ['Produtores', 'Quinta do Vale Meão, Quinta de Vila Maior, Quinta do Reguengo, Dona Berta']
+  ]);
+  R('Douro e Porto', '', 'Cidades do mapa do Douro', 'lista', [
+    ['', 'Porto, Lamego, Peso da Régua'],
+    ['', 'Vila Real, Pinhão, Vila Nova de Foz Côa'],
+    ['', 'O mapa mostra as 3 sub-regiões em ordem de oeste a leste: Baixo Corgo, Cima Corgo e Douro Superior']
   ]);
   R('Douro e Porto', '', 'Vinho do Porto', 'fatos', [
     ['O que é', 'Vinho fortificado, produção iniciada no séc. XVII; símbolo maior da enologia portuguesa'],
@@ -245,6 +259,10 @@ STUDY_PACKS.push((function () {
     ['28 ha', 'Trincadeira das Pratas'],
     ['4 ha', 'Tamarez']
   ]);
+  R('Alentejo', '', 'Mapa das 8 sub-regiões do Alentejo', 'lista', [
+    ['', '1 Portalegre, 2 Borba, 3 Évora, 4 Redondo'],
+    ['', '5 Reguengos, 6 Granja-Amareleja, 7 Vidigueira, 8 Moura']
+  ]);
   R('Alentejo', '', 'Solos das sub-regiões do Alentejo', 'fatos', [
     ['Portalegre', 'Granito nas partes altas e xisto nas baixas'],
     ['Borba', 'Mármore e xisto vermelho: solo pobre'],
@@ -281,6 +299,7 @@ STUDY_PACKS.push((function () {
   R('Alentejo', 'Évora', 'Évora', 'fatos', [
     ['Área', 'Cerca de 1.418 ha de vinhedos'],
     ['Papel', 'Grande centro econômico; abriga algumas das melhores vinícolas do país'],
+    ['Templo romano', 'O Templo de Diana, com cerca de 2 mil anos, é o símbolo da cidade (foto do slide)'],
     ['Vinhos', 'Por solo e clima quente, tendem a ser mais encorpados e longevos'],
     ['Produtores', 'Cartuxa (Eugénio de Almeida), Pêra Grave, Herdade da Fonte Coberta, Casa Relvas']
   ]);
@@ -347,14 +366,19 @@ STUDY_PACKS.push((function () {
   ]);
   H('Alentejo', 'Cozinha do Alentejo', 'fatos', [
     ['Pão alentejano', 'Trigo, sal, fermento e água morna; segundo o slide, considerado recentemente o melhor do mundo', 'conferir'],
-    ['Porco preto', 'Também chamado porco da raça alentejana; origina embutidos, cozidos e presuntos'],
+    ['Cereais', 'Trigo, aveia, cevada e triticale (cruzamento de trigo e centeio); relação estreita com os pães'],
+    ['Porco preto', 'Também chamado porco da raça alentejana ou porco preto ibérico; origina embutidos, cozidos e presuntos'],
     ['Pata Negra', 'Segundo o slide, um dos presuntos mais caros do mundo, do porco preto alentejano', 'conferir'],
     ['Borrego', 'Cordeiro alentejano; segundo o slide, tem IGP própria em Portalegre', 'conferir'],
+    ['Alimentação do borrego', 'Rigorosamente controlada, com o desenvolvimento acompanhado de perto pelos produtores'],
     ['Azeite', 'Alentejo está no topo do ranking mundial; Galega cobre 80% da área plantada'],
-    ['Outras azeitonas', 'Cobrançosa (de Trás-os-Montes), Cordovil de Serpa (a mais amarga), Verdeal Alentejana']
+    ['Outras azeitonas', 'Cobrançosa (de Trás-os-Montes), Cordovil de Serpa (a mais amarga), Verdeal Alentejana (da região, resistente)']
   ]);
 
   var LEVELS = {
+    'Cidades-símbolo das regiões (paisagens)': 'expert',
+    'Cidades do mapa do Douro': 'expert',
+    'Mapa das 8 sub-regiões do Alentejo': 'avancado',
     'Portugal em números': 'medio',
     'Marcos do vinho português': 'avancado',
     'Povos antigos em Portugal': 'avancado',
@@ -412,7 +436,7 @@ STUDY_PACKS.push((function () {
     'Cozinha do Alentejo': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'PT', version: 1, cards: cards };
+  return { code: 'PT', version: 2, cards: cards };
 })());
 
 // =====================================================================
@@ -485,6 +509,36 @@ STUDY_PACKS.push((function () {
     ['Clos Mogador', ''], ['Clos Erasmus', ''], ['Maestro Sierra', ''], ['Píntia', ''], ['Tio Pepe', '']
   ]);
 
+  P('Uvas principais por comunidade (mapa)', 'fatos', [
+    ['Galícia', 'Albariño, Mencía, Godello'],
+    ['Castela e Leão', 'Tempranillo, Verdejo, Mencía'],
+    ['País Basco', 'Hondarrabi Zuri (branca) e Hondarrabi Beltza (tinta)'],
+    ['La Rioja', 'Tempranillo, Garnacha (Grenache), Viura'],
+    ['Navarra', 'Garnacha, Tempranillo, rosado'],
+    ['Aragão', 'Garnacha, Tempranillo, Cariñena'],
+    ['Catalunha', 'Cava, Garnacha, Syrah'],
+    ['Castela-La Mancha', 'Airén, Bobal, Monastrell, Tempranillo'],
+    ['Extremadura', 'Tempranillo, Cabernet Sauvignon, Syrah'],
+    ['Comunidade Valenciana', 'Monastrell (Mourvèdre), Airén, Bobal'],
+    ['Múrcia', 'Monastrell e Syrah'],
+    ['Andaluzia', 'Sherry (Jerez) e Pedro Ximénez'],
+    ['Madri', 'Monastrell, Garnacha e Syrah, segundo o mapa', 'conferir']
+  ]);
+  P('DOs por comunidade (mapa)', 'fatos', [
+    ['Galícia', 'Rías Baixas, Ribeiro, Ribeira Sacra, Valdeorras, Monterrei'],
+    ['Castela e Leão', 'Bierzo, Tierra de León, Arlanza, Cigales, Ribera del Duero, Toro, Rueda, Tierra del Vino de Zamora, Arribes'],
+    ['País Basco', 'Txakolina (Bizkaiko, Getariako e Arabako)'],
+    ['Aragão', 'Somontano, Campo de Borja, Calatayud, Cariñena'],
+    ['Catalunha', 'Empordà, Pla de Bages, Costers del Segre, Alella, Conca de Barberà, Penedès, Priorat, Montsant, Tarragona, Terra Alta'],
+    ['Castela-La Mancha', 'Méntrida, Mondéjar, Uclés, Ribera del Júcar, Manchuela, La Mancha, Almansa, Valdepeñas'],
+    ['Madri e Extremadura', 'Vinos de Madrid; Ribera del Guadiana'],
+    ['Comunidade Valenciana', 'Utiel-Requena, Valencia, Alicante'],
+    ['Múrcia', 'Yecla, Jumilla, Bullas'],
+    ['Andaluzia', 'Condado de Huelva, Jerez, Manzanilla-Sanlúcar de Barrameda, Montilla-Moriles, Málaga e Sierras de Málaga'],
+    ['Baleares', 'Binissalem e Plà i Llevant (Maiorca)'],
+    ['Canárias', 'La Palma, Ycoden-Daute-Isora, Tacoronte-Acentejo, Valle de la Orotava, Valle de Güímar, Abona, Lanzarote, entre outras']
+  ]);
+
   // ---------- Rioja ----------
   R('Rioja', '', 'Rioja em resumo', 'fatos', [
     ['Área', 'Cerca de 65.000 ha de vinhedos'],
@@ -502,17 +556,20 @@ STUDY_PACKS.push((function () {
   R('Rioja', 'Rioja Alta', 'Rioja Alta', 'fatos', [
     ['Importância', 'A mais importante das três sub-regiões'],
     ['Área', 'Pouco mais de 27 mil ha, segundo o slide', 'conferir'],
-    ['Perfil', 'Clima e solos perfeitos para a Tempranillo']
+    ['Perfil', 'Clima e solos perfeitos para a Tempranillo'],
+    ['Cidades no mapa', 'Haro, Briones, Santo Domingo de la Calzada, Nájera, Logroño, Navarrete, Badarán, Baños de Río Tobía']
   ]);
   R('Rioja', 'Rioja Alavesa', 'Rioja Alavesa', 'fatos', [
     ['Importância', '2ª sub-região mais importante'],
     ['Local', 'Na zona do País Basco'],
-    ['Área', 'Pouco mais de 13 mil ha, segundo o slide', 'conferir']
+    ['Área', 'Pouco mais de 13 mil ha, segundo o slide', 'conferir'],
+    ['Cidades no mapa', 'Labastida, Laguardia e Elciego']
   ]);
   R('Rioja', 'Rioja Oriental', 'Rioja Oriental', 'fatos', [
     ['Nome antigo', 'Rioja Baja'],
     ['Perfil', 'A mais simples; no sudeste, com solos pobres'],
-    ['Área', 'Pouco mais de 24 mil ha, segundo o slide', 'conferir']
+    ['Área', 'Pouco mais de 24 mil ha, segundo o slide', 'conferir'],
+    ['Cidades no mapa', 'Viana, Mendavia, Andosilla, San Adrián, Calahorra, Arnedo, Grávalos, Alfaro']
   ]);
   R('Rioja', '', 'Grandes produtores de Rioja', 'produtores', [
     ['Bodegas Roda', ''], ['Marqués de Murrieta', ''], ['Marqués de Vargas', ''], ['Bodega Muga', ''],
@@ -532,6 +589,12 @@ STUDY_PACKS.push((function () {
   ]);
   R('Navarra', '', 'Grandes produtores de Navarra', 'produtores', [
     ['Julián Chivite', ''], ['Gran Feudo', ''], ['Viña Zorzal', '']
+  ]);
+
+  R('Navarra', '', 'Vizinhas de Navarra e Rioja (mapa)', 'lista', [
+    ['', 'Txakolina do País Basco: Bizkaiko, Getariako e Arabako'],
+    ['', 'Rioja e Navarra, ao longo do Rio Ebro'],
+    ['', 'Campo de Borja, Cariñena e Somontano, em Aragão']
   ]);
 
   // ---------- Castela e Leão ----------
@@ -555,6 +618,9 @@ STUDY_PACKS.push((function () {
     ['Uvas', 'Tempranillo (Tinta del País) e Cabernet Sauvignon'],
     ['Envelhecimento', '7 anos em carvalho americano e mais 3 em garrafa antes de sair'],
     ['Reserva Especial', 'Versão não safrada, ao lado do Único (safrado)']
+  ]);
+  R('Castela e Leão', 'Ribera del Duero', 'Cidades de Ribera del Duero (mapa)', 'lista', [
+    ['', 'Aranda de Duero, Roa, Peñafiel e San Esteban de Gormaz, ao longo do Rio Duero']
   ]);
   R('Castela e Leão', '', 'Outras regiões de Castela e Leão', 'fatos', [
     ['Toro', 'Tintos robustos de Tinta del Toro (Tempranillo)'],
@@ -653,7 +719,8 @@ STUDY_PACKS.push((function () {
   ]);
   R('Andaluzia', 'Jerez-Xérès-Sherry', 'Solera de Jerez', 'lista', [
     ['', 'Barris empilhados em andanas: solera embaixo, 1ª e 2ª criaderas acima'],
-    ['', 'A saca retira vinho da solera; o rocío repõe com o vinho da fileira de cima']
+    ['', 'A saca retira vinho da solera; o rocío repõe com o vinho da fileira de cima'],
+    ['', 'No esquema do slide, a "sobretablas" aparece indicada acima da fileira mais alta de barris']
   ]);
 
   // ---------- Harmonização ----------
@@ -661,6 +728,9 @@ STUDY_PACKS.push((function () {
     ['Conceito', 'Pequenas porções servidas em bares para acompanhar bebidas'],
     ['Origem', 'Da prática de cobrir (tapar) as bebidas'],
     ['Cortesia', 'Tapa oferecida ao pedir uma bebida cria ambiente informal e de convivência']
+  ]);
+  H('Espanha', 'Cozinha espanhola', 'fatos', [
+    ['Valores', 'Calma, respeito aos ingredientes e a arte de compartilhar']
   ]);
   H('Rioja e Navarra', 'Cozinha de Rioja e Navarra', 'lista', [
     ['', 'Chorizo riojano (embutido) e cordeiro'],
@@ -677,7 +747,8 @@ STUDY_PACKS.push((function () {
     ['Lechazo asado', 'Cordeiro assado'],
     ['Morcilla de Burgos', 'Embutido típico'],
     ['Queso de oveja', 'Queijo de ovelha'],
-    ['Pimentões marinados', 'Também entre os pratos de destaque']
+    ['Pimentões marinados', 'Também entre os pratos de destaque'],
+    ['Leitão', 'Citado entre as especialidades da região, ao lado de cordeiro, morcillas e queijos']
   ]);
   H('Jerez de la Frontera', 'Cozinha de Jerez', 'fatos', [
     ['Andaluzia', 'Encontro da cultura alimentar europeia com influências árabes e africanas'],
@@ -688,6 +759,11 @@ STUDY_PACKS.push((function () {
   ]);
 
   var LEVELS = {
+    'Uvas principais por comunidade (mapa)': 'avancado',
+    'DOs por comunidade (mapa)': 'expert',
+    'Vizinhas de Navarra e Rioja (mapa)': 'expert',
+    'Cidades de Ribera del Duero (mapa)': 'expert',
+    'Cozinha espanhola': 'medio',
     'A Espanha em números': 'medio',
     'Classificação dos vinhos espanhóis': 'medio',
     'Crianza': 'medio',
@@ -733,5 +809,5 @@ STUDY_PACKS.push((function () {
     'Cozinha de Jerez': 'avancado' };
   cards.forEach(function (c) { c.level = LEVELS[c.title] || 'avancado'; });
 
-  return { code: 'ES', version: 1, cards: cards };
+  return { code: 'ES', version: 2, cards: cards };
 })());
