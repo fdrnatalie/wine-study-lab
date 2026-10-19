@@ -404,6 +404,35 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .sc-den .d { font-size: .85rem; color: var(--ink-2); line-height: 1.35; }
 .sc-list { margin: 0; padding-left: 18px; font-size: .92rem; line-height: 1.5; }
 .src.aula { color: var(--info); background: var(--info-soft); }
+
+/* Curso */
+.course-stats { display: flex; gap: 10px; }
+.course-stats .cs { background: var(--paper-2); border-radius: 8px; padding: 8px 14px; text-align: center; font-size: .72rem; color: var(--muted); letter-spacing: .04em; }
+.course-stats .cs b { display: block; font-family: var(--serif); font-size: 1.5rem; color: var(--ink); line-height: 1.1; }
+.course-review { display: flex; justify-content: space-between; align-items: center; gap: 12px; text-decoration: none; color: inherit; border-color: var(--gold); background: var(--gold-soft); margin-bottom: 14px; }
+.course-path { display: grid; gap: 4px; }
+.course-node { display: flex; align-items: center; gap: 14px; padding: 8px 6px; border-radius: 10px; text-decoration: none; color: inherit; }
+a.course-node:hover { background: var(--paper-2); }
+.course-node .dot { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; border: 2px solid var(--line-2); background: var(--paper); flex: none; }
+.course-node.open .dot { border-color: var(--wine); color: var(--wine); background: var(--wine-soft); }
+.course-node.done .dot { border-color: var(--hit); color: var(--hit); background: var(--hit-soft); }
+.course-node.locked { opacity: .55; }
+.course-node .txt { display: grid; }
+.course-node .nm { font-weight: 600; }
+.course-node .sub { font-size: .8rem; color: var(--muted); }
+.course-lv { color: var(--gold); font-weight: 600; }
+.course-run { max-width: 720px; margin: 0 auto; }
+.course-top { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.course-tip { background: var(--wine-soft); color: var(--ink); border-radius: 8px; padding: 12px 14px; margin: 0 0 12px; line-height: 1.5; }
+.course-opt { display: block; width: 100%; text-align: left; margin: 0 0 8px; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--paper); color: var(--ink); font: inherit; cursor: pointer; }
+.course-opt:hover:not(:disabled) { border-color: var(--wine); }
+.course-opt.sel { border-color: var(--wine); background: var(--wine-soft); }
+.course-opt.right { border-color: var(--hit); background: var(--hit-soft); color: var(--hit); }
+.course-opt.wrong { border-color: var(--miss); background: var(--miss-soft); color: var(--miss); }
+.course-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.course-fb { margin-top: 12px; padding: 12px 14px; border-radius: 8px; line-height: 1.45; }
+.course-fb.ok { background: var(--hit-soft); color: var(--hit); }
+.course-fb.no { background: var(--miss-soft); color: var(--miss); }
 </style>
 
 </head>
@@ -622,6 +651,10 @@ var Router = {
     [/^\/caderno$/, 'notes'],
     [/^\/usuarios$/, 'users'],
     [/^\/quiz$/, 'quiz'],
+    [/^\/curso$/, 'course'],
+    [/^\/curso\/licao\/([a-z0-9-]+)$/, 'courseLesson', ['id']],
+    [/^\/curso\/desafio\/([a-z0-9-]+)$/, 'courseChallenge', ['id']],
+    [/^\/curso\/revisao$/, 'courseReview'],
     [/^\/estudar\/(historia|producao|harmonizacao)$/, 'estudo', ['tema']],
     [/^\/config$/, 'settings'],
     [/^\/revisao$/, 'review']
@@ -695,7 +728,7 @@ var Router = {
       if (token !== Router.token) return;           // o usuário navegou antes de terminar
       if (page.fullscreen) { UI.openLayer(html); }
       else {
-        view.innerHTML = (trail.length > 1 && route.page !== 'dashboard' ? '<a href="#" class="back-link" data-back="1">← Voltar</a>' : '') + html;
+        view.innerHTML = (trail.length > 1 && route.page !== 'dashboard' && !/^course(Lesson|Review|Challenge)$/.test(route.page) ? '<a href="#" class="back-link" data-back="1">← Voltar</a>' : '') + html;
         window.scrollTo(0, 0);
       }
       if (page.mount) page.mount(page.fullscreen ? document.getElementById('layer') : view, route.params);
@@ -818,7 +851,7 @@ var Nav = {
   },
   groups: [
     [null, [['#/', 'home', 'Dashboard', /^\/?$|^\/dashboard/]]],
-    ['Estudar', [['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/estudar/historia', 'history', 'História do vinho', /^\/estudar\/historia/], ['#/estudar/producao', 'grape', 'Produção de vinho', /^\/estudar\/producao/], ['#/estudar/harmonizacao', 'note', 'Harmonizações', /^\/estudar\/harmonizacao/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/quiz', 'quiz', 'Quiz', /^\/quiz/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
+    ['Estudar', [['#/curso', 'target', 'Curso', /^\/curso/], ['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/estudar/historia', 'history', 'História do vinho', /^\/estudar\/historia/], ['#/estudar/producao', 'grape', 'Produção de vinho', /^\/estudar\/producao/], ['#/estudar/harmonizacao', 'note', 'Harmonizações', /^\/estudar\/harmonizacao/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/quiz', 'quiz', 'Quiz', /^\/quiz/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
     ['Minha Adega', [['#/adega', 'bottle', 'Garrafinhas', /^\/adega$/], ['#/adega/fracionar', 'split', 'Fracionar garrafa', /^\/adega\/fracionar/]]],
     ['Degustação', [['#/degustacao/nova', 'target', 'Nova degustação', /^\/degustacao\/nova/], ['#/degustacao/historico', 'history', 'Histórico', /^\/degustacao\/(historico|[A-Z])/],
       // Jogo em outra aba (mantém o formato próprio dele); o endereço vem do servidor.
@@ -4066,6 +4099,189 @@ Pages.estudo = {
   }
 };
 var Util2 = { norm: function (s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); } };
+</script>
+
+  <script>
+/* ============================================================
+   Curso: trilha de lições curtas (Bordeaux é a unidade-piloto).
+   #/curso → trilha · #/curso/licao/ID · #/curso/revisao · #/curso/desafio/UNIDADE
+   O servidor entrega a lição com as respostas certas; a correção é imediata no navegador e o resultado (course.finish)
+   guarda pontos, sequência de dias, progresso e as perguntas erradas para revisão.
+   ============================================================ */
+var CourseUI = {
+  LEVEL: { medio: 'Médio', avancado: 'Avançado', expert: 'Expert' },
+  shuffle: function (a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  },
+  statsHtml: function (st) {
+    return '<div class="course-stats"><div class="cs"><b>' + (st.streak || 0) + '</b>' + (st.streak === 1 ? 'dia seguido' : 'dias seguidos') + '</div><div class="cs"><b>' + (st.xp || 0) + '</b>pontos</div></div>';
+  }
+};
+
+Pages.course = {
+  render: function () {
+    return API.call('course.get').then(function (d) {
+      var html = '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>Curso</h1><p class="sub">Lições curtas, na ordem, com revisão do que você errou.</p></div>' + CourseUI.statsHtml(d.stats) + '</div>';
+      if (d.review_due) {
+        html += '<a class="panel course-review" href="#/curso/revisao"><div><div class="serif" style="font-size:1.35rem">Revisão do dia</div><div class="muted small">' + plural(d.review_due, 'pergunta que você errou volta', 'perguntas que você errou voltam') + ' agora, para fixar.</div></div><span class="btn primary">Revisar</span></a>';
+      } else if (!d.stats.studied_today) {
+        html += '<div class="callout" style="margin-bottom:14px">Faça uma lição hoje para manter a sua sequência de dias.</div>';
+      }
+      d.units.forEach(function (u) {
+        var pct = Math.round(u.done / u.lessons.length * 100);
+        html += '<section class="panel course-unit"><div class="page-head" style="margin-bottom:8px"><div><div class="eyebrow">' + esc(u.country) + '</div><div class="serif" style="font-size:1.8rem;line-height:1.1">' + esc(u.title) + '</div></div>' +
+          (u.href ? '<a class="btn small" href="' + esc(u.href) + '">Ver cartões</a>' : '') + '</div>' + Components.meter(pct) +
+          '<div class="small muted" style="margin:6px 0 14px">' + u.done + ' de ' + u.lessons.length + ' lições concluídas</div><div class="course-path">';
+        u.lessons.forEach(function (l, i) {
+          var open = l.status !== 'locked';
+          html += '<' + (open ? 'a href="#/curso/licao/' + esc(l.id) + '"' : 'div') + ' class="course-node ' + l.status + '"><span class="dot">' + (l.status === 'done' ? '✓' : i + 1) + '</span>' +
+            '<span class="txt"><span class="nm">' + esc(l.title) + '</span><span class="sub">' + (l.status === 'done' ? 'Concluída' + (l.best_score !== null ? ' · melhor nota ' + l.best_score + '%' : '') : l.status === 'open' ? plural(l.questions, 'pergunta', 'perguntas') : 'Bloqueada') +
+            ' · <span class="course-lv">' + esc(CourseUI.LEVEL[l.level] || '') + '</span></span></span></' + (open ? 'a' : 'div') + '>';
+        });
+        var ch = u.challenge;
+        html += '<' + (ch.status === 'open' ? 'a href="#/curso/desafio/' + esc(u.id) + '"' : 'div') + ' class="course-node ' + (ch.status === 'open' ? 'open' : 'locked') + '"><span class="dot">★</span><span class="txt"><span class="nm">Desafio da unidade</span><span class="sub">' +
+          (ch.status === 'open' ? '10 perguntas de tudo o que você viu' + (ch.pending_review ? ' · ' + plural(ch.pending_review, 'erro pendente', 'erros pendentes') : '') : 'Termine as 6 lições para abrir') + '</span></span></' + (ch.status === 'open' ? 'a' : 'div') + '></div></section>';
+      });
+      return html;
+    });
+  }
+};
+
+/** Lição, revisão do dia e desafio usam a mesma tela. */
+function courseRunner(load) {
+  return {
+    render: function (p) {
+      return load(p).then(function (lesson) {
+        var S = Pages.courseRun.S = { lesson: lesson, i: -1, results: [], q: null, mistakes: 0, done: false, finished: null };
+        if (!lesson.questions.length) return '<div class="page-head"><div><div class="eyebrow">Curso</div><h1>' + esc(lesson.title) + '</h1></div></div>' +
+          Components.empty('Nada para revisar agora', 'Quando você errar alguma pergunta, ela volta aqui no dia seguinte.', '<a class="btn" href="#/curso">Voltar à trilha</a>');
+        return '<div class="course-run" id="crun"></div>';
+      });
+    },
+    mount: function () { if (Pages.courseRun.S.lesson.questions.length) CourseRun.draw(); }
+  };
+}
+Pages.courseRun = {};
+Pages.courseLesson = courseRunner(function (p) { return API.call('course.lesson', { id: p.id }); });
+Pages.courseReview = courseRunner(function () { return API.call('course.review'); });
+Pages.courseChallenge = courseRunner(function (p) { return API.call('course.challenge', { unit: p.id }); });
+['courseLesson', 'courseReview', 'courseChallenge'].forEach(function (n) { Pages[n].actions = {}; });
+
+var CourseRun = {
+  S: function () { return Pages.courseRun.S; },
+  box: function () { return document.getElementById('crun'); },
+  top: function () {
+    var S = CourseRun.S(), n = S.lesson.questions.length;
+    return '<div class="course-top"><a href="#/curso" class="muted small">← Sair</a><span class="small muted">' + esc(S.lesson.title) + (S.lesson.level ? ' · ' + esc(CourseUI.LEVEL[S.lesson.level] || '') : '') + '</span></div>' +
+      Components.meter(Math.round(Math.max(S.i, 0) / n * 100));
+  },
+  draw: function () {
+    var S = CourseRun.S(), box = CourseRun.box();
+    if (!box) return;
+    if (S.finished) return CourseRun.drawResult();
+    if (S.i < 0) {
+      box.innerHTML = CourseRun.top() + '<section class="panel" style="margin-top:14px"><div class="eyebrow">Antes de começar</div><h2 class="serif" style="margin:6px 0 10px">' + esc(S.lesson.title) + '</h2>' +
+        (S.lesson.tip ? '<div class="course-tip">' + esc(S.lesson.tip) + '</div>' : '') +
+        '<p class="small muted">' + plural(S.lesson.questions.length, 'pergunta', 'perguntas') + '. Errar não tira nada: a pergunta errada volta amanhã para você fixar.</p>' +
+        '<div class="btn-row"><button class="btn primary" data-action="c-start">Começar</button></div></section>';
+      return;
+    }
+    var q = S.lesson.questions[S.i];
+    S.q = { q: q, mistakes: 0, answered: false };
+    var body = '';
+    if (q.t === 'mc') {
+      var opts = CourseUI.shuffle(q.options.map(function (t, k) { return { t: t, ok: k === q.a }; }));
+      S.q.opts = opts;
+      body = opts.map(function (o, k) { return '<button class="course-opt" data-action="c-pick" data-k="' + k + '">' + esc(o.t) + '</button>'; }).join('');
+    } else if (q.t === 'match') {
+      S.q.left = q.pairs.map(function (pr, k) { return { t: pr[0], k: k, done: false }; });
+      S.q.right = CourseUI.shuffle(q.pairs.map(function (pr, k) { return { t: pr[1], k: k, done: false }; }));
+      S.q.sel = null; S.q.matched = 0;
+      body = '<div class="course-pair"><div id="cp-l">' + S.q.left.map(function (x, i) { return '<button class="course-opt" data-action="c-pl" data-i="' + i + '">' + esc(x.t) + '</button>'; }).join('') + '</div>' +
+        '<div id="cp-r">' + S.q.right.map(function (x, i) { return '<button class="course-opt" data-action="c-pr" data-i="' + i + '">' + esc(x.t) + '</button>'; }).join('') + '</div></div>';
+    } else if (q.t === 'order') {
+      S.q.pool = CourseUI.shuffle(q.items.map(function (t) { return t; }));
+      S.q.next = 0;
+      body = '<div id="co-slots"></div><div id="co-pool" class="course-pool">' + S.q.pool.map(function (t, i) { return '<button class="course-opt" data-action="c-ord" data-i="' + i + '">' + esc(t) + '</button>'; }).join('') + '</div>';
+    }
+    box.innerHTML = CourseRun.top() + '<section class="panel" style="margin-top:14px"><div class="eyebrow">Pergunta ' + (S.i + 1) + ' de ' + S.lesson.questions.length + '</div>' +
+      '<h2 class="serif" style="margin:8px 0 14px;font-size:1.5rem;line-height:1.2">' + esc(q.q) + '</h2>' + (q.t === 'order' ? '<p class="small muted" style="margin:-8px 0 12px">Toque nos itens na ordem certa.</p>' : '') + body + '<div id="cfb"></div></section>';
+  },
+  feedback: function (ok) {
+    var S = CourseRun.S(), q = S.q.q;
+    S.q.answered = true;
+    S.results.push({ id: q.id, ok: ok && S.q.mistakes === 0 });
+    var last = S.i + 1 >= S.lesson.questions.length;
+    document.getElementById('cfb').innerHTML = '<div class="course-fb ' + (S.results[S.results.length - 1].ok ? 'ok' : 'no') + '"><b>' + (S.results[S.results.length - 1].ok ? 'Certo!' : 'Quase. Essa volta para revisão.') + '</b> ' + esc(q.why || '') + '</div>' +
+      '<div class="btn-row" style="justify-content:flex-end;margin-top:12px"><button class="btn primary" data-action="c-next">' + (last ? 'Ver resultado' : 'Continuar') + '</button></div>';
+  },
+  drawResult: function () {
+    var S = CourseRun.S(), r = S.finished, box = CourseRun.box();
+    var isLesson = !/^(review|challenge:)/.test(S.lesson.id);
+    var actions = '';
+    if (isLesson && !r.passed) actions = '<a class="btn primary" href="#/curso/licao/' + esc(S.lesson.id) + '" data-action="c-retry">Tentar de novo</a><a class="btn" href="#/curso">Voltar à trilha</a>';
+    else if (r.next) actions = '<a class="btn primary" href="#/curso/licao/' + esc(r.next.id) + '">Próxima lição</a><a class="btn" href="#/curso">Voltar à trilha</a>';
+    else actions = '<a class="btn primary" href="#/curso">Voltar à trilha</a>';
+    box.innerHTML = '<section class="panel" style="text-align:center;margin-top:14px"><div class="eyebrow">' + (isLesson ? (r.passed ? 'Lição concluída' : 'Quase lá') : esc(S.lesson.title)) + '</div>' +
+      '<div class="serif" style="font-size:3.2rem;line-height:1.1;margin:8px 0">' + r.right + '<small style="font-size:1.4rem;color:var(--muted)">/' + r.total + '</small></div>' +
+      '<p class="muted" style="margin:0 0 14px">' + (isLesson && !r.passed ? 'Para concluir, acerte pelo menos ' + r.pass_mark + '%. Releia a dica e tente de novo.' : r.unit_done ? 'Você terminou todas as lições da unidade! O desafio está liberado.' : 'Boa! Continue amanhã para manter a sequência.') + '</p>' +
+      '<div class="course-stats" style="justify-content:center;margin-bottom:14px"><div class="cs"><b>+' + r.xp + '</b>pontos</div><div class="cs"><b>' + r.streak + '</b>' + (r.streak === 1 ? 'dia seguido' : 'dias seguidos') + '</div><div class="cs"><b>' + r.to_review + '</b>para revisar</div></div>' +
+      '<div class="btn-row" style="justify-content:center">' + actions + '</div></section>';
+  }
+};
+
+function courseActions() {
+  return {
+    'c-start': function () { var S = CourseRun.S(); S.i = 0; CourseRun.draw(); },
+    'c-pick': function (btn) {
+      var S = CourseRun.S(); if (S.q.answered) return;
+      var o = S.q.opts[Number(btn.getAttribute('data-k'))];
+      var all = document.querySelectorAll('.course-opt');
+      all.forEach(function (b, k) { b.disabled = true; if (S.q.opts[k].ok) b.classList.add('right'); });
+      if (!o.ok) { btn.classList.add('wrong'); S.q.mistakes++; }
+      CourseRun.feedback(o.ok);
+    },
+    'c-pl': function (btn) {
+      var S = CourseRun.S(), L = S.q.left[Number(btn.getAttribute('data-i'))]; if (S.q.answered || L.done) return;
+      document.querySelectorAll('#cp-l .course-opt').forEach(function (b) { b.classList.remove('sel'); });
+      S.q.sel = L; btn.classList.add('sel');
+    },
+    'c-pr': function (btn) {
+      var S = CourseRun.S(), R = S.q.right[Number(btn.getAttribute('data-i'))];
+      if (S.q.answered || R.done || !S.q.sel) return;
+      var L = S.q.sel;
+      if (L.k === R.k) {
+        L.done = R.done = true; S.q.matched++; S.q.sel = null;
+        var lb = document.querySelector('#cp-l [data-i="' + S.q.left.indexOf(L) + '"]');
+        lb.classList.remove('sel'); lb.classList.add('right'); lb.disabled = true; btn.classList.add('right'); btn.disabled = true;
+        if (S.q.matched === S.q.left.length) CourseRun.feedback(true);
+      } else {
+        S.q.mistakes++; btn.classList.add('wrong');
+        setTimeout(function () { btn.classList.remove('wrong'); }, 500);
+        UI.toast('Essa não combina. Tente de novo.', true);
+      }
+    },
+    'c-ord': function (btn) {
+      var S = CourseRun.S(); if (S.q.answered) return;
+      var t = S.q.pool[Number(btn.getAttribute('data-i'))];
+      if (S.q.q.items[S.q.next] === t) {
+        S.q.next++; btn.style.display = 'none';
+        document.getElementById('co-slots').insertAdjacentHTML('beforeend', '<div class="course-opt right">' + S.q.next + '. ' + esc(t) + '</div>');
+        if (S.q.next === S.q.q.items.length) CourseRun.feedback(true);
+      } else { S.q.mistakes++; btn.classList.add('wrong'); setTimeout(function () { btn.classList.remove('wrong'); }, 500); UI.toast('Ainda não é essa. Pense na ordem.', true); }
+    },
+    'c-next': function () {
+      var S = CourseRun.S();
+      S.i++;
+      if (S.i < S.lesson.questions.length) return CourseRun.draw();
+      return API.call('course.finish', { lesson_id: S.lesson.id, results: S.results }).then(function (r) { S.finished = r; CourseRun.draw(); });
+    },
+    'c-retry': function () { /* o link recarrega a lição */ }
+  };
+}
+['courseLesson', 'courseReview', 'courseChallenge'].forEach(function (n) { Pages[n].actions = courseActions(); });
 </script>
 
   <script>App.start();</script>

@@ -824,7 +824,7 @@ h3 { font-size: 20px; margin-bottom: 7px; }
  */
 var CONFIG = {
   APP_NAME: 'Wine Study Lab',
-  SCHEMA_VERSION: 9,
+  SCHEMA_VERSION: 10,
   // ID da planilha: vem de src/server/00_Local.js (fora do Git; veja 00_Local.example.js). Sem ele, o script usa
   // a planilha à qual está vinculado (getActiveSpreadsheet).
   SPREADSHEET_ID: '',
@@ -878,6 +878,14 @@ var SCHEMA = {
   // v9: fotos das uvas (arquivos numa pasta do Drive da dona, compartilhados por link). Escrita só da administradora.
   grape_photos: { sheet: 'db_grape_photos', prefix: 'GPH', cols: [
     'grape_id', 'file_id', 'caption', 'sort:number'] },
+
+  // v10: curso (progresso pessoal de cada usuário). day = data no formato AAAA-MM-DD (fuso do Brasil).
+  course_progress: { sheet: 'db_course_progress', prefix: 'CPR', cols: [
+    'user_id', 'unit_id', 'lesson_id', 'best_score:number', 'attempts:number', 'completed_day', 'xp:number'] },
+  course_stats: { sheet: 'db_course_stats', prefix: 'CST', cols: [
+    'user_id', 'xp_total:number', 'streak:number', 'best_streak:number', 'last_day'] },
+  course_reviews: { sheet: 'db_course_reviews', prefix: 'CRV', cols: [
+    'user_id', 'question_id', 'step:number', 'due_day', 'wrong_count:number'] },
 
   appellations: { sheet: 'db_appellations', prefix: 'APL', cols: [
     'name', 'name_key', 'region_id', 'classification', 'rules', 'notes'] },
@@ -1015,7 +1023,7 @@ var SCHEMA = {
  */
 var SCOPES = {
   personal: ['bottling_batches', 'bottles', 'tastings', 'tasting_samples', 'tasting_answers', 'tasting_results',
-    'notes', 'note_links', 'wine_notes'],
+    'notes', 'note_links', 'wine_notes', 'course_progress', 'course_stats', 'course_reviews'],
   catalog: ['wines', 'wine_grapes', 'producers', 'appellations', 'profiles', 'entity_aromas'],
   system: ['users', 'sessions']
   // as demais: admin
@@ -22832,6 +22840,260 @@ var SeedStudy = (function () {
   return { run: runPack, ensure: ensure };
 })();
 
+// ---- 56_Course.js
+/**
+ * Curso: trilha de lições curtas (dados em 57_CourseData.js). Progresso, pontos, sequência de dias e revisão espaçada
+ * são PESSOAIS: ficam nas abas course_* e cada usuário só enxerga as próprias linhas (política "personal").
+ *
+ * Fluxo: course.get (trilha) → course.lesson (perguntas) → [cliente corrige na hora] → course.finish (resultado).
+ * As respostas certas viajam com a lição para o feedback ser imediato; o curso é de estudo pessoal, sem ranking.
+ */
+var Course = (function () {
+  var PASS = 70;                    // % mínimo para concluir uma lição
+  var INTERVALS = [1, 3, 7, 14];    // dias até a próxima revisão de uma pergunta errada
+  var REVIEW_BATCH = 8;
+
+  function today_() { return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10); }   // fuso de Brasília
+  function addDays_(day, n) { var d = new Date(day + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+
+  function unit_(id) { return COURSE_UNITS.filter(function (u) { return u.id === id; })[0]; }
+  function lessonById_(id) {
+    for (var i = 0; i < COURSE_UNITS.length; i++) for (var j = 0; j < COURSE_UNITS[i].lessons.length; j++) if (COURSE_UNITS[i].lessons[j].id === id) return { unit: COURSE_UNITS[i], lesson: COURSE_UNITS[i].lessons[j], index: j };
+    return null;
+  }
+  function questionById_(id) {
+    for (var i = 0; i < COURSE_UNITS.length; i++) for (var j = 0; j < COURSE_UNITS[i].lessons.length; j++) {
+      var qs = COURSE_UNITS[i].lessons[j].questions;
+      for (var k = 0; k < qs.length; k++) if (qs[k].id === id) return qs[k];
+    }
+    return null;
+  }
+
+  function stats_() {
+    var s = Repo.all('course_stats')[0];   // a política já filtra pelo usuário
+    return s || { xp_total: 0, streak: 0, best_streak: 0, last_day: '' };
+  }
+  /** Sequência vigente: continua se estudou hoje ou ontem; senão zera. */
+  function liveStreak_(s) {
+    if (!s.last_day) return 0;
+    var t = today_();
+    return s.last_day === t || s.last_day === addDays_(t, -1) ? (s.streak || 0) : 0;
+  }
+
+  function regionHref_(u) {
+    var c = Repo.all('countries').filter(function (x) { return x.name_key === Util.normKey(u.country); })[0];
+    if (!c) return '';
+    var r = Repo.all('regions').filter(function (x) { return x.country_id === c.id && !x.parent_id && x.name_key === Util.normKey(u.region); })[0];
+    return r ? '#/regioes/' + r.id : '';
+  }
+
+  function dueReviews_() {
+    var t = today_();
+    return Repo.all('course_reviews').filter(function (r) { return r.due_day <= t && questionById_(r.question_id); })
+      .sort(function (a, b) { return String(a.due_day).localeCompare(String(b.due_day)); });
+  }
+
+  function get() {
+    var prog = Util.indexBy(Repo.all('course_progress'), 'lesson_id');
+    var st = stats_();
+    var reviews = Repo.all('course_reviews');
+    var units = COURSE_UNITS.map(function (u) {
+      var prev = true, doneCount = 0;
+      var lessons = u.lessons.map(function (l) {
+        var p = prog[l.id], done = !!(p && p.completed_day);
+        var status = done ? 'done' : (prev ? 'open' : 'locked');
+        if (done) doneCount++;
+        prev = done;
+        return { id: l.id, title: l.title, level: l.level, questions: l.questions.length, status: status, best_score: p ? p.best_score : null };
+      });
+      var allDone = doneCount === u.lessons.length;
+      var wrongInUnit = reviews.filter(function (r) { return r.question_id.indexOf(u.lessons[0].id.split('-')[0] + '-') === 0; }).length;
+      return { id: u.id, title: u.title, country: u.country, href: regionHref_(u), lessons: lessons, done: doneCount,
+        challenge: { status: allDone ? 'open' : 'locked', pending_review: wrongInUnit } };
+    });
+    return { units: units, stats: { xp: st.xp_total || 0, streak: liveStreak_(st), best_streak: st.best_streak || 0, studied_today: st.last_day === today_() },
+      review_due: dueReviews_().length };
+  }
+
+  function lesson(id) {
+    var f = lessonById_(Validate.str(id, 40, 'Lição'));
+    if (!f) throw new Error('Lição não encontrada.');
+    var prog = Util.indexBy(Repo.all('course_progress'), 'lesson_id');
+    if (f.index > 0 && !(prog[f.unit.lessons[f.index - 1].id] || {}).completed_day) throw new Error('Conclua a lição anterior primeiro.');
+    return { id: f.lesson.id, title: f.lesson.title, unit: f.unit.title, level: f.lesson.level, tip: f.lesson.tip, href: regionHref_(f.unit), questions: f.lesson.questions };
+  }
+
+  /** Desafio da unidade: 10 perguntas, dando prioridade às que você errou. */
+  function challenge(unitId) {
+    var u = unit_(Validate.str(unitId, 40, 'Unidade'));
+    if (!u) throw new Error('Unidade não encontrada.');
+    var prog = Util.indexBy(Repo.all('course_progress'), 'lesson_id');
+    if (!u.lessons.every(function (l) { return (prog[l.id] || {}).completed_day; })) throw new Error('Conclua todas as lições da unidade primeiro.');
+    var wrong = {};
+    Repo.all('course_reviews').forEach(function (r) { wrong[r.question_id] = r.wrong_count || 1; });
+    var all = [];
+    u.lessons.forEach(function (l) { l.questions.forEach(function (q) { all.push(q); }); });
+    var picked = Util.shuffle(all.slice()).sort(function (a, b) { return (wrong[b.id] || 0) - (wrong[a.id] || 0); }).slice(0, 10);
+    return { id: 'challenge:' + u.id, title: 'Desafio: ' + u.title, unit: u.title, level: 'avancado', tip: 'Perguntas de toda a unidade — as que você mais errou vêm primeiro.', href: regionHref_(u), questions: Util.shuffle(picked) };
+  }
+
+  function review() {
+    var due = dueReviews_().slice(0, REVIEW_BATCH);
+    if (!due.length) return { id: 'review', title: 'Revisão do dia', unit: '', level: '', tip: '', questions: [] };
+    return { id: 'review', title: 'Revisão do dia', unit: '', level: '', tip: 'Perguntas que você errou e que voltam agora, até fixar.', questions: due.map(function (r) { return questionById_(r.question_id); }) };
+  }
+
+  /**
+   * results: [{id, ok}] de cada pergunta da lição/revisão/desafio. Atualiza pontos, sequência, progresso e revisões.
+   * Só aceita ids que existem no curso (nada vindo do navegador é gravado sem validação).
+   */
+  function finish(a) {
+    var kind = String(a.lesson_id || '');
+    var results = (Array.isArray(a.results) ? a.results : []).slice(0, 30).filter(function (r) { return r && questionById_(String(r.id)); })
+      .map(function (r) { return { id: String(r.id), ok: !!r.ok }; });
+    if (!results.length) throw new Error('Nenhuma resposta para registrar.');
+    var isLesson = !/^(review|challenge:)/.test(kind);
+    var f = isLesson ? lessonById_(kind) : null;
+    if (isLesson && !f) throw new Error('Lição não encontrada.');
+    var prog = Util.indexBy(Repo.all('course_progress'), 'lesson_id');
+    if (isLesson && f.index > 0 && !(prog[f.unit.lessons[f.index - 1].id] || {}).completed_day) throw new Error('Conclua a lição anterior primeiro.');
+    if (isLesson) {
+      var ids = f.lesson.questions.map(function (q) { return q.id; });
+      if (results.some(function (r) { return ids.indexOf(r.id) < 0; })) throw new Error('Respostas de outra lição.');
+    }
+    var right = results.filter(function (r) { return r.ok; }).length;
+    var score = Math.round(right / results.length * 100);
+    var passed = score >= PASS;
+    var t = today_();
+
+    return Repo.withLock(function () {
+      // Revisão espaçada: errou → volta amanhã; acertou numa revisão vencida → intervalo maior.
+      var existing = Util.indexBy(Repo.all('course_reviews'), 'question_id');
+      var ins = [], upd = [], del = [];
+      results.forEach(function (r) {
+        var cur = existing[r.id];
+        if (!r.ok) {
+          if (cur) upd.push({ id: cur.id, step: 0, due_day: addDays_(t, INTERVALS[0]), wrong_count: (cur.wrong_count || 0) + 1 });
+          else ins.push({ question_id: r.id, step: 0, due_day: addDays_(t, INTERVALS[0]), wrong_count: 1, source: 'sistema' });
+        } else if (cur && cur.due_day <= t) {
+          var step = (cur.step || 0) + 1;
+          if (step >= INTERVALS.length) del.push(cur.id);
+          else upd.push({ id: cur.id, step: step, due_day: addDays_(t, INTERVALS[step]) });
+        }
+      });
+      if (ins.length) Repo.insert('course_reviews', ins);
+      if (upd.length) Repo.update('course_reviews', upd);
+      if (del.length) Repo.remove('course_reviews', del);
+
+      // Pontos: 3 por acerto, +6 por concluir uma lição (a primeira vez ou melhorando a nota).
+      var firstPass = isLesson && passed && !(prog[kind] || {}).completed_day;
+      var xp = right * 3 + (firstPass ? 6 : 0);
+      if (isLesson) {
+        var p = prog[kind];
+        var patch = { best_score: Math.max(score, p ? p.best_score || 0 : 0), attempts: (p ? p.attempts || 0 : 0) + 1, xp: (p ? p.xp || 0 : 0) + xp };
+        if (passed && !(p && p.completed_day)) patch.completed_day = t;
+        if (p) { patch.id = p.id; Repo.update('course_progress', [patch]); }
+        else Repo.insert('course_progress', [Object.assign({ unit_id: f.unit.id, lesson_id: kind, source: 'sistema' }, patch)]);
+      }
+      var st = Repo.all('course_stats')[0], streak = 1;
+      if (st && st.last_day === t) streak = st.streak || 1;
+      else if (st && st.last_day === addDays_(t, -1)) streak = (st.streak || 0) + 1;
+      var next = { xp_total: ((st && st.xp_total) || 0) + xp, streak: streak, best_streak: Math.max(streak, (st && st.best_streak) || 0), last_day: t };
+      if (st) Repo.update('course_stats', [Object.assign({ id: st.id }, next)]);
+      else Repo.insert('course_stats', [Object.assign({ source: 'sistema' }, next)]);
+
+      var nextLesson = null;
+      if (isLesson && passed) { var nl = f.unit.lessons[f.index + 1]; nextLesson = nl ? { id: nl.id, title: nl.title } : null; }
+      return { score: score, right: right, total: results.length, passed: isLesson ? passed : true, xp: xp, streak: streak,
+        to_review: results.filter(function (r) { return !r.ok; }).length, next: nextLesson, unit_done: isLesson && passed && !nextLesson, pass_mark: PASS };
+    });
+  }
+
+  return { get: get, lesson: lesson, challenge: challenge, review: review, finish: finish };
+})();
+
+// ---- 57_CourseData.js
+/**
+ * Curso (estilo trilha): conteúdo das unidades. Cada pergunta sai de um cartão de estudo (material de aula) — itens marcados
+ * "conferir" não entram. Tipos: mc (múltipla escolha), match (ligar pares), order (ordenar).
+ * Unidade-piloto: Bordeaux (França). Para criar outra unidade basta acrescentar um objeto em COURSE_UNITS.
+ */
+var COURSE_UNITS = (function () {
+  function mc(q, right, wrong, why) { return { t: 'mc', q: q, options: [right].concat(wrong), a: 0, why: why }; }
+  function match(q, pairs, why) { return { t: 'match', q: q, pairs: pairs, why: why }; }
+  function order(q, items, why) { return { t: 'order', q: q, items: items, why: why }; }
+
+  var bordeaux = {
+    id: 'bordeaux', title: 'Bordeaux', country: 'França', region: 'Bordeaux',
+    lessons: [
+      { id: 'bdx-1', title: 'Duas margens, três rios', level: 'medio',
+        tip: 'Bordeaux fica no sudoeste da França, junto ao Atlântico. A margem esquerda do rio Gironde (Médoc e Graves) é terra de Cabernet Sauvignon; a margem direita (Saint-Émilion e Pomerol) é de Merlot.',
+        questions: [
+          mc('Qual uva predomina na margem esquerda de Bordeaux?', 'Cabernet Sauvignon', ['Merlot', 'Pinot Noir', 'Syrah'], 'A margem esquerda (Médoc e Graves) é dominada pela Cabernet Sauvignon: vinhos encorpados e de longa guarda.'),
+          mc('Qual uva predomina na margem direita?', 'Merlot', ['Cabernet Sauvignon', 'Pinot Noir', 'Syrah'], 'Na margem direita (Saint-Émilion, Pomerol) manda a Merlot: vinhos mais suaves, frutados e de estrutura equilibrada.'),
+          mc('Qual destas denominações fica na margem direita?', 'Pomerol', ['Pauillac', 'Margaux', 'Saint-Julien'], 'Pomerol e Saint-Émilion são as estrelas da margem direita.'),
+          mc('Qual destas denominações fica na margem esquerda?', 'Pauillac', ['Pomerol', 'Saint-Émilion', 'Fronsac'], 'Pauillac, Margaux, Saint-Julien e Saint-Estèphe ficam no Médoc, na margem esquerda.'),
+          mc('Como são, em geral, os vinhos da margem esquerda?', 'Encorpados e de longa guarda', ['Leves, para beber jovens', 'Doces e licorosos', 'Espumantes'], 'Cabernet Sauvignon com casca espessa: taninos robustos e muita longevidade.'),
+          mc('Onde fica a região de Bordeaux?', 'Sudoeste da França, junto ao Atlântico', ['Sul da França, no Mediterrâneo', 'Nordeste, perto da Alemanha', 'Centro, no vale do Loire'], 'Rios e afluentes escoavam o vinho; o porto de Bordeaux está entre os mais movimentados da França.')
+        ] },
+      { id: 'bdx-2', title: 'As uvas de Bordeaux', level: 'medio',
+        tip: 'Tintas: Cabernet Sauvignon, Merlot, Cabernet Franc e Petit Verdot. Brancas: Sauvignon Blanc, Sémillon e Muscadelle.',
+        questions: [
+          match('Ligue a uva ao seu papel', [['Merlot', 'Taninos suaves; rainha da margem direita'], ['Cabernet Sauvignon', 'Casca espessa; encorpada e longeva'], ['Sauvignon Blanc', 'Acidez vibrante e aromas cítricos'], ['Sémillon', 'Corpo, textura aveludada e podridão nobre']], 'Cada uva tem uma função no corte e no estilo do vinho.'),
+          mc('Qual destas é uma uva branca de Bordeaux?', 'Sémillon', ['Merlot', 'Petit Verdot', 'Cabernet Franc'], 'As brancas de Bordeaux são Sauvignon Blanc, Sémillon e Muscadelle.'),
+          mc('Qual uva tem aromas de cassis, amora e especiarias?', 'Cabernet Sauvignon', ['Merlot', 'Sauvignon Blanc', 'Sémillon'], 'A Merlot lembra cereja, ameixa e chocolate; a Cabernet Sauvignon, cassis e amora.'),
+          mc('A Cabernet Sauvignon nasceu do cruzamento de quais uvas?', 'Cabernet Franc com Sauvignon Blanc', ['Merlot com Pinot Noir', 'Malbec com Syrah', 'Cabernet Franc com Merlot'], 'Foi um cruzamento natural, entre o fim do século XVII e o início do XVIII, em Bordeaux.'),
+          mc('Qual uva dá taninos suaves e aromas de cereja, ameixa e chocolate?', 'Merlot', ['Cabernet Sauvignon', 'Petit Verdot', 'Sauvignon Blanc'], 'Merlot: acessível e versátil, escolha popular entre iniciantes e apreciadores.'),
+          mc('Qual uva branca aparece em pouca quantidade e equilibra Sauvignon Blanc e Sémillon?', 'Muscadelle', ['Chardonnay', 'Riesling', 'Viognier'], 'A Muscadelle traz aromas florais e frutados.')
+        ] },
+      { id: 'bdx-3', title: 'Margem esquerda: Médoc e Graves', level: 'avancado',
+        tip: 'Médoc vem do latim "medio aquae": entre as águas. O solo é de cascalho, com drenagem excelente. As quatro comunas famosas: Pauillac, Margaux, Saint-Julien e Saint-Estèphe. Graves leva o nome do seu solo de cascalho.',
+        questions: [
+          mc('O nome Médoc vem do latim "medio aquae". O que significa?', 'Entre as águas', ['Terra de ouro', 'Colina do sol', 'Vale dos reis'], 'A região fica entre o Atlântico, o estuário do Gironde e os rios.'),
+          mc('Que solo predomina no Médoc?', 'Cascalho', ['Argila pesada', 'Areia de praia', 'Calcário branco'], 'O cascalho drena muito bem: as vinhas passam por um estresse hídrico que concentra as uvas.'),
+          match('Ligue cada comuna do Médoc ao seu perfil', [['Pauillac', 'Força e estrutura'], ['Margaux', 'Elegância e taninos sedosos'], ['Saint-Estèphe', 'Robusto e encorpado'], ['Saint-Julien', 'Equilibrado, com cedro e especiarias']], 'Quatro comunas, quatro caráteres dentro do mesmo território.'),
+          mc('Quais são os dois ícones de Pauillac?', 'Château Lafite Rothschild e Château Latour', ['Château Margaux e Château Palmer', 'Château Pétrus e Château Cheval Blanc', 'Château d\'Yquem e Château Haut-Brion'], 'Lafite e Latour estão entre os vinhos mais prestigiosos do mundo.'),
+          mc('Em qual comuna fica o Château Cos d\'Estournel?', 'Saint-Estèphe', ['Pauillac', 'Margaux', 'Saint-Julien'], 'Cos d\'Estournel é segundo cru de 1855, famoso pela arquitetura oriental.'),
+          mc('Qual destes é um Premier Cru fora do Médoc?', 'Château Haut-Brion (Pessac-Léognan)', ['Château Lafite Rothschild', 'Château Latour', 'Château Margaux'], 'Haut-Brion fica em Graves, na comuna de Pessac-Léognan.'),
+          mc('Por que Graves se chama assim?', 'Pelo solo de cascalho, pedras e seixos', ['Pelo tamanho dos cachos', 'Pelo clima muito frio', 'Por um rei chamado Graves'], 'Solo bem drenado: uvas concentradas e complexas.')
+        ] },
+      { id: 'bdx-4', title: 'Margem direita: Saint-Émilion e Pomerol', level: 'avancado',
+        tip: 'Saint-Émilion só faz tinto, com Merlot, e tem classificação própria, criada em 1955 e revista de tempos em tempos. Pomerol é pequena, de argila, e não tem classificação oficial; Pétrus, Le Pin e Lafleur estão entre os vinhos mais cobiçados do mundo.',
+        questions: [
+          mc('Qual a uva dominante em Saint-Émilion e Pomerol?', 'Merlot', ['Cabernet Sauvignon', 'Syrah', 'Pinot Noir'], 'O solo de argila e o clima da margem direita favorecem a Merlot.'),
+          mc('Pomerol tem classificação oficial?', 'Não: nenhuma classificação de Bordeaux inclui Pomerol', ['Sim, a de 1855', 'Sim, a de 1955', 'Sim, a Cru Bourgeois'], 'Mesmo sem classificação, Pomerol tem alguns dos vinhos mais cobiçados.'),
+          mc('Qual destes é um dos vinhos mais cobiçados de Pomerol?', 'Château Pétrus', ['Château Latour', 'Château Margaux', 'Château d\'Yquem'], 'Pétrus, Le Pin e Lafleur: cada château com estilo próprio.'),
+          match('Ligue o vinho à sua denominação', [['Château Pétrus', 'Pomerol'], ['Château Cheval Blanc', 'Saint-Émilion'], ['Château Lafite Rothschild', 'Pauillac'], ['Château Haut-Brion', 'Pessac-Léognan']], 'Margem direita: Pomerol e Saint-Émilion. Margem esquerda: Pauillac e Graves (Pessac-Léognan).'),
+          mc('Em que ano foi criada a classificação de Saint-Émilion?', '1955', ['1855', '1932', '1973'], 'Revista periodicamente, uma das atualizações foi em 2012.'),
+          mc('Quais níveis tem a classificação de Saint-Émilion?', 'Premier Grand Cru Classé A, Premier Grand Cru Classé B e Grand Cru Classé', ['Premier, Deuxième e Troisième Cru', 'Grand Cru e Cru Bourgeois', 'Só dois: Premier e Segundo'], 'Atenção: "Saint-Émilion Grand Cru" é uma AOC, não um nível da classificação.')
+        ] },
+      { id: 'bdx-5', title: 'A classificação de 1855', level: 'medio',
+        tip: 'Feita para a Exposição Universal de Paris, a pedido de Napoleão III. Classifica 61 châteaux em cinco níveis, quase todos do Médoc. A única mudança foi em 1973, com a promoção do Mouton-Rothschild a Premier Cru.',
+        questions: [
+          mc('Para qual evento foi feita a classificação de 1855?', 'Exposição Universal de Paris', ['Jogos Olímpicos de Atenas', 'Feira do Vinho de Londres', 'Coroação de um rei'], 'Os melhores vinhos do Médoc foram listados para a exposição.'),
+          mc('A pedido de quem foi feita a classificação?', 'Napoleão III', ['Luís XIV', 'Napoleão Bonaparte', 'Carlos Magno'], 'Era o imperador da França em 1855.'),
+          order('Ordene os níveis de 1855, do topo à base', ['Premier Cru', 'Deuxième Cru', 'Troisième Cru', 'Quatrième Cru', 'Cinquième Cru'], 'Cinco categorias, de Premiers a Cinquièmes Crus: 5, 14, 14, 10 e 18 châteaux.'),
+          mc('Qual château foi promovido a Premier Cru em 1973?', 'Mouton-Rothschild', ['Château Margaux', 'Château Latour', 'Château Palmer'], 'Foi a única mudança nos níveis desde 1855.'),
+          mc('Quantos châteaux a classificação de 1855 reúne?', '61', ['25', '40', '100'], 'Quase todos da margem esquerda do Gironde (Médoc, mais Haut-Brion).'),
+          mc('Quantos Premiers Crus existem hoje?', '5', ['3', '4', '10'], 'Lafite Rothschild, Latour, Margaux, Haut-Brion e, desde 1973, Mouton-Rothschild.')
+        ] },
+      { id: 'bdx-6', title: 'Sauternes e os doces', level: 'medio',
+        tip: 'Sauternes é o branco doce de Bordeaux: Sémillon, Sauvignon Blanc e Muscadelle atacadas pela podridão nobre (Botrytis cinerea), com aromas de mel, damasco e pêssego. Château d\'Yquem é a referência máxima.',
+        questions: [
+          mc('Que fungo dá ao Sauternes os aromas de mel e damasco?', 'Botrytis cinerea (podridão nobre)', ['Míldio', 'Oídio', 'Filoxera'], 'A podridão nobre concentra açúcares e aromas, mantendo a acidez equilibrada.'),
+          mc('Qual destas uvas entra no Sauternes?', 'Sémillon', ['Merlot', 'Cabernet Sauvignon', 'Cabernet Franc'], 'Sémillon, Sauvignon Blanc e Muscadelle.'),
+          mc('Qual château é a referência máxima de Sauternes?', 'Château d\'Yquem', ['Château Pétrus', 'Château Latour', 'Château Palmer'], 'Premier Cru Supérieur, de grande longevidade.'),
+          mc('Qual categoria de 1855 o Château d\'Yquem tem?', 'Premier Cru Supérieur', ['Quinto Cru', 'Cru Bourgeois', 'Grand Cru Classé de Saint-Émilion'], 'A classificação de 1855 também incluiu os doces de Sauternes.'),
+          mc('Que aromas aparecem nos Sauternes?', 'Mel, damasco, pêssego e flores', ['Cassis, grafite e tabaco', 'Cereja, chocolate e especiarias', 'Limão, grapefruit e erva'], 'Cassis e grafite são de Pauillac; limão e grapefruit, da Sauvignon Blanc seca.'),
+          mc('Qual denominação vizinha também produz vinhos doces?', 'Barsac', ['Pauillac', 'Pomerol', 'Margaux'], 'Barsac e Sauternes são vizinhas e produzem os doces de Bordeaux.')
+        ] }
+    ]
+  };
+  var units = [bordeaux];
+  units.forEach(function (u) { u.lessons.forEach(function (l) { l.unit = u.id; l.questions.forEach(function (q, i) { q.id = l.id + '-' + (i + 1); }); }); });
+  return units;
+})();
+
 // ---- 60_Stats.js
 /**
  * Estatísticas do dashboard. Tudo calculado a partir de db_tasting_results
@@ -23904,6 +24166,11 @@ var API_METHODS = {
   'regions.countries': function () { return Regions.countries(); },
   'regions.country': function (a) { return Regions.country(a.id); },
   'regions.get': function (a) { return Regions.get(a.id); },
+  'course.get': function () { return Course.get(); },
+  'course.lesson': function (a) { return Course.lesson(a.id); },
+  'course.challenge': function (a) { return Course.challenge(a.unit); },
+  'course.review': function () { return Course.review(); },
+  'course.finish': function (a) { return Course.finish(a); },
   'study.topic': function (a) { return Study.topic(String(a.topic || '')); },
   'study.counts': function () { return Study.counts(); },
   'seed.regions': function (p) { var r = SeedRegions.run(!(p && p.resume)); r.lookups = Catalog.lookups(); return r; },
