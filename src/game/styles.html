@@ -504,4 +504,17 @@ h3 { font-size: 20px; margin-bottom: 7px; }
   .history-actions { width: 100%; justify-content: flex-end; }
 }
 
+
+/* Busca ao escolher de uma lista (client/combo.html) */
+.combo { position: relative; }
+.combo-in { width: 100%; min-height: 42px; padding: 0 11px; color: var(--ink); background: #fffdfb; border: 1px solid var(--line); border-radius: 9px; font: inherit; font-size: 13px; outline: none; }
+.combo-in:focus { border-color: var(--coral); box-shadow: 0 0 0 3px rgba(224,111,92,.14); }
+.combo-in { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+.combo-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 80; max-height: 260px; overflow-y: auto; background: #fffdfb; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-soft); padding: 4px; }
+.combo-opt { padding: 9px 12px; border-radius: 7px; cursor: pointer; font-size: 13px; color: var(--ink); }
+.combo-opt.hi, .combo-opt:hover { background: var(--paper-muted); }
+.combo-opt.on { font-weight: 800; color: var(--coral-dark); }
+.combo-opt .muted { color: var(--ink-muted); }
+.combo-none { padding: 10px 12px; color: var(--ink-muted); font-style: italic; font-size: 13px; }
+.combo-filter { width: 100%; min-height: 34px; margin-bottom: 6px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fffdfb; color: var(--ink); font: inherit; font-size: 12px; }
 </style>
