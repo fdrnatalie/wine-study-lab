@@ -58,6 +58,13 @@ fs.copyFileSync(path.join(root, 'build', 'geo.js'), path.join(out, 'geo.js'));
 const photosDir = path.join(src, 'photos', 'uvas');
 if (fs.existsSync(photosDir)) {
   fs.mkdirSync(path.join(out, 'uvas'), { recursive: true });
-  fs.readdirSync(photosDir).filter((f) => /\.(jpe?g|png)$/i.test(f)).forEach((f) => fs.copyFileSync(path.join(photosDir, f), path.join(out, 'uvas', f)));
+  // A pasta fica no iCloud (Documentos): arquivos "na nuvem" podem demorar a baixar, então tenta de novo antes de desistir.
+  const copyRetry = (from, to) => {
+    for (let i = 0; ; i++) {
+      try { fs.copyFileSync(from, to); return; }
+      catch (e) { if (i >= 8 || !/ETIMEDOUT|EAGAIN|EBUSY/.test(e.code)) throw e; Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 1500 * (i + 1)); }
+    }
+  };
+  fs.readdirSync(photosDir).filter((f) => /\.(jpe?g|png)$/i.test(f)).forEach((f) => copyRetry(path.join(photosDir, f), path.join(out, 'uvas', f)));
 }
 console.log('build/site: index.html (' + Math.round(app.length / 1024) + ' KB), jogo.html, demo/');

@@ -78,6 +78,20 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:Old_vines_at_Domaine_Sigalas_in_Santorini,_Greece.jpg"
   }
  ],
+ "auxerrois blanc": [
+  {
+   "f": "auxerrois-blanc-1.jpg",
+   "by": "Dr. Joachim Schmid, FG RZ, FA Geisenheim",
+   "lic": "CC BY-SA 3.0",
+   "src": "https://commons.wikimedia.org/wiki/File:Auxerrois07-1.jpg"
+  },
+  {
+   "f": "auxerrois-blanc-2.jpg",
+   "by": "Dr. Joachim Schmid, FG RZ, FA Geisenheim",
+   "lic": "CC BY-SA 3.0",
+   "src": "https://commons.wikimedia.org/wiki/File:Auxerrois07-1_Ausschnitt.jpg"
+  }
+ ],
  "baga": [
   {
    "f": "baga-1.jpg",
@@ -236,6 +250,14 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:Catarratto_-_Amp%C3%A9lographie.jpg"
   }
  ],
+ "cayetana blanca": [
+  {
+   "f": "cayetana-blanca-1.jpg",
+   "by": "Jules Troncy",
+   "lic": "Public domain",
+   "src": "https://commons.wikimedia.org/wiki/File:Cayetana_blanca_Viala_Vermorel.jpg"
+  }
+ ],
  "chardonnay": [
   {
    "f": "chardonnay-1.jpg",
@@ -384,6 +406,14 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:Dornfelder_Weinsberg_20080927.jpg"
   }
  ],
+ "dureza": [
+  {
+   "f": "dureza-1.jpg",
+   "by": "Viala et Vermorel",
+   "lic": "Public domain",
+   "src": "https://commons.wikimedia.org/wiki/File:Dureza_Viala_et_Vermorel.JPG"
+  }
+ ],
  "feteasca alba": [
   {
    "f": "feteasca-alba-1.jpg",
@@ -512,6 +542,28 @@ var GRAPE_PHOTO_SEED = {
    "by": "Paul Barker Hemings",
    "lic": "CC BY-SA 2.0",
    "src": "https://commons.wikimedia.org/wiki/File:Prosecco_vitigni.jpg"
+  }
+ ],
+ "goethe": [
+  {
+   "f": "goethe-1.jpg",
+   "by": "Bush, Firm, Vinegrowers, Bushberg, Mo. (Bush & Son & Meissner)",
+   "lic": "Public domain",
+   "src": "https://commons.wikimedia.org/wiki/File:Illustrated_descriptive_catalogue_of_American_grape-vines_(Page_53)_BHL32492520.jpg"
+  }
+ ],
+ "gouais blanc": [
+  {
+   "f": "gouais-blanc-1.jpg",
+   "by": "VIVC (Vitis International Variety Catalogue)",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:VIVC5374_HEUNISCH_WEISS_Full_plant_3126.jpg"
+  },
+  {
+   "f": "gouais-blanc-2.jpg",
+   "by": "Jules Troncy",
+   "lic": "CC0",
+   "src": "https://commons.wikimedia.org/wiki/File:Gouais_blanc_-_Amp%C3%A9lographie.jpg"
   }
  ],
  "gouveio": [
@@ -672,6 +724,14 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:Lambrusco_(8104905591).jpg"
   }
  ],
+ "listan negro": [
+  {
+   "f": "listan-negro-1.jpg",
+   "by": "Pamela Heywood",
+   "lic": "CC BY 2.0",
+   "src": "https://commons.wikimedia.org/wiki/File:Listan_Negro_grapes_in_Tenerife.jpg"
+  }
+ ],
  "listan prieto": [
   {
    "f": "listan-prieto-1.jpg",
@@ -796,6 +856,14 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:Merlot_(2022).JPG"
   }
  ],
+ "mondeuse blanche": [
+  {
+   "f": "mondeuse-blanche-1.jpg",
+   "by": "Viala et Vermorel",
+   "lic": "Public domain",
+   "src": "https://commons.wikimedia.org/wiki/File:Mondeuse_blanche_Viala_et_Vermorel.jpg"
+  }
+ ],
  "montepulciano": [
   {
    "f": "montepulciano-1.jpg",
@@ -854,6 +922,20 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:Frankenblick_Infotafel_M%C3%BCller-Thurgau-20221016-RM-153216.jpg"
   }
  ],
+ "muscadelle": [
+  {
+   "f": "muscadelle-1.jpg",
+   "by": "Jules Troncy",
+   "lic": "CC0",
+   "src": "https://commons.wikimedia.org/wiki/File:Muscadelle_-_Amp%C3%A9lographie.jpg"
+  },
+  {
+   "f": "muscadelle-2.jpg",
+   "by": "Imprimerie A. Bellier & Cie - Bordeaux",
+   "lic": "CC0",
+   "src": "https://commons.wikimedia.org/wiki/File:Muscadelle_-_Joseph_Daurel.jpg"
+  }
+ ],
  "muscat blanc a petits grains": [
   {
    "f": "muscat-blanc-a-petits-grains-1.jpg",
@@ -880,6 +962,20 @@ var GRAPE_PHOTO_SEED = {
    "by": "Jérôme Loubès",
    "lic": "CC BY-SA 3.0",
    "src": "https://commons.wikimedia.org/wiki/File:Muscat_d%27Alexandrie.JPG"
+  }
+ ],
+ "muscat ottonel": [
+  {
+   "f": "muscat-ottonel-1.jpg",
+   "by": "Geolina163 + 1971markus",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:HBLA_Klosterneuburg_Muskat_Ottonel_1.jpg"
+  },
+  {
+   "f": "muscat-ottonel-2.jpg",
+   "by": "Funke",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:Muskat_Ottonel_Klosterneuburg.jpg"
   }
  ],
  "nebbiolo": [
@@ -1004,6 +1100,20 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:Petit_verdot_-_Amp%C3%A9lographie.jpg"
   }
  ],
+ "petite arvine": [
+  {
+   "f": "petite-arvine-1.jpg",
+   "by": "Herivale walliswine.ch",
+   "lic": "CC BY-SA 3.0",
+   "src": "https://commons.wikimedia.org/wiki/File:Arvine.JPG"
+  },
+  {
+   "f": "petite-arvine-2.jpg",
+   "by": "Alexis Kreyder",
+   "lic": "Public domain",
+   "src": "https://commons.wikimedia.org/wiki/File:Arvine_Viala_Vermorel.jpg"
+  }
+ ],
  "petite sirah": [
   {
    "f": "petite-sirah-1.jpg",
@@ -1104,6 +1214,14 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:Picpoul_blanc_-_vines.jpg"
   }
  ],
+ "plavac mali": [
+  {
+   "f": "plavac-mali-1.jpg",
+   "by": "Pero Kvrzica",
+   "lic": "CC BY 2.0",
+   "src": "https://commons.wikimedia.org/wiki/File:Plavac_mali_N.jpg"
+  }
+ ],
  "poulsard": [
   {
    "f": "poulsard-1.jpg",
@@ -1168,6 +1286,20 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:Riesling_Grapes.jpg"
   }
  ],
+ "riesling italico": [
+  {
+   "f": "riesling-italico-1.jpg",
+   "by": "Geolina163 + 1971markus",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:HBLA_Klosterneuburg_Welschriesling_2.jpg"
+  },
+  {
+   "f": "riesling-italico-2.jpg",
+   "by": "Geolina163 + 1971markus",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:HBLA_Klosterneuburg_Welschriesling_1.jpg"
+  }
+ ],
  "rkatsiteli": [
   {
    "f": "rkatsiteli-1.jpg",
@@ -1194,6 +1326,20 @@ var GRAPE_PHOTO_SEED = {
    "by": "Opera propria",
    "lic": "Public domain",
    "src": "https://commons.wikimedia.org/wiki/File:Pianta_Rossese.JPG"
+  }
+ ],
+ "roter veltliner": [
+  {
+   "f": "roter-veltliner-1.jpg",
+   "by": "Geolina163 + 1971markus",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:HBLA_Klosterneuburg_Roter_Veltliner_1.jpg"
+  },
+  {
+   "f": "roter-veltliner-2.jpg",
+   "by": "Geolina163 + 1971markus",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:HBLA_Klosterneuburg_Roter_Veltliner_3.jpg"
   }
  ],
  "roussanne": [
@@ -1540,6 +1686,20 @@ var GRAPE_PHOTO_SEED = {
    "by": "Àngela Llop",
    "lic": "CC BY-SA 3.0",
    "src": "https://commons.wikimedia.org/wiki/File:Verema_varietat_xarel.lo_2011,_Vilafranca_del_Penedes.jpg"
+  }
+ ],
+ "zierfandler": [
+  {
+   "f": "zierfandler-1.jpg",
+   "by": "Geolina163 + 1971markus",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:HBLA_Klosterneuburg_Zierfandler_3.jpg"
+  },
+  {
+   "f": "zierfandler-2.jpg",
+   "by": "Karl Bauer",
+   "lic": "CC BY 3.0",
+   "src": "https://commons.wikimedia.org/wiki/File:Zierfandler_DSC_4659.JPG"
   }
  ],
  "zweigelt": [
