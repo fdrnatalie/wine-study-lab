@@ -20,6 +20,20 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:Aglianico_Viala_Vermorel.jpg"
   }
  ],
+ "airen": [
+  {
+   "f": "airen-1.jpg",
+   "by": "VIVC (Vitis International Variety Catalogue)",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:VIVC157_AIREN_Cluster_in_the_field_8859.jpg"
+  },
+  {
+   "f": "airen-2.jpg",
+   "by": "BodegasAmbite",
+   "lic": "CC BY-SA 3.0",
+   "src": "https://commons.wikimedia.org/wiki/File:AirenGrapeVine.jpg"
+  }
+ ],
  "albana": [
   {
    "f": "albana-1.jpg",
@@ -126,6 +140,20 @@ var GRAPE_PHOTO_SEED = {
    "by": "Alexis Kreyder",
    "lic": "CC0",
    "src": "https://commons.wikimedia.org/wiki/File:Portugais_bleu_-_Amp%C3%A9lographie.jpg"
+  }
+ ],
+ "blauer wildbacher": [
+  {
+   "f": "blauer-wildbacher-1.jpg",
+   "by": "Vinzenz Kreuzer / Conrad Kreuzer",
+   "lic": "Public domain",
+   "src": "https://commons.wikimedia.org/wiki/File:Kreuzer_Ampelographie_146_Blauer_Wildbacher.jpg"
+  },
+  {
+   "f": "blauer-wildbacher-2.jpg",
+   "by": "Geolina163",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:HBLA_Klosterneuburg_Blauer_Wildbacher_1.jpg"
   }
  ],
  "blaufrankisch": [
@@ -412,6 +440,20 @@ var GRAPE_PHOTO_SEED = {
    "by": "Viala et Vermorel",
    "lic": "Public domain",
    "src": "https://commons.wikimedia.org/wiki/File:Dureza_Viala_et_Vermorel.JPG"
+  }
+ ],
+ "elbling": [
+  {
+   "f": "elbling-1.jpg",
+   "by": "Jules Troncy",
+   "lic": "CC0",
+   "src": "https://commons.wikimedia.org/wiki/File:Elbling_-_Amp%C3%A9lographie.jpg"
+  },
+  {
+   "f": "elbling-2.jpg",
+   "by": "Vinzenz Kreuzer / Conrad Kreuzer",
+   "lic": "Public domain",
+   "src": "https://commons.wikimedia.org/wiki/File:Kreuzer_Ampelographie_143_Wei%C3%9Fer_Elbling.jpg"
   }
  ],
  "feteasca alba": [
@@ -1042,6 +1084,14 @@ var GRAPE_PHOTO_SEED = {
    "src": "https://commons.wikimedia.org/wiki/File:VIVC12819_UVA_DI_TROIA_Cluster_in_the_field_20412.jpg"
   }
  ],
+ "ortega": [
+  {
+   "f": "ortega-1.jpg",
+   "by": "Dr. Joachim Schmid, FG RZ, FA Geisenheim",
+   "lic": "CC BY-SA 3.0",
+   "src": "https://commons.wikimedia.org/wiki/File:Ortega_04c_4.jpg"
+  }
+ ],
  "palomino": [
   {
    "f": "palomino-1.jpg",
@@ -1600,6 +1650,14 @@ var GRAPE_PHOTO_SEED = {
    "by": "Enrique Dans",
    "lic": "CC BY 2.0",
    "src": "https://commons.wikimedia.org/wiki/File:Racimos_de_Treixadura.jpg"
+  }
+ ],
+ "trepat": [
+  {
+   "f": "trepat-1.jpg",
+   "by": "Celler Mas de la Creu",
+   "lic": "CC BY-SA 4.0",
+   "src": "https://commons.wikimedia.org/wiki/File:Ra%C3%AFm_de_Trepat_en_verolla,_Conca_de_Barber%C3%A0.jpg"
   }
  ],
  "trincadeira": [

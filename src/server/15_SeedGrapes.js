@@ -23,6 +23,7 @@
  * v3 (06/10/2026): fichas completas das uvas que só tinham o nome (vindas dos packs de regiões), começando pelas
  *   mais citadas: origem, história, onde se planta, viticultura, aromas e perfil (Wikipedia + Wine Folly; quando
  *   não há artigo próprio, a Wikipedia em outra língua ou o artigo do vinho do país, com o link em `wiki`).
+ * v11 (20/10/2026): perfis sensoriais para 18 uvas que tinham ficha sem perfil, só onde Wine Folly ou Wikipedia dizem explicitamente.
  * v10 (08/10/2026): lote 8, mais 21 uvas (Sardenha, Campânia, Douro e Minho, Madeira, Romênia, EUA…; sem ficha por falta de fonte: Granaccia, Batoca, Padeiro, Listrão).
  * v9 (08/10/2026): lote 7, mais 37 uvas (Suíça, Alemanha, Hungria, Rioja, Grécia, Argentina…; sem ficha por falta de fonte: Rumeni Plavec, Granaccia, Tintilla, Vijariego Negro, Maturana Tinta, Caíño Tinto).
  * v8 (07/10/2026): lote 6, mais 39 uvas (sul da Itália, Portugal, Romênia, Turquia…; sem ficha por falta de fonte: Egiodola, Zelen, Pinela, Lado, Malvasía Castellana, Mazrona).
@@ -923,13 +924,15 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       main_countries: 'Alemanha, Hungria, Áustria, República Tcheca, Eslováquia, Eslovênia, Luxemburgo, Itália, Inglaterra, Nova Zelândia',
       description: 'Vinhos suaves, de acidez baixa, mas frutados; para beber jovens. DNA: Riesling × Madeleine Royale.',
       profile: P('', '', '', 'baixa', ''), aromas_wf: [], aromas_wiki: [] },
-    { name: 'Muscat of Alexandria', color: 'branca', wiki: 'Muscat_of_Alexandria', wf: '',
+    { name: 'Muscat of Alexandria', color: 'branca', wiki: 'Muscat_of_Alexandria', wf: 'muscat-of-alexandria',
       origin: 'Norte da África/Egito; uma das videiras mais antigas ainda existentes.',
       synonyms: ['Zibibbo', 'Moscatel de Alejandría', "Muscat d'Alexandrie", 'Gordo Blanco'],
       main_countries: 'Grécia, Itália, Espanha, Austrália, Bolívia, África do Sul', main_regions: 'Lemnos; Pantelleria (Zibibbo), Sicília, Calábria; Málaga, Alicante, Valência, Canárias',
       climate: 'Prospera no calor; amadurece em agosto (hemisfério norte).', disease_sensitivity: 'Oídio.', vigor: 'Muito produtiva.',
-      description: 'Sabor marcante de uva; tradicionalmente vinhos doces; também usada em jerez, porto, aguardentes, Moscato, uva de mesa e passas. Mãe/pai do Torrontés Riojano.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Sabor marcante de uva; tradicionalmente vinhos doces; também usada em jerez, porto, aguardentes, Moscato, uva de mesa e passas. Mãe/pai do Torrontés Riojano. Perfil típico segundo a Wine Folly: doce, corpo médio, sem tanino, acidez média, menos de 10% de álcool; serviço 12–15 °C, guarda 3–5 anos.',
+      profile: P('doce', 'medio', 'baixo', 'media', 'baixo'),
+      flavors: 'tangerina, mel, lichia, casca de pêssego, flores brancas',
+      aromas_wf: ['Tangerina', 'Mel', 'Lichia', 'Pêssego'], aromas_wiki: [] },
     { name: 'Trousseau', color: 'tinta', wiki: 'Trousseau_(grape)', wf: '',
       origin: 'Jura (leste da França).',
       synonyms: ['Bastardo', 'Merenzao', 'Cabernet Gros', 'Trousseau Noir'],
@@ -1068,8 +1071,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       synonyms: ['Viura', 'Macabeu', 'Maccabeo', 'Alcañón'],
       main_countries: 'Espanha, França, Israel',
       main_regions: 'Rioja (principal uva do Rioja branco), região da Cava ao sul de Barcelona, Languedoc-Roussillon; 2ª branca mais plantada da Espanha (~45 mil ha em 2015)',
-      description: 'Brancos jovens de acidez moderada, para beber cedo ou para cortes (inclusive com tintos). Nos Pireneus dá brancos salinos e texturizados. No Rioja substituiu Malvasia e Garnacha Blanca depois da filoxera por resistir melhor à oxidação; há Reservas e Gran Reservas de guarda muito longa.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: ['Salino'] },
+      description: 'Brancos jovens de acidez moderada, para beber cedo ou para cortes (inclusive com tintos). Nos Pireneus dá brancos salinos e texturizados. No Rioja substituiu Malvasia e Garnacha Blanca depois da filoxera por resistir melhor à oxidação; há Reservas e Gran Reservas de guarda muito longa. Segundo a Wikipedia: vinhos brancos levemente ácidos e jovens.',
+      profile: P('', '', '', 'media-', ''), aromas_wf: [], aromas_wiki: ['Salino'] },
 
     { name: 'Arinto', color: 'branca', wiki: 'Arinto', wf: 'arinto',
       origin: 'Portugal (uva indígena).',
@@ -1088,8 +1091,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       skin_thickness: 'Grossa', berry_size: 'Pequena, azul-escura', bunch_size: 'Médio, moderadamente compacto',
       disease_sensitivity: 'Naturalmente resistente a geada, seca e doenças.',
       climate: 'Continental de altitude: invernos frios, verões quentes e secos, grande amplitude térmica.', soils: 'Vulcânicos, bem drenados; argilo-calcários no sul de Vayots Dzor.',
-      description: 'A tinta mais plantada e importante da Armênia; chamava-se Sev Malahi até 1947. Vinhos rubi claros a médios, de taninos finos e sedosos, acidez média a alta e final longo, às vezes levemente amargo; também meio-doces, espumantes e brandy. Envelhecida em inox, carvalho ou ânforas de barro (karas).',
-      profile: P('', '', '', '', ''),
+      description: 'A tinta mais plantada e importante da Armênia; chamava-se Sev Malahi até 1947. Vinhos rubi claros a médios, de taninos finos e sedosos, acidez média a alta e final longo, às vezes levemente amargo; também meio-doces, espumantes e brandy. Envelhecida em inox, carvalho ou ânforas de barro (karas). Segundo a Wikipedia: tintos secos encorpados (há também estilos meio-doces), taninos finos e sedosos, acidez média a alta.',
+      profile: P('seco', 'encorpado', '', 'media+', ''),
       aromas_wf: [], aromas_wiki: ['Cereja vermelha', 'Romã', 'Violeta', 'Pimenta-do-reino', 'Amora', 'Cassis', 'Rosa'] },
 
     { name: 'Alicante Bouschet', color: 'tinta', wiki: 'Alicante_Bouschet', wf: 'alicante-bouschet',
@@ -1334,8 +1337,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       synonyms: ['Hondarrabi Zuri', 'Ondarrabi Zuri'],
       main_countries: 'Espanha', main_regions: 'Getariako Txakolina, Bizkaiko Txakolina, Txakoli de Álava',
       vigor: 'Pouco produtiva (raramente passa de 60 hl/ha).', bunch_size: 'Pequenos e compactos; bagas pequenas, redondas e douradas',
-      description: 'A uva do Txakoli branco. Vinho amarelo-pálido com aromas de cítricos, fruta madura, ervas e flores. No século XIX, Wilhelm von Humboldt comparou seus vinhos aos melhores da Alsácia e do Reno. Às vezes em corte com a tinta Hondarribi Beltza. Nos registros do Txakoli, o nome também cobre Courbu Blanc e Crouchen.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: ['Limão'] },
+      description: 'A uva do Txakoli branco. Vinho amarelo-pálido com aromas de cítricos, fruta madura, ervas e flores. No século XIX, Wilhelm von Humboldt comparou seus vinhos aos melhores da Alsácia e do Reno. Às vezes em corte com a tinta Hondarribi Beltza. Nos registros do Txakoli, o nome também cobre Courbu Blanc e Crouchen. Segundo a Wikipedia: acidez marcante e teor alcoólico médio a moderado.',
+      profile: P('', '', '', '', 'medio'), aromas_wf: [], aromas_wiki: ['Limão'] },
 
     { name: 'Airén', color: 'branca', wiki: 'Airén', wf: 'airen',
       origin: 'Espanha; citada desde o século XV como Lairén, primeiro registro como Airén em 1615.',
@@ -1778,8 +1781,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       synonyms: ['Mudzhuretuli', 'Keduretuli'],
       main_countries: 'Geórgia', main_regions: 'Racha-Lechkhumi (Khvanchkara)',
       bunch_size: 'Longos, de bagas roxo-escuras',
-      description: 'Desde 1907 em corte com a Alexandrouli no Khvanchkara; também rosés varietais e cortes meio-secos com aroma de romã.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: ['Romã'] },
+      description: 'Desde 1907 em corte com a Alexandrouli no Khvanchkara; também rosés varietais e cortes meio-secos com aroma de romã. Segundo a Wikipedia: na Geórgia faz vinho de corpo médio, meio-seco.',
+      profile: P('meio_seco', 'medio', '', '', ''), aromas_wf: [], aromas_wiki: ['Romã'] },
 
     { name: 'Agiorgitiko', color: 'tinta', wiki: 'Agiorgitiko', wf: 'agiorgitiko',
       origin: 'Grécia, provavelmente Argólida e Coríntia (Peloponeso); as histórias de cultivo na Grécia antiga não têm comprovação.',
@@ -1825,7 +1828,7 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       main_countries: 'Grécia', main_regions: 'Lemnos, Calcídica, Trácia',
       ripening: 'Tardia.', disease_sensitivity: 'Muito resistente; aguenta secas fortes.',
       description: 'Para Oz Clarke, "uma das tintas mais importantes da Grécia". Varietal encorpado, de taninos e acidez moderados e aroma mineral; em corte dá cor, peso, acidez e um aroma herbáceo que lembra folha de louro. Mosto rico em açúcar, álcool marcante; colhida tarde fica mais herbácea.',
-      profile: P('', 'encorpado', 'medio', 'media', ''), aromas_wf: [], aromas_wiki: ['Louro'] },
+      profile: P('', 'encorpado', 'medio', 'media', 'alto'), aromas_wf: [], aromas_wiki: ['Louro'] },
 
     { name: 'Debina', color: 'branca', wiki: 'Debina_(grape)', wf: '',
       origin: 'Épiro (Grécia) e sul da Albânia.',
@@ -1863,8 +1866,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       origin: 'Hungria.',
       synonyms: [],
       main_countries: 'Hungria', main_regions: 'Mór',
-      description: 'Apreciada pelo nariz muito frutado e pelo frescor vivo e encorpado; também faz vinhos doces. Era uma das preferidas da corte dos Habsburgo; quase todo consumido na própria Hungria.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Apreciada pelo nariz muito frutado e pelo frescor vivo e encorpado; também faz vinhos doces. Era uma das preferidas da corte dos Habsburgo; quase todo consumido na própria Hungria. Segundo a Wikipedia: nariz muito frutado e frescor crocante, de corpo cheio.',
+      profile: P('', 'encorpado', '', '', ''), aromas_wf: [], aromas_wiki: [] },
 
     { name: 'Prié Blanc', color: 'branca', wiki: 'Prié_blanc', wf: '',
       origin: 'Itália (Valle d\'Aosta), documentada desde 1691 em Saint-Pierre; o DNA sugere ligação com as espanholas Lairén e Albillo. Mãe/pai da Mayolet e da Primetta.',
@@ -1916,12 +1919,14 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       description: 'Vinhos de cor profunda; possível parentesco com a Greco di Tufo. Faz secos, amabile e passito.',
       profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
 
-    { name: 'Pignoletto', color: 'branca', wiki: 'Grechetto', wf: '',
+    { name: 'Pignoletto', color: 'branca', wiki: 'Grechetto', wf: 'grechetto',
       origin: 'Itália (Emília-Romanha); listada como sinônimo de Grechetto.',
       synonyms: ['Grechetto'],
       main_countries: 'Itália', main_regions: 'Colli Bolognesi (Pignoletto DOC/DOCG)',
-      description: 'Na Emília é a uva do Pignoletto, muitas vezes frisante ou espumante. A Wikipedia a lista entre os sinônimos da Grechetto: veja também essa ficha.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Na Emília é a uva do Pignoletto, muitas vezes frisante ou espumante. A Wikipedia a lista entre os sinônimos da Grechetto: veja também essa ficha. Perfil da Wine Folly para a Grechetto (Pignoletto é listada como sinônimo): seco, corpo médio-leve, sem tanino, acidez média-alta, 11,5–13,5% de álcool.',
+      profile: P('seco', 'medio-', 'baixo', 'media+', 'medio'),
+      flavors: 'pêssego branco, melão, morango, flores do campo, concha',
+      aromas_wf: ['Pêssego', 'Melão', 'Morango', 'Salino'], aromas_wiki: [] },
 
     { name: 'Vernaccia', color: 'branca', wiki: 'Vernaccia', wf: '',
       origin: 'Itália (Toscana), antiga; origem discutida (Europa Oriental, Grécia ou Roma). Na Idade Média, o "Vernage" era popular em Londres.',
@@ -1934,8 +1939,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       origin: 'Itália (Lácio), provavelmente nativa; talvez usada já pelos romanos.',
       synonyms: ['Cesanese Comune', 'Cesanese di Affile'],
       main_countries: 'Itália', main_regions: 'Frosinone: Cesanese del Piglio, di Affile e di Olevano Romano; menos de 1.000 ha em 2000',
-      description: 'Tradicionalmente tintos doces, de frisantes a espumantes; desde o fim do século XX, sobretudo tintos secos tranquilos (mínimo de 90% da uva). A Cesanese di Affile é uma subvariedade própria da comuna.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Tradicionalmente tintos doces, de frisantes a espumantes; desde o fim do século XX, sobretudo tintos secos tranquilos (mínimo de 90% da uva). A Cesanese di Affile é uma subvariedade própria da comuna. Segundo a Wikipedia, os vinhos são descritos como leves e macios.',
+      profile: P('', 'leve', '', '', ''), aromas_wf: [], aromas_wiki: [] },
 
     { name: 'Tintilia', color: 'tinta', wiki: 'Tintilia', wf: '',
       origin: 'Itália (Molise); o nome deve vir de "tinta".',
@@ -2224,8 +2229,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       synonyms: [],
       main_countries: 'Alemanha, Inglaterra', main_regions: 'Francônia, Rheinhessen; Inglaterra',
       ripening: 'Precoce, como a Müller-Thurgau.', vigor: 'Muito produtiva; pouco exigente de terreno.',
-      description: 'Atinge açúcares altos onde o Riesling não amadurece com segurança. Vinhos aromáticos; muito plantada na Inglaterra.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Atinge açúcares altos onde o Riesling não amadurece com segurança. Vinhos aromáticos; muito plantada na Inglaterra. Segundo a Wikipedia: baixa acidez.',
+      profile: P('', '', '', 'baixa', ''), aromas_wf: [], aromas_wiki: [] },
 
     { name: 'Sousão', color: 'tinta', wiki: 'Sezão', wf: '',
       origin: 'Portugal (Minho).',
@@ -2347,12 +2352,14 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       description: 'A moscatel aromática do Egeu turco, replantada na península de Urla desde os anos 2000.',
       profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
 
-    { name: 'Gouveio', color: 'branca', wiki: 'Godello', wf: '',
+    { name: 'Gouveio', color: 'branca', wiki: 'Godello', wf: 'godello',
       origin: 'Nome português da Godello.',
       synonyms: ['Godello'],
       main_countries: 'Portugal', main_regions: 'Douro, Trás-os-Montes',
-      description: 'É a mesma uva que a Godello galega: veja aquela ficha. No Douro às vezes é confundida com a Verdelho.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'É a mesma uva que a Godello galega: veja aquela ficha. No Douro às vezes é confundida com a Verdelho. O Gouveio do norte de Portugal é considerado a mesma uva da Godello (Wikipedia): o perfil abaixo é o da Godello, pela Wine Folly.',
+      profile: P('seco', 'medio', 'baixo', 'media..alta', ''),
+      flavors: 'grapefruit, raspa de limão, marmelo, cascalho',
+      aromas_wf: ['Grapefruit', 'Limão', 'Marmelo', 'Pedra molhada', 'Salino', 'Maçã verde', 'Pera'], aromas_wiki: [] },
 
     { name: 'Auxerrois', color: 'branca', wiki: 'Auxerrois_blanc', wf: '',
       origin: 'Nome curto da Auxerrois Blanc.',
@@ -2490,8 +2497,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       synonyms: [],
       main_countries: 'Geórgia', main_regions: 'Kakheti (margem direita do Alazani), Kartli',
       berry_size: 'Média, verde-amarelada, de casca fina', bunch_size: 'Médios, cônicos, alados e soltos',
-      description: 'Muito açúcar; vinhos equilibrados e delicados, de mesa e de sobremesa, pelo método europeu ou em qvevri.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Muito açúcar; vinhos equilibrados e delicados, de mesa e de sobremesa, pelo método europeu ou em qvevri. Segundo a Wikipedia: álcool moderado e acidez suave.',
+      profile: P('', '', '', '', 'medio'), aromas_wf: [], aromas_wiki: [] },
 
     { name: 'Tsitska', color: 'branca', wiki: 'Georgian_wine', wf: '',
       origin: 'Geórgia ocidental (Imereti).',
@@ -2623,8 +2630,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       synonyms: [],
       main_countries: 'Itália', main_regions: 'Colli Orientali del Friuli',
       bunch_size: 'Densos como uma pinha',
-      description: 'Tinta de destaque nos Colli Orientali del Friuli.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Tinta de destaque nos Colli Orientali del Friuli. Segundo a Wikipedia: vinho de cor profunda e encorpado, que se dá bem com tempo em carvalho.',
+      profile: P('', 'encorpado', '', '', ''), aromas_wf: [], aromas_wiki: [] },
 
     { name: 'Ortrugo', color: 'branca', wiki: 'Ortrugo', wf: '',
       origin: 'Itália (colinas de Piacenza, Emília-Romanha).',
@@ -2652,8 +2659,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       synonyms: ['Lacrima di Morro d\'Alba'],
       main_countries: 'Itália', main_regions: 'Lacrima di Morro d\'Alba DOC (Ancona)',
       skin_thickness: 'Grossa, mas frágil (racha)',
-      description: 'Tinta rara e semi-aromática, notoriamente difícil de cultivar; quase só em Morro d\'Alba.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Tinta rara e semi-aromática, notoriamente difícil de cultivar; quase só em Morro d\'Alba. Segundo a Wikipedia: tipicamente baixo em tanino, melhor bebido jovem.',
+      profile: P('', '', 'baixo', '', ''), aromas_wf: [], aromas_wiki: [] },
 
     { name: 'Bombino Bianco', color: 'branca', wiki: 'Bombino_bianco', wf: '',
       origin: 'Itália (costa adriática). "Bombino" = pequena bomba, pela forma arredondada do cacho.',
@@ -2971,8 +2978,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       origin: 'França (sul).',
       synonyms: ['Clairette Blanche'],
       main_countries: 'França', main_regions: 'Provence, Rhône e Languedoc — ~3.000 ha no fim dos anos 1990, em queda',
-      description: 'Muito usada em vermute. Com a Piquepoul formava o antigo "Picardan".',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Muito usada em vermute. Com a Piquepoul formava o antigo "Picardan". Segundo a Wikipedia: dá vinho de álcool alto e acidez baixa, às vezes "flácido" e que oxida com facilidade.',
+      profile: P('', '', '', 'baixa', 'alto'), aromas_wf: [], aromas_wiki: [] },
 
     { name: 'Seyval Blanc', color: 'branca', wiki: 'Seyval_blanc', wf: '',
       origin: 'França: híbrida (Seyve-Villard nº 5276) — complexa, com Vitis vinifera e americanas.',
@@ -3037,8 +3044,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       origin: 'Valle d\'Aosta (Itália), onde se supunha equivocadamente que tivesse origem — por isso o nome "Cornalin d\'Aoste"; hoje quase extinta lá.',
       synonyms: ['Cornalin d\'Aoste'],
       main_countries: 'Suíça', main_regions: 'Valais (128 ha em 2009)',
-      description: 'No Valais chama-se Humagne Rouge. Não confundir com a Cornalin (Rouge du Pays) do Valais.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'No Valais chama-se Humagne Rouge. Não confundir com a Cornalin (Rouge du Pays) do Valais. Segundo a Wikipedia: vinhos rústicos e ricos em tanino.',
+      profile: P('', '', 'alto', '', ''), aromas_wf: [], aromas_wiki: [] },
 
     { name: 'Rèze', color: 'branca', wiki: 'Rèze', wf: '',
       origin: 'Suíça (Valais).',
@@ -3072,8 +3079,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       origin: 'Alemanha, 1927: Peter Morio (Geilweilerhof, Pfalz) cruzou Blauer Portugieser e Pinot Noir; o trabalho foi continuado por Bernhard Husfeld nos anos 1950.',
       synonyms: [],
       main_countries: 'Alemanha', main_regions: 'Pfalz',
-      description: 'Uva tinta alemã de cruzamento.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Uva tinta alemã de cruzamento. Segundo a Wikipedia: vinhos de cor escura, ricos em tanino e encorpados.',
+      profile: P('', 'encorpado', 'alto', '', ''), aromas_wf: [], aromas_wiki: [] },
 
     { name: 'Tempranillo Blanco', color: 'branca', wiki: 'Tempranillo_blanco', wf: '',
       origin: 'Espanha (Rioja): mutação da Tempranillo tinta, descoberta em 1988 por um viticultor perto de Murillo de Río Leza; liberada oficialmente em 2007.',
@@ -3117,8 +3124,8 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       synonyms: [],
       main_countries: 'França, Alemanha, Reino Unido, Quirguistão, EUA', main_regions: 'Loire; Alemanha; Washington; Reino Unido e Irlanda (muito usada em 2026)',
       ripening: 'Precoce; vai bem em climas frescos.',
-      description: 'Branca de maturação precoce, adaptada a clima fresco.',
-      profile: P('', '', '', '', ''), aromas_wf: [], aromas_wiki: [] },
+      description: 'Branca de maturação precoce, adaptada a clima fresco. Segundo a Wikipedia: vinho fresco, ácido e seco.',
+      profile: P('seco', '', '', 'alta', ''), aromas_wf: [], aromas_wiki: [] },
 
     { name: 'Ortega', color: 'branca', wiki: 'Ortega_(grape)', wf: '',
       origin: 'Alemanha, 1948: Hans Breider (Würzburg) cruzou Müller-Thurgau e Siegerrebe; liberada em 1981. O nome homenageia o filósofo José Ortega y Gasset.',
@@ -3417,5 +3424,5 @@ var GRAPE_ENCYCLOPEDIA = (function () {
   grapes = grapes.concat(GRAPES_V10);
   relations = relations.concat(RELATIONS_V10);
 
-  return { version: 10, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
+  return { version: 11, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
 })();
