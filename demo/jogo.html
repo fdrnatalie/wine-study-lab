@@ -2100,9 +2100,69 @@ var Seeds = (function () {
   return { run: run };
 })();
 
+// ---- 14_Features.js
+/**
+ * Funcionalidades liberadas por público.
+ *
+ * Cada funcionalidade em construção começa liberada só para a administradora ('admin').
+ * Quando estiver pronta, a administradora a libera para todos ('todos') em Configurações
+ * (setting "feature_<id>"). A regra vale no servidor: esconder o menu não basta.
+ */
+var Features = (function () {
+  var DEFS = [
+    { id: 'curso', label: 'Curso (trilha de lições)' },
+    { id: 'historia', label: 'História do vinho' },
+    { id: 'producao', label: 'Produção de vinho' },
+    { id: 'harmonizacao', label: 'Harmonizações' },
+    { id: 'cartoes', label: 'Cartões de estudo nas páginas de país e região' }
+  ];
+  var BY_TOPIC = { historia: 'historia', producao: 'producao', harmonizacao: 'harmonizacao', pais: 'cartoes', regiao: 'cartoes' };
+
+  function known_(id) { return DEFS.some(function (d) { return d.id === id; }); }
+
+  function audience(id) {
+    return Settings.get('feature_' + id, 'admin') === 'todos' ? 'todos' : 'admin';
+  }
+
+  function allowed(id) {
+    if (!known_(id)) return false;
+    return Ctx.isAdmin() || audience(id) === 'todos';
+  }
+
+  function require(id) {
+    if (!allowed(id)) throw new Error('Esta área ainda não está disponível.');
+  }
+
+  /** Cartões de um tema (pais, regiao, historia, producao, harmonizacao) podem ser vistos? */
+  function allowedTopic(topic) { return allowed(BY_TOPIC[topic] || 'cartoes'); }
+
+  /** {id: true|false} para o usuário atual. */
+  function mine() {
+    var o = {};
+    DEFS.forEach(function (d) { o[d.id] = allowed(d.id); });
+    return o;
+  }
+
+  /** Para a tela de Configurações (administradora). */
+  function list() {
+    Ctx.requireAdmin();
+    return DEFS.map(function (d) { return { id: d.id, label: d.label, audience: audience(d.id) }; });
+  }
+
+  function set(id, value) {
+    Ctx.requireAdmin();
+    if (!known_(id)) throw new Error('Funcionalidade desconhecida.');
+    Validate.oneOf(value, ['admin', 'todos'], 'público');
+    Settings.set('feature_' + id, value);
+    return list();
+  }
+
+  return { allowed: allowed, require: require, allowedTopic: allowedTopic, mine: mine, list: list, set: set };
+})();
+
 // ---- 14_SeedManifest.js
 /** Gerado por tools/build-seeds.js — não editar. Versões dos dados empacotados em src/seed/. */
-var SEED_MANIFEST = {"grapes":{"version":11,"count":372},"packs":[{"code":"AM","version":1,"country":"Armênia","regions":6},{"code":"AR","version":1,"country":"Argentina","regions":4},{"code":"AT","version":1,"country":"Áustria","regions":4},{"code":"AU","version":1,"country":"Austrália","regions":5},{"code":"BG","version":1,"country":"Bulgária","regions":5},{"code":"BR","version":2,"country":"Brasil","regions":6},{"code":"CA","version":1,"country":"Canadá","regions":4},{"code":"CH","version":1,"country":"Suíça","regions":6},{"code":"CL","version":1,"country":"Chile","regions":4},{"code":"CN","version":1,"country":"China","regions":4},{"code":"DE","version":1,"country":"Alemanha","regions":13},{"code":"ES","version":1,"country":"Espanha","regions":15},{"code":"FR","version":1,"country":"França","regions":13},{"code":"GB","version":1,"country":"Inglaterra","regions":2},{"code":"GE","version":1,"country":"Geórgia","regions":5},{"code":"GR","version":1,"country":"Grécia","regions":8},{"code":"HR","version":1,"country":"Croácia","regions":4},{"code":"HU","version":1,"country":"Hungria","regions":6},{"code":"IL","version":1,"country":"Israel","regions":5},{"code":"IT","version":2,"country":"Itália","regions":20},{"code":"JP","version":1,"country":"Japão","regions":4},{"code":"LB","version":1,"country":"Líbano","regions":3},{"code":"MD","version":1,"country":"Moldávia","regions":3},{"code":"MX","version":1,"country":"México","regions":5},{"code":"NZ","version":1,"country":"Nova Zelândia","regions":8},{"code":"PT","version":1,"country":"Portugal","regions":14},{"code":"RO","version":1,"country":"Romênia","regions":8},{"code":"SI","version":1,"country":"Eslovênia","regions":3},{"code":"TR","version":1,"country":"Turquia","regions":5},{"code":"US","version":1,"country":"Estados Unidos","regions":4},{"code":"UY","version":1,"country":"Uruguai","regions":4},{"code":"ZA","version":1,"country":"África do Sul","regions":2}],"geo_keys":["AM:Aragatsotn","AM:Ararat","AM:Armavir","AM:Kotayk","AM:Tavush","AM:Vayots Dzor","AR:Mendoza","AR:Noroeste","AR:Patagônia","AR:San Juan","AT:Burgenland","AT:Niederösterreich","AT:Steiermark","AT:Wien","AU:New South Wales","AU:South Australia","AU:Tasmania","AU:Victoria","AU:Western Australia","Abruzzo","BG:Danúbio","BG:Mar Negro","BG:Struma","BG:Trácia","BR:Minas Gerais","BR:Paraná","BR:Rio Grande do Sul","BR:Santa Catarina","BR:São Francisco","BR:São Paulo","Basilicata","CA:British Columbia","CA:Nova Scotia","CA:Ontario","CA:Quebec","CH:Deutschschweiz","CH:Genève","CH:Ticino","CH:Três Lagos","CH:Valais","CH:Vaud","CL:Aconcágua","CL:Central","CL:Coquimbo","CL:Sul","CN:Hebei","CN:Ningxia","CN:Shandong","CN:Xinjiang","Calabria","Campania","DE:Ahr","DE:Baden","DE:Franken","DE:Hessische Bergstraße","DE:Mittelrhein","DE:Mosel","DE:Nahe","DE:Pfalz","DE:Rheingau","DE:Rheinhessen","DE:Saale-Unstrut","DE:Sachsen","DE:Württemberg","ES:Andalucia","ES:Aragon","ES:Baleares","ES:Canarias","ES:Castilla-La Mancha","ES:Castilla-Leon","ES:Cataluña","ES:Extremadura","ES:Galicia","ES:La Rioja","ES:Madrid","ES:Murcia","ES:Navarra","ES:Pais Vasco","ES:Valencia","Emilia-Romagna","FR:Alsácia","FR:Beaujolais","FR:Bordeaux","FR:Borgonha","FR:Champagne","FR:Córsega","FR:Jura","FR:Languedoc-Roussillon","FR:Provença","FR:Savoia","FR:Sudoeste","FR:Vale do Loire","FR:Vale do Rhône","Friuli-Venezia Giulia","GB:England","GB:Wales","GE:Imereti","GE:Kakheti","GE:Kartli","GE:Racha","GE:Samegrelo","GR:Central","GR:Creta","GR:Egeu","GR:Epiro","GR:Jônicas","GR:Macedônia","GR:Peloponeso","GR:Tessália","HR:Dalmácia","HR:Eslavônia","HR:Ocidental","HR:Ístria","HU:Balaton","HU:Duna","HU:Eger","HU:Pannon","HU:Tokaj","HU:Észak-Dunántúl","IL:Galileia","IL:Judeia","IL:Negev","IL:Samson","IL:Sharon","JP:Hokkaido","JP:Nagano","JP:Yamagata","JP:Yamanashi","LB:Bekaa","LB:Montanha","LB:Sul","Lazio","Liguria","Lombardia","MD:Codru","MD:Valul lui Traian","MD:Ștefan Vodă","MX:Baja California","MX:Centro","MX:Chihuahua","MX:Coahuila","MX:Sonora","Marche","Molise","NZ:Auckland","NZ:Canterbury","NZ:Gisborne","NZ:Hawke's Bay","NZ:Marlborough","NZ:Nelson","NZ:Otago","NZ:Wairarapa","PT:Alentejo","PT:Algarve","PT:Bairrada","PT:Beira Interior","PT:Douro","PT:Dão","PT:Lisboa","PT:Minho","PT:Setúbal","PT:Tejo","PT:Trás-os-Montes","Piemonte","Puglia","RO:Banat","RO:Crișana","RO:Danúbio","RO:Dobruja","RO:Moldávia","RO:Muntênia","RO:Transilvânia","SI:Podravje","SI:Posavje","SI:Primorska","Sardegna","Sicilia","TR:Anatólia Central","TR:Egeu","TR:Leste","TR:Outras","TR:Trácia","Toscana","Trentino-Alto Adige","US:California","US:New York","US:Oregon","US:Washington","UY:Norte","UY:Sudeste","UY:Sudoeste","UY:Sul","Umbria","Valle d'Aosta","Veneto","ZA:Northern Cape","ZA:Western Cape"],"study":[{"code":"CL","version":2,"cards":26},{"code":"AR","version":2,"cards":26},{"code":"BR","version":2,"cards":41},{"code":"UY","version":2,"cards":16},{"code":"DE","version":2,"cards":14},{"code":"AT","version":2,"cards":13},{"code":"GR","version":2,"cards":23},{"code":"LB","version":2,"cards":11},{"code":"SI","version":2,"cards":10},{"code":"FR1","version":2,"cards":55},{"code":"FR2","version":2,"cards":65},{"code":"FR3","version":2,"cards":58},{"code":"HAR","version":2,"cards":13},{"code":"HIS","version":3,"cards":8},{"code":"PT","version":2,"cards":58},{"code":"ES","version":2,"cards":48},{"code":"IT","version":4,"cards":71},{"code":"US","version":2,"cards":25},{"code":"AU","version":2,"cards":15},{"code":"NZ","version":2,"cards":15},{"code":"ZA","version":2,"cards":21},{"code":"PRO","version":2,"cards":144}]};
+var SEED_MANIFEST = {"grapes":{"version":12,"count":372},"packs":[{"code":"AM","version":1,"country":"Armênia","regions":6},{"code":"AR","version":1,"country":"Argentina","regions":4},{"code":"AT","version":1,"country":"Áustria","regions":4},{"code":"AU","version":1,"country":"Austrália","regions":5},{"code":"BG","version":1,"country":"Bulgária","regions":5},{"code":"BR","version":2,"country":"Brasil","regions":6},{"code":"CA","version":1,"country":"Canadá","regions":4},{"code":"CH","version":1,"country":"Suíça","regions":6},{"code":"CL","version":1,"country":"Chile","regions":4},{"code":"CN","version":1,"country":"China","regions":4},{"code":"DE","version":1,"country":"Alemanha","regions":13},{"code":"ES","version":1,"country":"Espanha","regions":15},{"code":"FR","version":1,"country":"França","regions":13},{"code":"GB","version":1,"country":"Inglaterra","regions":2},{"code":"GE","version":1,"country":"Geórgia","regions":5},{"code":"GR","version":1,"country":"Grécia","regions":8},{"code":"HR","version":1,"country":"Croácia","regions":4},{"code":"HU","version":1,"country":"Hungria","regions":6},{"code":"IL","version":1,"country":"Israel","regions":5},{"code":"IT","version":2,"country":"Itália","regions":20},{"code":"JP","version":1,"country":"Japão","regions":4},{"code":"LB","version":1,"country":"Líbano","regions":3},{"code":"MD","version":1,"country":"Moldávia","regions":3},{"code":"MX","version":1,"country":"México","regions":5},{"code":"NZ","version":1,"country":"Nova Zelândia","regions":8},{"code":"PT","version":1,"country":"Portugal","regions":14},{"code":"RO","version":1,"country":"Romênia","regions":8},{"code":"SI","version":1,"country":"Eslovênia","regions":3},{"code":"TR","version":1,"country":"Turquia","regions":5},{"code":"US","version":1,"country":"Estados Unidos","regions":4},{"code":"UY","version":1,"country":"Uruguai","regions":4},{"code":"ZA","version":1,"country":"África do Sul","regions":2}],"geo_keys":["AM:Aragatsotn","AM:Ararat","AM:Armavir","AM:Kotayk","AM:Tavush","AM:Vayots Dzor","AR:Mendoza","AR:Noroeste","AR:Patagônia","AR:San Juan","AT:Burgenland","AT:Niederösterreich","AT:Steiermark","AT:Wien","AU:New South Wales","AU:South Australia","AU:Tasmania","AU:Victoria","AU:Western Australia","Abruzzo","BG:Danúbio","BG:Mar Negro","BG:Struma","BG:Trácia","BR:Minas Gerais","BR:Paraná","BR:Rio Grande do Sul","BR:Santa Catarina","BR:São Francisco","BR:São Paulo","Basilicata","CA:British Columbia","CA:Nova Scotia","CA:Ontario","CA:Quebec","CH:Deutschschweiz","CH:Genève","CH:Ticino","CH:Três Lagos","CH:Valais","CH:Vaud","CL:Aconcágua","CL:Central","CL:Coquimbo","CL:Sul","CN:Hebei","CN:Ningxia","CN:Shandong","CN:Xinjiang","Calabria","Campania","DE:Ahr","DE:Baden","DE:Franken","DE:Hessische Bergstraße","DE:Mittelrhein","DE:Mosel","DE:Nahe","DE:Pfalz","DE:Rheingau","DE:Rheinhessen","DE:Saale-Unstrut","DE:Sachsen","DE:Württemberg","ES:Andalucia","ES:Aragon","ES:Baleares","ES:Canarias","ES:Castilla-La Mancha","ES:Castilla-Leon","ES:Cataluña","ES:Extremadura","ES:Galicia","ES:La Rioja","ES:Madrid","ES:Murcia","ES:Navarra","ES:Pais Vasco","ES:Valencia","Emilia-Romagna","FR:Alsácia","FR:Beaujolais","FR:Bordeaux","FR:Borgonha","FR:Champagne","FR:Córsega","FR:Jura","FR:Languedoc-Roussillon","FR:Provença","FR:Savoia","FR:Sudoeste","FR:Vale do Loire","FR:Vale do Rhône","Friuli-Venezia Giulia","GB:England","GB:Wales","GE:Imereti","GE:Kakheti","GE:Kartli","GE:Racha","GE:Samegrelo","GR:Central","GR:Creta","GR:Egeu","GR:Epiro","GR:Jônicas","GR:Macedônia","GR:Peloponeso","GR:Tessália","HR:Dalmácia","HR:Eslavônia","HR:Ocidental","HR:Ístria","HU:Balaton","HU:Duna","HU:Eger","HU:Pannon","HU:Tokaj","HU:Észak-Dunántúl","IL:Galileia","IL:Judeia","IL:Negev","IL:Samson","IL:Sharon","JP:Hokkaido","JP:Nagano","JP:Yamagata","JP:Yamanashi","LB:Bekaa","LB:Montanha","LB:Sul","Lazio","Liguria","Lombardia","MD:Codru","MD:Valul lui Traian","MD:Ștefan Vodă","MX:Baja California","MX:Centro","MX:Chihuahua","MX:Coahuila","MX:Sonora","Marche","Molise","NZ:Auckland","NZ:Canterbury","NZ:Gisborne","NZ:Hawke's Bay","NZ:Marlborough","NZ:Nelson","NZ:Otago","NZ:Wairarapa","PT:Alentejo","PT:Algarve","PT:Bairrada","PT:Beira Interior","PT:Douro","PT:Dão","PT:Lisboa","PT:Minho","PT:Setúbal","PT:Tejo","PT:Trás-os-Montes","Piemonte","Puglia","RO:Banat","RO:Crișana","RO:Danúbio","RO:Dobruja","RO:Moldávia","RO:Muntênia","RO:Transilvânia","SI:Podravje","SI:Posavje","SI:Primorska","Sardegna","Sicilia","TR:Anatólia Central","TR:Egeu","TR:Leste","TR:Outras","TR:Trácia","Toscana","Trentino-Alto Adige","US:California","US:New York","US:Oregon","US:Washington","UY:Norte","UY:Sudeste","UY:Sudoeste","UY:Sul","Umbria","Valle d'Aosta","Veneto","ZA:Northern Cape","ZA:Western Cape"],"study":[{"code":"CL","version":2,"cards":26},{"code":"AR","version":2,"cards":26},{"code":"BR","version":2,"cards":41},{"code":"UY","version":2,"cards":16},{"code":"DE","version":2,"cards":14},{"code":"AT","version":2,"cards":13},{"code":"GR","version":2,"cards":23},{"code":"LB","version":2,"cards":11},{"code":"SI","version":2,"cards":10},{"code":"FR1","version":2,"cards":55},{"code":"FR2","version":2,"cards":65},{"code":"FR3","version":2,"cards":58},{"code":"HAR","version":2,"cards":13},{"code":"HIS","version":3,"cards":8},{"code":"PT","version":2,"cards":58},{"code":"ES","version":2,"cards":48},{"code":"IT","version":4,"cards":71},{"code":"US","version":2,"cards":25},{"code":"AU","version":2,"cards":15},{"code":"NZ","version":2,"cards":15},{"code":"ZA","version":2,"cards":21},{"code":"PRO","version":2,"cards":144}]};
 
 // ---- 14_Settings.js
 /**
@@ -2434,7 +2494,7 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       main_countries: 'Itália; pequenas áreas nos EUA e Austrália',
       main_regions: "Piemonte: Dogliani DOCG, Dolcetto d'Alba, Ovada, Asti, Diano d'Alba; Ligúria (Ormeasco); Oltrepò Pavese",
       description: 'Cor escura, seco, acidez moderada a baixa, tânico e frutado; cereja negra e alcaçuz, com ameixa seca; final amargo característico que lembra amêndoa. Douce Noire e Charbono, antes tidos como sinônimos, são outras variedades (DNA). Em Oltrepò Pavese é chamada de "Nebbiolo". Serviço: 15–20 °C. Guarda: 3–5 anos.',
-      profile: P('seco', 'medio+', 'baixo', 'media-', 'medio'),
+      profile: P('seco', 'medio+', 'medio-', 'media-', 'medio'),
       flavors: 'ameixa, amora, cacau, pimenta-do-reino, violeta',
       aromas_wf: ['Ameixa', 'Amora', 'Cacau', 'Pimenta-do-reino', 'Violeta'], aromas_wiki: ['Cereja negra', 'Alcaçuz', 'Ameixa seca', 'Amêndoa'] },
 
@@ -5639,7 +5699,7 @@ var GRAPE_ENCYCLOPEDIA = (function () {
   grapes = grapes.concat(GRAPES_V10);
   relations = relations.concat(RELATIONS_V10);
 
-  return { version: 11, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
+  return { version: 12, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
 })();
 
 // ---- 16_SeedImport.js
@@ -18813,7 +18873,7 @@ var Catalog = (function () {
       rules: Settings.rules(),
       ai_enabled: AiProvider.hasKey() && Ctx.isAdmin(),
       me: Auth.publicUser(Ctx.current()),
-      is_admin: Ctx.isAdmin(),
+      is_admin: Ctx.isAdmin(), features: Features.mine(),
       encyclopedia: { version: SEED_MANIFEST.grapes.version, grapes: SEED_MANIFEST.grapes.count,
         region_packs: SeedRegions.summary() },
       enums: {
@@ -19289,7 +19349,7 @@ var Regions = (function () {
     var geo = {};
     top.forEach(function (r) { if (r.geo_key && geoKeys[r.geo_key]) geo[r.id] = r.geo_key; });
     return {
-      id: c.id, name: c.name, description: c.description, cards: Study.forCountry(c.id), source: c.source, source_ref: c.source_ref, field_refs: c.field_refs || {}, field_sources: c.field_sources || {},
+      id: c.id, name: c.name, description: c.description, cards: Features.allowed('cartoes') ? Study.forCountry(c.id) : [], source: c.source, source_ref: c.source_ref, field_refs: c.field_refs || {}, field_sources: c.field_sources || {},
       regions: top.map(function (r) {
         var subs = regs.filter(function (s) { return s.parent_id === r.id; });
         var ids = [r.id].concat(subs.map(function (s) { return s.id; }));
@@ -19319,7 +19379,7 @@ var Regions = (function () {
     var subs = regs.filter(function (s) { return s.parent_id === r.id; })
       .sort(function (a, b) { return classRank_(a.classification) - classRank_(b.classification) || String(a.name).localeCompare(String(b.name), 'pt'); });
     var ids = [r.id].concat(subs.map(function (s) { return s.id; }));
-    var cards = Study.forRegions(ids);
+    var cards = Features.allowed('cartoes') ? Study.forRegions(ids) : {};
     function grapeList(regionId) {
       return (rg[regionId] || []).map(function (x) {
         var g = grapes[x.grape_id];
@@ -23137,7 +23197,7 @@ var Quiz = (function () {
 
   // ---------- Perguntas a partir dos cartões de estudo (material de aula) ----------
   function cardPool_(opts) {
-    var cards = Repo.all('study_cards').filter(function (x) { return x.status !== 'revisar'; });
+    var cards = Repo.all('study_cards').filter(function (x) { return x.status !== 'revisar' && Features.allowedTopic(x.topic); });
     if (opts.cards && opts.cards !== 'todos') cards = cards.filter(function (x) { return x.topic === opts.cards; });
     if (opts.country_id) cards = cards.filter(function (x) { return x.country_id === opts.country_id; });
     return cards;
@@ -23213,6 +23273,7 @@ var Quiz = (function () {
     var n = Math.max(3, Math.min(20, Number(opts.n) || 10));
     if (opts.cards) {   // só cartões de estudo (seção, tema ou país)
       var onlyCards = cardQuestions_({ cards: String(opts.cards), level: cleanLevel_(opts.level), country_id: opts.country_id ? Validate.id(opts.country_id, 'countries') : '' }, n);
+      if (!onlyCards.length) throw new Error('Esta área ainda não está disponível.');
       return { title: 'Quiz do material de aula', level: cleanLevel_(opts.level), questions: shuffle(onlyCards) };
     }
     var c = context();
@@ -23235,12 +23296,12 @@ var Quiz = (function () {
         if (t.status === 'revelada') {
           var wgList = (wg[w.id] || []).map(function (x) { return c.gById[x.grape_id]; }).filter(Boolean);
           if (wgList.length) {
-            wineQs.push(q('vinho', 'A garrafinha #' + b.number + ' era ' + w.name + (w.vintage ? ' ' + w.vintage : '') + '. Qual era a uva principal?',
+            wineQs.push(q('vinho', 'Qual era a uva principal da garrafinha #' + b.number + '?',
               wgList[0].name, pickN(c.known.filter(function (x) { return x.color === wgList[0].color; }).map(function (x) { return x.name; }), 3, wgList.map(function (x) { return x.name; })),
               wgList[0].origin ? 'Origem da ' + wgList[0].name + ': ' + trim(wgList[0].origin, 200) : '', refOf(wgList[0], 'origin')));
           }
           if (reg) {
-            wineQs.push(q('vinho', 'De qual região era a garrafinha #' + b.number + ' (' + w.name + ')?', reg.name + ' (' + countryName(c, reg) + ')',
+            wineQs.push(q('vinho', 'De qual região era a garrafinha #' + b.number + '?', reg.name + ' (' + countryName(c, reg) + ')',
               pickN(c.regions.filter(function (r) { return !r.parent_id && r.id !== reg.id; }).map(function (r) { return r.name + ' (' + countryName(c, r) + ')'; }), 3),
               trim(reg.climate || reg.description || '', 220), refOf(reg, 'description')));
           }
@@ -24929,15 +24990,21 @@ var API_METHODS = {
   'regions.countries': function () { return Regions.countries(); },
   'regions.country': function (a) { return Regions.country(a.id); },
   'regions.get': function (a) { return Regions.get(a.id); },
-  'course.get': function () { return Course.get(); },
-  'course.lesson': function (a) { return Course.lesson(a.id); },
-  'course.challenge': function (a) { return Course.challenge(a.unit); },
-  'course.review': function () { return Course.review(); },
-  'course.finish': function (a) { return Course.finish(a); },
+  'course.get': function () { Features.require('curso'); return Course.get(); },
+  'course.lesson': function (a) { Features.require('curso'); return Course.lesson(a.id); },
+  'course.challenge': function (a) { Features.require('curso'); return Course.challenge(a.unit); },
+  'course.review': function () { Features.require('curso'); return Course.review(); },
+  'course.finish': function (a) { Features.require('curso'); return Course.finish(a); },
   'audit.list': function () { return Audit.list(); },
   'audit.confirm': function (a) { return Audit.confirm(a); },
-  'study.topic': function (a) { return Study.topic(String(a.topic || '')); },
-  'study.counts': function () { return Study.counts(); },
+  'study.topic': function (a) { var t = String(a.topic || ''); if (!Features.allowedTopic(t)) throw new Error('Esta área ainda não está disponível.'); return Study.topic(t); },
+  'study.counts': function () {
+    var c = Study.counts(), o = {};
+    Object.keys(c).forEach(function (t) { if (Features.allowedTopic(t)) o[t] = c[t]; });
+    return o;
+  },
+  'features.list': function () { return Features.list(); },
+  'features.set': function (a) { return Features.set(String(a.id || ''), a.value); },
   'seed.regions': function (p) { var r = SeedRegions.run(!(p && p.resume)); r.lookups = Catalog.lookups(); return r; },
   'seed.grapes': function () { var x = SeedEncyclopedia.runAll(true); var r = Object.assign({}, x.report || {}, { remaining: x.remaining }); r.lookups = Catalog.lookups(); return r; },
 
@@ -24974,7 +25041,7 @@ var API_METHODS = {
 // Sem login.
 var PUBLIC_METHODS = { 'auth.config': 1, 'auth.login': 1, 'debug.last': 1 };
 // Só a administradora (enciclopédia, sincronização, IA, configurações, usuários).
-var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify|photoAdd|photoRemove)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
+var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify|photoAdd|photoRemove)$|settings\.(set|saveRules)$|users\.|features\.|auth\.setClientId$)/;
 
 /**
  * Executa um método da API. resolveUser() identifica quem chama (sessão ou conta Google).

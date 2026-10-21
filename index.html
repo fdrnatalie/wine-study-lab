@@ -874,6 +874,7 @@ var Nav = {
     tree: '<circle cx="5" cy="4" r="2"/><circle cx="15" cy="4" r="2"/><circle cx="10" cy="16" r="2"/><path d="M5 6v2c0 2 5 2 5 6M15 6v2c0 2-5 2-5 6"/>',
     gear: '<circle cx="10" cy="10" r="2.6"/><path d="M10 2v2.2M10 15.8V18M2 10h2.2M15.8 10H18M4.3 4.3l1.6 1.6M14.1 14.1l1.6 1.6M4.3 15.7l1.6-1.6M14.1 5.9l1.6-1.6"/>'
   },
+  featureOf: { '#/curso': 'curso', '#/estudar/historia': 'historia', '#/estudar/producao': 'producao', '#/estudar/harmonizacao': 'harmonizacao' },
   groups: [
     [null, [['#/', 'home', 'Dashboard', /^\/?$|^\/dashboard/]]],
     ['Estudar', [['#/curso', 'target', 'Curso', /^\/curso/], ['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/estudar/historia', 'history', 'História do vinho', /^\/estudar\/historia/], ['#/estudar/producao', 'grape', 'Produção de vinho', /^\/estudar\/producao/], ['#/estudar/harmonizacao', 'note', 'Harmonizações', /^\/estudar\/harmonizacao/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/quiz', 'quiz', 'Quiz', /^\/quiz/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
@@ -892,6 +893,8 @@ var Nav = {
       g[1].forEach(function (it) {
         if (it[0] === '#/revisao' && !ai) return;
         if (it[0] === '#/usuarios' && !(Store.lookups && Store.lookups.is_admin)) return;
+        var feat = Nav.featureOf[it[0]];
+        if (feat && !(Store.lookups && Store.lookups.features && Store.lookups.features[feat])) return;
         var ext = it[0] === '@game';
         var gameUrl = (window.WSL_CONFIG && window.WSL_CONFIG.gameUrl) || Store.app.game_url;
         if (ext && !gameUrl) return;
@@ -1505,6 +1508,18 @@ function memberSettings_() {
 }
 
 /** Rotina de fichas técnicas (92_Routine.js). */
+/** Quais áreas em construção os outros usuários já veem. */
+function featuresPanel_(list) {
+  return '<section class="panel"><h2 style="margin-top:0">O que os outros usuários veem</h2>' +
+    '<p class="muted">Áreas em construção ficam só para você. Libere uma quando estiver pronta; dá para voltar atrás a qualquer momento.</p>' +
+    '<div class="tbl-wrap"><table class="tbl"><tbody>' + list.map(function (f) {
+      var on = f.audience === 'todos';
+      return '<tr><td>' + esc(f.label) + '</td><td class="nowrap"><span class="src ' + (on ? 'usuario' : 'sistema') + '">' + (on ? 'liberada para todos' : 'só você') + '</span></td>' +
+        '<td class="nowrap"><button class="btn small" data-action="feature-set" data-id="' + esc(f.id) + '" data-value="' + (on ? 'admin' : 'todos') + '">' +
+        (on ? 'Voltar a só eu' : 'Liberar para todos') + '</button></td></tr>';
+    }).join('') + '</tbody></table></div></section>';
+}
+
 function routinePanel_(rt) {
   var last = rt.last_run;
   return '<section class="panel"><h2 style="margin-top:0">Rotina de fichas técnicas</h2>' +
@@ -1531,8 +1546,8 @@ function routinePanel_(rt) {
 Pages.settings = {
   render: function () {
     if (!Store.lookups.is_admin) return memberSettings_();
-    return Promise.all([API.call('settings.get'), API.call('ai.status'), API.call('routine.status')]).then(function (res) {
-      var s = res[0], ai = res[1], rt = res[2];
+    return Promise.all([API.call('settings.get'), API.call('ai.status'), API.call('routine.status'), API.call('features.list')]).then(function (res) {
+      var s = res[0], ai = res[1], rt = res[2], feats = res[3];
       var st = {};
       s.settings.forEach(function (x) { st[x.key] = x.value; });
       var total = s.rules.filter(function (r) { return r.active; }).reduce(function (a, r) { return a + Number(r.weight || 0); }, 0);
@@ -1551,6 +1566,7 @@ Pages.settings = {
       }
       html += '</section>';
 
+      html += featuresPanel_(feats);
       html += routinePanel_(rt);
       var enc = Store.lookups.encyclopedia || {};
       html += '<section class="panel"><h2 style="margin-top:0">Enciclopédia de uvas</h2>' +
@@ -1622,6 +1638,12 @@ Pages.settings = {
         UI.toast(r.checked + ' vinho(s) verificado(s): ' + r.barcode_fields + ' campo(s) pelo código, ' + r.ai_proposals + ' sugestão(ões) da IA para revisar.');
         Router.render();
       }).catch(function (e) { UI.busy(btn, false); throw e; });
+    },
+    'feature-set': function (btn) {
+      UI.busy(btn, true);
+      return API.call('features.set', { id: btn.dataset.id, value: btn.dataset.value }).then(function () {
+        return Store.refreshLookups();
+      }).then(function () { Nav.render(); Router.render(); }).catch(function (e) { UI.busy(btn, false); UI.error(e); });
     },
     'sync': function (btn) {
       UI.busy(btn, true);
