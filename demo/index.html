@@ -444,6 +444,19 @@ a.course-node:hover { background: var(--paper-2); }
 .combo-opt.on { font-weight: 700; color: var(--wine); }
 .combo-none { padding: 10px 12px; color: var(--muted); font-style: italic; }
 .combo-filter { margin-bottom: 6px; width: 100%; }
+
+/* Auditoria das fichas */
+.au-tiles { display: flex; gap: 10px; flex-wrap: wrap; }
+.au-tiles .cs { background: var(--paper-2); border-radius: 8px; padding: 8px 16px; text-align: center; font-size: .72rem; color: var(--muted); letter-spacing: .04em; }
+.au-tiles .cs b { display: block; font-family: var(--serif); font-size: 1.6rem; color: var(--ink); line-height: 1.1; }
+.au-card { margin-bottom: 10px; padding: 14px 18px; }
+.au-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.au-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.au-chip { font-size: .78rem; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--paper); }
+.au-chip.ok { background: var(--hit-soft); border-color: var(--hit); color: var(--hit); }
+.au-chip.parcial { background: var(--near-soft); border-color: var(--near); color: var(--near); }
+.au-chip.nao_verificado { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+.au-chip.falta { background: var(--miss-soft); border-color: var(--miss); color: var(--miss); }
 </style>
 
 </head>
@@ -22441,7 +22454,7 @@ var Tastings = (function () {
     }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
   }
 
-  return { create: create, getPlay: getPlay, saveAnswers: saveAnswers, reveal: reveal, rescore: rescore, getReport: getReport, cancel: cancel, list: list };
+  return { create: create, getPlay: getPlay, saveAnswers: saveAnswers, reveal: reveal, rescore: rescore, getReport: getReport, truthFor: truthFor_, cancel: cancel, list: list };
 })();
 
 /** Converte ids/chaves em rótulos legíveis para relatórios. */
@@ -23659,6 +23672,125 @@ var COURSE_UNITS = (function () {
   return units;
 })();
 
+// ---- 58_Audit.js
+/**
+ * Auditoria das fichas dos vinhos: para cada vinho que o usuário pode editar, mostra o que vale como gabarito numa degustação
+ * e o que não vale (falta preencher ou ainda não foi verificado), usando a MESMA regra de Tastings.truthFor.
+ *
+ * Também permite "confirmar" os dados marcados como não verificados (ex.: colunas sensoriais que vieram da planilha, que foram
+ * geradas por IA): é uma decisão do usuário, registrada como origem "usuario". Nada é confirmado sem esse pedido.
+ *
+ * Os dados nunca saem da conta: tudo é calculado na hora, para quem está logado.
+ */
+var Audit = (function () {
+  var WINE_FIELD_LABEL = { country_id: 'país', region_id: 'região', subregion_id: 'sub-região', vintage: 'safra', abv: 'teor alcoólico',
+    color: 'cor', producer_id: 'produtor', classification: 'classificação' };
+  var SENSORY = [['acidity', 'acidez'], ['tannin', 'tanino'], ['body', 'corpo'], ['sweetness', 'doçura'], ['alcohol', 'álcool']];
+  var UNTRUSTED = function (src) { return !Catalog.isTrusted(src); };
+
+  function editable_(w) { return Ctx.isAdmin() || (w.created_by && w.created_by === Ctx.userId()); }
+
+  function check_(key, label, status, detail) { return { k: key, label: label, s: status, detail: detail || '' }; }
+
+  function auditWine_(w, ctx) {
+    var fs = w.field_sources || {};
+    function fieldCheck(key, label, col, value) {
+      if (Util.isBlank(value)) return check_(key, label, 'falta', 'não preenchido');
+      if (UNTRUSTED(fs[col])) return check_(key, label, 'nao_verificado', 'origem: ' + (fs[col] === 'ia_nao_verificada' ? 'IA, não verificada' : fs[col]));
+      return check_(key, label, 'ok', String(value));
+    }
+    var checks = [];
+    checks.push(fieldCheck('safra', 'Safra', 'vintage', w.vintage));
+    checks.push(fieldCheck('abv', 'Teor alcoólico', 'abv', w.abv));
+    checks.push(fieldCheck('pais', 'País', 'country_id', w.country_id));
+    var regionCol = w.subregion_id ? 'subregion_id' : 'region_id';
+    checks.push(fieldCheck('regiao', 'Região', regionCol, w.subregion_id || w.region_id));
+
+    var grapes = ctx.wineGrapes[w.id] || [];
+    if (!grapes.length) checks.push(check_('uvas', 'Uvas', 'falta', 'nenhuma uva ligada ao vinho'));
+    else if (grapes.every(function (g) { return UNTRUSTED(g.source); })) checks.push(check_('uvas', 'Uvas', 'nao_verificado', 'origem: IA, não verificada'));
+    else checks.push(check_('uvas', 'Uvas', 'ok', grapes.length + (grapes.length === 1 ? ' uva' : ' uvas')));
+
+    var prof = ctx.profiles[w.id];
+    if (!prof) checks.push(check_('perfil', 'Perfil (acidez, tanino, corpo…)', 'falta', 'sem perfil cadastrado'));
+    else {
+      var filled = SENSORY.filter(function (x) { return !Util.isBlank(prof[x[0]]); });
+      var missing = SENSORY.filter(function (x) { return Util.isBlank(prof[x[0]]); }).map(function (x) { return x[1]; });
+      if (UNTRUSTED(prof.source)) checks.push(check_('perfil', 'Perfil (acidez, tanino, corpo…)', 'nao_verificado', 'origem: ' + (prof.source === 'ia_nao_verificada' ? 'IA/planilha, não verificada' : prof.source) + (filled.length ? '' : ' · vazio')));
+      else if (!filled.length) checks.push(check_('perfil', 'Perfil (acidez, tanino, corpo…)', 'falta', 'perfil sem níveis preenchidos'));
+      else checks.push(check_('perfil', 'Perfil (acidez, tanino, corpo…)', missing.length ? 'parcial' : 'ok', missing.length ? 'faltam: ' + missing.join(', ') : 'completo'));
+    }
+
+    var aromas = ctx.aromas[w.id] || [];
+    if (!aromas.length) checks.push(check_('aromas', 'Aromas', 'falta', 'nenhum aroma'));
+    else if (aromas.every(function (a) { return UNTRUSTED(a.source); })) checks.push(check_('aromas', 'Aromas', 'nao_verificado', 'origem: IA, não verificada'));
+    else checks.push(check_('aromas', 'Aromas', 'ok', aromas.length + ' aroma(s)'));
+
+    var bottles = ctx.bottles[w.id] || [];
+    return {
+      id: w.id, name: w.name, vintage: w.vintage || '', producer: (ctx.producers[w.producer_id] || {}).name || '',
+      bottles: bottles.length, checks: checks,
+      falta: checks.filter(function (c) { return c.s === 'falta'; }).length,
+      nao_verificado: checks.filter(function (c) { return c.s === 'nao_verificado'; }).length,
+      parcial: checks.filter(function (c) { return c.s === 'parcial'; }).length,
+      source: w.source
+    };
+  }
+
+  function list() {
+    var ctx = {
+      wineGrapes: Util.groupBy(Repo.all('wine_grapes'), 'wine_id'),
+      profiles: Util.indexBy(Repo.all('profiles').filter(function (p) { return p.entity_type === 'wine'; }), 'entity_id'),
+      aromas: Util.groupBy(Repo.all('entity_aromas').filter(function (a) { return a.entity_type === 'wine'; }), 'entity_id'),
+      bottles: Util.groupBy(Repo.all('bottles'), 'wine_id'),
+      producers: Util.indexBy(Repo.all('producers'), 'id')
+    };
+    var wines = Repo.all('wines').filter(editable_).map(function (w) { return auditWine_(w, ctx); })
+      .sort(function (a, b) { return (b.falta + b.nao_verificado + b.parcial) - (a.falta + a.nao_verificado + a.parcial) || String(a.name).localeCompare(String(b.name), 'pt'); });
+    var complete = wines.filter(function (w) { return !w.falta && !w.nao_verificado && !w.parcial; }).length;
+    return { wines: wines, total: wines.length, complete: complete };
+  }
+
+  /**
+   * Confirma como "usuario" o que estava marcado como não verificado em UM vinho.
+   * parts: 'campos' | 'uvas' | 'perfil' | 'aromas'. Só vinhos que o usuário pode editar; a política do Repository também confere.
+   */
+  function confirm(a) {
+    var id = Validate.id(a.wine_id, 'wines');
+    var w = Repo.get('wines', id);
+    if (!w) throw new Error('Vinho não encontrado.');
+    if (!editable_(w)) throw new Error('Você não pode alterar este vinho.');
+    var parts = (Array.isArray(a.parts) ? a.parts : []).filter(function (p) { return ['campos', 'uvas', 'perfil', 'aromas'].indexOf(p) >= 0; });
+    if (!parts.length) throw new Error('Escolha o que confirmar.');
+    var done = { campos: 0, uvas: 0, perfil: 0, aromas: 0 };
+    return Repo.withLock(function () {
+      if (parts.indexOf('campos') >= 0) {
+        var fs = Object.assign({}, w.field_sources || {}), n = 0;
+        Object.keys(fs).forEach(function (k) { if (fs[k] === 'ia_nao_verificada' || fs[k] === 'ia') { fs[k] = 'usuario'; n++; } });
+        if (n) { Repo.update('wines', [{ id: w.id, field_sources: fs }]); done.campos = n; }
+      }
+      if (parts.indexOf('uvas') >= 0) {
+        var wg = Repo.where('wine_grapes', { wine_id: w.id }).filter(function (g) { return UNTRUSTED(g.source); });
+        if (wg.length) { Repo.update('wine_grapes', wg.map(function (g) { return { id: g.id, source: 'usuario' }; })); done.uvas = wg.length; }
+      }
+      if (parts.indexOf('perfil') >= 0) {
+        var p = Catalog.profileOf('wine', w.id);
+        if (p && UNTRUSTED(p.source)) {
+          Repo.update('profiles', [{ id: p.id, source: 'usuario', source_ref: String(p.source_ref || '').slice(0, 400) + (p.source_ref ? ' · ' : '') + 'confirmado por você em ' + Util.nowIso().slice(0, 10) }]);
+          done.perfil = 1;
+        }
+      }
+      if (parts.indexOf('aromas') >= 0) {
+        var ar = Repo.where('entity_aromas', function (x) { return x.entity_type === 'wine' && x.entity_id === w.id && UNTRUSTED(x.source); });
+        if (ar.length) { Repo.update('entity_aromas', ar.map(function (x) { return { id: x.id, source: 'usuario' }; })); done.aromas = ar.length; }
+      }
+      return done;
+    });
+  }
+
+  return { list: list, confirm: confirm };
+})();
+
 // ---- 60_Stats.js
 /**
  * Estatísticas do dashboard. Tudo calculado a partir de db_tasting_results
@@ -24736,6 +24868,8 @@ var API_METHODS = {
   'course.challenge': function (a) { return Course.challenge(a.unit); },
   'course.review': function () { return Course.review(); },
   'course.finish': function (a) { return Course.finish(a); },
+  'audit.list': function () { return Audit.list(); },
+  'audit.confirm': function (a) { return Audit.confirm(a); },
   'study.topic': function (a) { return Study.topic(String(a.topic || '')); },
   'study.counts': function () { return Study.counts(); },
   'seed.regions': function (p) { var r = SeedRegions.run(!(p && p.resume)); r.lookups = Catalog.lookups(); return r; },
@@ -25144,6 +25278,7 @@ var Router = {
     [/^\/usuarios$/, 'users'],
     [/^\/quiz$/, 'quiz'],
     [/^\/curso$/, 'course'],
+    [/^\/auditoria$/, 'audit'],
     [/^\/curso\/licao\/([a-z0-9-]+)$/, 'courseLesson', ['id']],
     [/^\/curso\/desafio\/([a-z0-9-]+)$/, 'courseChallenge', ['id']],
     [/^\/curso\/revisao$/, 'courseReview'],
@@ -25344,7 +25479,7 @@ var Nav = {
   groups: [
     [null, [['#/', 'home', 'Dashboard', /^\/?$|^\/dashboard/]]],
     ['Estudar', [['#/curso', 'target', 'Curso', /^\/curso/], ['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/estudar/historia', 'history', 'História do vinho', /^\/estudar\/historia/], ['#/estudar/producao', 'grape', 'Produção de vinho', /^\/estudar\/producao/], ['#/estudar/harmonizacao', 'note', 'Harmonizações', /^\/estudar\/harmonizacao/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/quiz', 'quiz', 'Quiz', /^\/quiz/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
-    ['Minha Adega', [['#/adega', 'bottle', 'Garrafinhas', /^\/adega$/], ['#/adega/fracionar', 'split', 'Fracionar garrafa', /^\/adega\/fracionar/]]],
+    ['Minha Adega', [['#/adega', 'bottle', 'Garrafinhas', /^\/adega$/], ['#/auditoria', 'note', 'Auditoria das fichas', /^\/auditoria/], ['#/adega/fracionar', 'split', 'Fracionar garrafa', /^\/adega\/fracionar/]]],
     ['Degustação', [['#/degustacao/nova', 'target', 'Nova degustação', /^\/degustacao\/nova/], ['#/degustacao/historico', 'history', 'Histórico', /^\/degustacao\/(historico|[A-Z])/],
       // Jogo em outra aba (mantém o formato próprio dele); o endereço vem do servidor.
       ['@game', 'eye', 'Degustação às cegas (jogo) ↗', /^$^/]]],
@@ -28923,6 +29058,110 @@ function courseActions() {
   };
 }
 ['courseLesson', 'courseReview', 'courseChallenge'].forEach(function (n) { Pages[n].actions = courseActions(); });
+</script>
+
+  <script>
+/* ============================================================
+   Auditoria das fichas (#/auditoria): para cada vinho, o que vale como gabarito numa degustação e o que não vale.
+   Verde = vale · amarelo = parcial · laranja = preenchido mas ainda "não verificado" (não conta) · vermelho = falta.
+   "Confirmar" registra, por decisão sua, os dados não verificados como "informado por você".
+   ============================================================ */
+var AuditUI = {
+  PART: { safra: 'campos', abv: 'campos', pais: 'campos', regiao: 'campos', uvas: 'uvas', perfil: 'perfil', aromas: 'aromas' },
+  PART_LABEL: { campos: 'safra, álcool, país e região', uvas: 'uvas', perfil: 'perfil (acidez, tanino, corpo…)', aromas: 'aromas' },
+  STATE: { ok: 'vale', parcial: 'parcial', nao_verificado: 'não verificado', falta: 'falta' },
+  partsOf: function (w) {
+    var p = {};
+    w.checks.forEach(function (c) { if (c.s === 'nao_verificado') p[AuditUI.PART[c.k]] = true; });
+    return Object.keys(p);
+  },
+  match: function (w, f, q) {
+    if (q && Util2.norm([w.name, w.producer, w.vintage].join(' ')).indexOf(Util2.norm(q)) < 0) return false;
+    if (f === 'lacunas') return w.falta > 0 || w.parcial > 0;
+    if (f === 'verificar') return w.nao_verificado > 0;
+    if (f === 'completos') return !w.falta && !w.nao_verificado && !w.parcial;
+    return true;
+  },
+  card: function (w) {
+    var parts = AuditUI.partsOf(w);
+    var chips = w.checks.map(function (c) {
+      return '<span class="au-chip ' + c.s + '" title="' + esc(c.label + ': ' + c.detail) + '"><b>' + esc(c.label.replace(/ \(.*/, '')) + '</b> ' + esc(AuditUI.STATE[c.s]) + (c.detail && c.s !== 'ok' ? ' · ' + esc(c.detail) : '') + '</span>';
+    }).join('');
+    var admin = Store.lookups && Store.lookups.is_admin && Store.lookups.ai_enabled;
+    return '<article class="panel au-card" data-wine="' + esc(w.id) + '"><div class="au-head"><div><a class="serif" style="font-size:1.25rem" href="#/vinhos/' + esc(w.id) + '">' + esc(w.name) +
+      '</a> <span class="muted">' + esc(w.vintage || '') + '</span><div class="small muted">' + esc(w.producer || 'sem produtor') + ' · ' + plural(w.bottles, 'garrafinha', 'garrafinhas') + '</div></div>' +
+      '<div class="btn-row"><a class="btn small" href="#/vinhos/' + esc(w.id) + '/editar">Editar ficha</a>' +
+      (parts.length ? '<button class="btn small primary" data-action="au-confirm" data-id="' + esc(w.id) + '">Confirmar o que está não verificado</button>' : '') +
+      (admin ? '<button class="btn small" data-action="au-ai" data-id="' + esc(w.id) + '">Pesquisar a ficha (IA)</button>' : '') + '</div></div><div class="au-chips">' + chips + '</div></article>';
+  }
+};
+
+Pages.audit = {
+  render: function () {
+    return API.call('audit.list').then(function (d) {
+      Pages.audit.data = d; Pages.audit.f = 'lacunas'; Pages.audit.q = '';
+      var needs = d.wines.filter(function (w) { return w.falta || w.parcial; }).length;
+      var verify = d.wines.filter(function (w) { return w.nao_verificado; }).length;
+      var html = '<div class="page-head"><div><div class="eyebrow">Minha adega</div><h1>Auditoria das fichas</h1>' +
+        '<p class="sub">O que vale como gabarito numa degustação, vinho por vinho. Só entra no gabarito o que está preenchido e verificado.</p></div></div>' +
+        '<div class="au-tiles"><div class="cs"><b>' + d.total + '</b>vinhos</div><div class="cs"><b>' + d.complete + '</b>completos</div><div class="cs"><b>' + needs + '</b>com lacunas</div><div class="cs"><b>' + verify + '</b>a verificar</div></div>' +
+        '<div class="callout" style="margin:14px 0">Laranja = está preenchido, mas veio de IA ou da planilha antiga e <b>ainda não conta</b> como gabarito. Se os dados estiverem certos, use <b>Confirmar</b>; se faltar, use <b>Editar ficha</b>' +
+        (Store.lookups.ai_enabled && Store.lookups.is_admin ? ' ou <b>Pesquisar a ficha (IA)</b> (as sugestões vão para a Revisão da IA, com a fonte de cada dado)' : '') + '.</div>' +
+        '<div class="toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><div class="chips" id="au-filter">' +
+        [['lacunas', 'Com lacunas'], ['verificar', 'A verificar'], ['completos', 'Completos'], ['todos', 'Todos']].map(function (x) { return '<button type="button" class="chip' + (x[0] === 'lacunas' ? ' on' : '') + '" data-action="au-filter" data-f="' + x[0] + '">' + x[1] + '</button>'; }).join('') +
+        '</div><input class="in" type="search" id="au-q" placeholder="Buscar vinho ou produtor…" style="max-width:280px"><button class="btn small" id="au-all" data-action="au-confirm-all">Confirmar todos os listados</button></div><div id="au-list"></div>';
+      return html;
+    });
+  },
+  draw: function () {
+    var P = Pages.audit, list = P.data.wines.filter(function (w) { return AuditUI.match(w, P.f, P.q); });
+    document.getElementById('au-list').innerHTML = list.length ? list.map(AuditUI.card).join('') : Components.empty('Nada por aqui', 'Nenhum vinho neste filtro.');
+    var n = list.filter(function (w) { return AuditUI.partsOf(w).length; }).length;
+    var b = document.getElementById('au-all'); if (b) { b.style.display = n ? '' : 'none'; b.textContent = 'Confirmar todos os listados (' + n + ')'; }
+  },
+  mount: function () {
+    Pages.audit.draw();
+    document.getElementById('au-q').addEventListener('input', function (e) { Pages.audit.q = e.target.value; Pages.audit.draw(); });
+  },
+  confirmOne: function (w) {
+    var parts = AuditUI.partsOf(w);
+    return API.call('audit.confirm', { wine_id: w.id, parts: parts }).then(function () {
+      w.checks.forEach(function (c) { if (c.s === 'nao_verificado') c.s = (c.k === 'perfil' ? 'parcial' : 'ok'); });
+      w.nao_verificado = 0;
+    });
+  },
+  actions: {
+    'au-filter': function (btn) {
+      Pages.audit.f = btn.getAttribute('data-f');
+      document.querySelectorAll('#au-filter .chip').forEach(function (c) { c.classList.toggle('on', c === btn); });
+      Pages.audit.draw();
+    },
+    'au-confirm': function (btn) {
+      var w = Pages.audit.data.wines.filter(function (x) { return x.id === btn.getAttribute('data-id'); })[0];
+      var txt = AuditUI.partsOf(w).map(function (p) { return AuditUI.PART_LABEL[p]; }).join(', ');
+      if (!confirm('Confirmar que estes dados de "' + w.name + '" estão corretos: ' + txt + '?\n\nEles passam a valer como gabarito e ficam marcados como "informado por você".')) return;
+      UI.busy(btn, true);
+      return Pages.audit.confirmOne(w).then(function () { UI.toast('Confirmado.'); Pages.audit.draw(); Store.refreshLookups().catch(function () {}); }).catch(function (e) { UI.busy(btn, false); throw e; });
+    },
+    'au-confirm-all': function (btn) {
+      var P = Pages.audit, list = P.data.wines.filter(function (w) { return AuditUI.match(w, P.f, P.q) && AuditUI.partsOf(w).length; });
+      if (!list.length) return;
+      if (!confirm('Confirmar como corretos os dados "não verificados" de ' + list.length + ' vinho(s)?\n\nIsso faz esses dados valerem como gabarito. Só faça se você conferiu as fichas.')) return;
+      UI.busy(btn, true);
+      var i = 0;
+      function next() {
+        if (i >= list.length) { UI.busy(btn, false); UI.toast(list.length + ' vinho(s) confirmado(s).'); P.draw(); return Promise.resolve(); }
+        btn.textContent = 'Confirmando ' + (i + 1) + ' de ' + list.length + '…';
+        return P.confirmOne(list[i++]).then(next);
+      }
+      return next().catch(function (e) { UI.busy(btn, false); P.draw(); throw e; });
+    },
+    'au-ai': function (btn) {
+      var w = Pages.audit.data.wines.filter(function (x) { return x.id === btn.getAttribute('data-id'); })[0];
+      return AiUI.run('ai.wine', { id: w.id }, w.name + (w.vintage ? ' ' + w.vintage : ''));
+    }
+  }
+};
 </script>
 
   <script>App.start();</script>
