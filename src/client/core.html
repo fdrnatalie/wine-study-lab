@@ -388,6 +388,7 @@ var Nav = {
     tree: '<circle cx="5" cy="4" r="2"/><circle cx="15" cy="4" r="2"/><circle cx="10" cy="16" r="2"/><path d="M5 6v2c0 2 5 2 5 6M15 6v2c0 2-5 2-5 6"/>',
     gear: '<circle cx="10" cy="10" r="2.6"/><path d="M10 2v2.2M10 15.8V18M2 10h2.2M15.8 10H18M4.3 4.3l1.6 1.6M14.1 14.1l1.6 1.6M4.3 15.7l1.6-1.6M14.1 5.9l1.6-1.6"/>'
   },
+  featureOf: { '#/curso': 'curso', '#/estudar/historia': 'historia', '#/estudar/producao': 'producao', '#/estudar/harmonizacao': 'harmonizacao' },
   groups: [
     [null, [['#/', 'home', 'Dashboard', /^\/?$|^\/dashboard/]]],
     ['Estudar', [['#/curso', 'target', 'Curso', /^\/curso/], ['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/estudar/historia', 'history', 'História do vinho', /^\/estudar\/historia/], ['#/estudar/producao', 'grape', 'Produção de vinho', /^\/estudar\/producao/], ['#/estudar/harmonizacao', 'note', 'Harmonizações', /^\/estudar\/harmonizacao/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/quiz', 'quiz', 'Quiz', /^\/quiz/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
@@ -406,6 +407,8 @@ var Nav = {
       g[1].forEach(function (it) {
         if (it[0] === '#/revisao' && !ai) return;
         if (it[0] === '#/usuarios' && !(Store.lookups && Store.lookups.is_admin)) return;
+        var feat = Nav.featureOf[it[0]];
+        if (feat && !(Store.lookups && Store.lookups.features && Store.lookups.features[feat])) return;
         var ext = it[0] === '@game';
         var gameUrl = (window.WSL_CONFIG && window.WSL_CONFIG.gameUrl) || Store.app.game_url;
         if (ext && !gameUrl) return;

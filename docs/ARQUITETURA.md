@@ -504,3 +504,9 @@ Regras que mantêm o sistema crescendo bem:
 
 **Próximo**: Minha Evolução (gráficos por uva/região/país/critério/mês, "o que mais erro"),
 Treinar (quiz, adivinhe a uva/região, revisão), Wine World (mapa com Leaflet + OpenStreetMap).
+
+## D15 — Funcionalidades liberadas por público (abertura do site)
+
+Áreas em construção (curso, história, produção, harmonizações, cartões de estudo em país/região) começam visíveis só para a administradora. `Features` (14_Features.js) lê a configuração `feature_<id>` (`admin` ou `todos`); a regra vale no **servidor** (API, cartões em país/região, quiz) e o menu apenas a reflete (`lookups.features`). A administradora liga/desliga em Configurações → "O que os outros usuários veem", sem novo deploy. Nova funcionalidade em construção = uma linha em `DEFS` + `Features.require` no método.
+
+Já era assim e permanece: login Google com cadastro aberto (membro); catálogo de vinhos comum (só o autor e a administradora editam a ficha; qualquer membro cadastra e edita os próprios); garrafinhas, degustações, notas e curso são pessoais (começam vazios para cada usuário).

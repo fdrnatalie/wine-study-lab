@@ -115,15 +115,21 @@ var API_METHODS = {
   'regions.countries': function () { return Regions.countries(); },
   'regions.country': function (a) { return Regions.country(a.id); },
   'regions.get': function (a) { return Regions.get(a.id); },
-  'course.get': function () { return Course.get(); },
-  'course.lesson': function (a) { return Course.lesson(a.id); },
-  'course.challenge': function (a) { return Course.challenge(a.unit); },
-  'course.review': function () { return Course.review(); },
-  'course.finish': function (a) { return Course.finish(a); },
+  'course.get': function () { Features.require('curso'); return Course.get(); },
+  'course.lesson': function (a) { Features.require('curso'); return Course.lesson(a.id); },
+  'course.challenge': function (a) { Features.require('curso'); return Course.challenge(a.unit); },
+  'course.review': function () { Features.require('curso'); return Course.review(); },
+  'course.finish': function (a) { Features.require('curso'); return Course.finish(a); },
   'audit.list': function () { return Audit.list(); },
   'audit.confirm': function (a) { return Audit.confirm(a); },
-  'study.topic': function (a) { return Study.topic(String(a.topic || '')); },
-  'study.counts': function () { return Study.counts(); },
+  'study.topic': function (a) { var t = String(a.topic || ''); if (!Features.allowedTopic(t)) throw new Error('Esta área ainda não está disponível.'); return Study.topic(t); },
+  'study.counts': function () {
+    var c = Study.counts(), o = {};
+    Object.keys(c).forEach(function (t) { if (Features.allowedTopic(t)) o[t] = c[t]; });
+    return o;
+  },
+  'features.list': function () { return Features.list(); },
+  'features.set': function (a) { return Features.set(String(a.id || ''), a.value); },
   'seed.regions': function (p) { var r = SeedRegions.run(!(p && p.resume)); r.lookups = Catalog.lookups(); return r; },
   'seed.grapes': function () { var x = SeedEncyclopedia.runAll(true); var r = Object.assign({}, x.report || {}, { remaining: x.remaining }); r.lookups = Catalog.lookups(); return r; },
 
@@ -160,7 +166,7 @@ var API_METHODS = {
 // Sem login.
 var PUBLIC_METHODS = { 'auth.config': 1, 'auth.login': 1, 'debug.last': 1 };
 // Só a administradora (enciclopédia, sincronização, IA, configurações, usuários).
-var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify|photoAdd|photoRemove)$|settings\.(set|saveRules)$|users\.|auth\.setClientId$)/;
+var ADMIN_METHODS = /^(sync\.|seed\.|ai\.|routine\.|label\.ai$|grapes\.(save|verify|photoAdd|photoRemove)$|settings\.(set|saveRules)$|users\.|features\.|auth\.setClientId$)/;
 
 /**
  * Executa um método da API. resolveUser() identifica quem chama (sessão ou conta Google).

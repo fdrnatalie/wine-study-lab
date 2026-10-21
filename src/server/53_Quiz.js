@@ -164,7 +164,7 @@ var Quiz = (function () {
 
   // ---------- Perguntas a partir dos cartões de estudo (material de aula) ----------
   function cardPool_(opts) {
-    var cards = Repo.all('study_cards').filter(function (x) { return x.status !== 'revisar'; });
+    var cards = Repo.all('study_cards').filter(function (x) { return x.status !== 'revisar' && Features.allowedTopic(x.topic); });
     if (opts.cards && opts.cards !== 'todos') cards = cards.filter(function (x) { return x.topic === opts.cards; });
     if (opts.country_id) cards = cards.filter(function (x) { return x.country_id === opts.country_id; });
     return cards;
@@ -240,6 +240,7 @@ var Quiz = (function () {
     var n = Math.max(3, Math.min(20, Number(opts.n) || 10));
     if (opts.cards) {   // só cartões de estudo (seção, tema ou país)
       var onlyCards = cardQuestions_({ cards: String(opts.cards), level: cleanLevel_(opts.level), country_id: opts.country_id ? Validate.id(opts.country_id, 'countries') : '' }, n);
+      if (!onlyCards.length) throw new Error('Esta área ainda não está disponível.');
       return { title: 'Quiz do material de aula', level: cleanLevel_(opts.level), questions: shuffle(onlyCards) };
     }
     var c = context();

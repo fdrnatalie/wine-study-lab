@@ -221,6 +221,22 @@ test('garrafinha só acaba quando você decide: em uso continua disponível', ()
   assert.strictEqual(post('bottles.fractionate', { wine_id: w.id, numbering: 'manual', numbers: String(bottles[1].number), original_volume_ml: 750, bottle_volume_ml: 30 }, owner.token).ok, false);
   assert.ok(post('bottles.fractionate', { wine_id: w.id, numbering: 'manual', numbers: String(bottles[0].number), original_volume_ml: 750, bottle_volume_ml: 30 }, owner.token).ok);
 });
+test('funcionalidades em construção: escondidas dos membros até a dona liberar', () => {
+  ['course.get', 'features.list'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));
+  ['historia', 'producao', 'harmonizacao'].forEach((t) => assert.strictEqual(post('study.topic', { topic: t }, ana.token).ok, false, t));
+  assert.deepStrictEqual(ok(post('study.counts', {}, ana.token)), {});
+  const lk0 = ok(post('lookups', {}, ana.token));
+  assert.ok(Object.keys(lk0.features).length >= 5 && Object.values(lk0.features).every((v) => v === false));
+  assert.strictEqual(ok(post('lookups', {}, owner.token)).features.curso, true);
+  const itId = ok(post('regions.countries', {}, ana.token)).find((c) => c.name === 'Itália').id;
+  assert.strictEqual(ok(post('regions.country', { id: itId }, ana.token)).cards.length, 0);
+  assert.strictEqual(post('quiz.generate', { cards: 'todos', n: 6 }, ana.token).ok, false);
+  assert.strictEqual(post('features.set', { id: 'curso', value: 'todos' }, ana.token).ok, false);
+  assert.strictEqual(post('features.set', { id: 'xyz', value: 'todos' }, owner.token).ok, false);
+  assert.strictEqual(post('features.set', { id: 'curso', value: 'qualquer' }, owner.token).ok, false);
+  ['curso', 'historia', 'producao', 'harmonizacao', 'cartoes'].forEach((id) => ok(post('features.set', { id, value: 'todos' }, owner.token)));
+  assert.ok(Object.values(ok(post('lookups', {}, ana.token)).features).every((v) => v === true));
+});
 test('cartões de estudo: membro lê, aparecem em país/região e no quiz', () => {
   const hist = ok(post('study.topic', { topic: 'historia' }, ana.token));
   assert.ok(hist.count > 0 && hist.groups.length > 1);
