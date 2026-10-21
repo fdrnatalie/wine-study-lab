@@ -1,0 +1,103 @@
+<script>
+/* ============================================================
+   Auditoria das fichas (#/auditoria): para cada vinho, o que vale como gabarito numa degustação e o que não vale.
+   Verde = vale · amarelo = parcial · laranja = preenchido mas ainda "não verificado" (não conta) · vermelho = falta.
+   "Confirmar" registra, por decisão sua, os dados não verificados como "informado por você".
+   ============================================================ */
+var AuditUI = {
+  PART: { safra: 'campos', abv: 'campos', pais: 'campos', regiao: 'campos', uvas: 'uvas', perfil: 'perfil', aromas: 'aromas' },
+  PART_LABEL: { campos: 'safra, álcool, país e região', uvas: 'uvas', perfil: 'perfil (acidez, tanino, corpo…)', aromas: 'aromas' },
+  STATE: { ok: 'vale', parcial: 'parcial', nao_verificado: 'não verificado', falta: 'falta' },
+  partsOf: function (w) {
+    var p = {};
+    w.checks.forEach(function (c) { if (c.s === 'nao_verificado') p[AuditUI.PART[c.k]] = true; });
+    return Object.keys(p);
+  },
+  match: function (w, f, q) {
+    if (q && Util2.norm([w.name, w.producer, w.vintage].join(' ')).indexOf(Util2.norm(q)) < 0) return false;
+    if (f === 'lacunas') return w.falta > 0 || w.parcial > 0;
+    if (f === 'verificar') return w.nao_verificado > 0;
+    if (f === 'completos') return !w.falta && !w.nao_verificado && !w.parcial;
+    return true;
+  },
+  card: function (w) {
+    var parts = AuditUI.partsOf(w);
+    var chips = w.checks.map(function (c) {
+      return '<span class="au-chip ' + c.s + '" title="' + esc(c.label + ': ' + c.detail) + '"><b>' + esc(c.label.replace(/ \(.*/, '')) + '</b> ' + esc(AuditUI.STATE[c.s]) + (c.detail && c.s !== 'ok' ? ' · ' + esc(c.detail) : '') + '</span>';
+    }).join('');
+    var admin = Store.lookups && Store.lookups.is_admin && Store.lookups.ai_enabled;
+    return '<article class="panel au-card" data-wine="' + esc(w.id) + '"><div class="au-head"><div><a class="serif" style="font-size:1.25rem" href="#/vinhos/' + esc(w.id) + '">' + esc(w.name) +
+      '</a> <span class="muted">' + esc(w.vintage || '') + '</span><div class="small muted">' + esc(w.producer || 'sem produtor') + ' · ' + plural(w.bottles, 'garrafinha', 'garrafinhas') + '</div></div>' +
+      '<div class="btn-row"><a class="btn small" href="#/vinhos/' + esc(w.id) + '/editar">Editar ficha</a>' +
+      (parts.length ? '<button class="btn small primary" data-action="au-confirm" data-id="' + esc(w.id) + '">Confirmar o que está não verificado</button>' : '') +
+      (admin ? '<button class="btn small" data-action="au-ai" data-id="' + esc(w.id) + '">Pesquisar a ficha (IA)</button>' : '') + '</div></div><div class="au-chips">' + chips + '</div></article>';
+  }
+};
+
+Pages.audit = {
+  render: function () {
+    return API.call('audit.list').then(function (d) {
+      Pages.audit.data = d; Pages.audit.f = 'lacunas'; Pages.audit.q = '';
+      var needs = d.wines.filter(function (w) { return w.falta || w.parcial; }).length;
+      var verify = d.wines.filter(function (w) { return w.nao_verificado; }).length;
+      var html = '<div class="page-head"><div><div class="eyebrow">Minha adega</div><h1>Auditoria das fichas</h1>' +
+        '<p class="sub">O que vale como gabarito numa degustação, vinho por vinho. Só entra no gabarito o que está preenchido e verificado.</p></div></div>' +
+        '<div class="au-tiles"><div class="cs"><b>' + d.total + '</b>vinhos</div><div class="cs"><b>' + d.complete + '</b>completos</div><div class="cs"><b>' + needs + '</b>com lacunas</div><div class="cs"><b>' + verify + '</b>a verificar</div></div>' +
+        '<div class="callout" style="margin:14px 0">Laranja = está preenchido, mas veio de IA ou da planilha antiga e <b>ainda não conta</b> como gabarito. Se os dados estiverem certos, use <b>Confirmar</b>; se faltar, use <b>Editar ficha</b>' +
+        (Store.lookups.ai_enabled && Store.lookups.is_admin ? ' ou <b>Pesquisar a ficha (IA)</b> (as sugestões vão para a Revisão da IA, com a fonte de cada dado)' : '') + '.</div>' +
+        '<div class="toolbar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><div class="chips" id="au-filter">' +
+        [['lacunas', 'Com lacunas'], ['verificar', 'A verificar'], ['completos', 'Completos'], ['todos', 'Todos']].map(function (x) { return '<button type="button" class="chip' + (x[0] === 'lacunas' ? ' on' : '') + '" data-action="au-filter" data-f="' + x[0] + '">' + x[1] + '</button>'; }).join('') +
+        '</div><input class="in" type="search" id="au-q" placeholder="Buscar vinho ou produtor…" style="max-width:280px"><button class="btn small" id="au-all" data-action="au-confirm-all">Confirmar todos os listados</button></div><div id="au-list"></div>';
+      return html;
+    });
+  },
+  draw: function () {
+    var P = Pages.audit, list = P.data.wines.filter(function (w) { return AuditUI.match(w, P.f, P.q); });
+    document.getElementById('au-list').innerHTML = list.length ? list.map(AuditUI.card).join('') : Components.empty('Nada por aqui', 'Nenhum vinho neste filtro.');
+    var n = list.filter(function (w) { return AuditUI.partsOf(w).length; }).length;
+    var b = document.getElementById('au-all'); if (b) { b.style.display = n ? '' : 'none'; b.textContent = 'Confirmar todos os listados (' + n + ')'; }
+  },
+  mount: function () {
+    Pages.audit.draw();
+    document.getElementById('au-q').addEventListener('input', function (e) { Pages.audit.q = e.target.value; Pages.audit.draw(); });
+  },
+  confirmOne: function (w) {
+    var parts = AuditUI.partsOf(w);
+    return API.call('audit.confirm', { wine_id: w.id, parts: parts }).then(function () {
+      w.checks.forEach(function (c) { if (c.s === 'nao_verificado') c.s = (c.k === 'perfil' ? 'parcial' : 'ok'); });
+      w.nao_verificado = 0;
+    });
+  },
+  actions: {
+    'au-filter': function (btn) {
+      Pages.audit.f = btn.getAttribute('data-f');
+      document.querySelectorAll('#au-filter .chip').forEach(function (c) { c.classList.toggle('on', c === btn); });
+      Pages.audit.draw();
+    },
+    'au-confirm': function (btn) {
+      var w = Pages.audit.data.wines.filter(function (x) { return x.id === btn.getAttribute('data-id'); })[0];
+      var txt = AuditUI.partsOf(w).map(function (p) { return AuditUI.PART_LABEL[p]; }).join(', ');
+      if (!confirm('Confirmar que estes dados de "' + w.name + '" estão corretos: ' + txt + '?\n\nEles passam a valer como gabarito e ficam marcados como "informado por você".')) return;
+      UI.busy(btn, true);
+      return Pages.audit.confirmOne(w).then(function () { UI.toast('Confirmado.'); Pages.audit.draw(); Store.refreshLookups().catch(function () {}); }).catch(function (e) { UI.busy(btn, false); throw e; });
+    },
+    'au-confirm-all': function (btn) {
+      var P = Pages.audit, list = P.data.wines.filter(function (w) { return AuditUI.match(w, P.f, P.q) && AuditUI.partsOf(w).length; });
+      if (!list.length) return;
+      if (!confirm('Confirmar como corretos os dados "não verificados" de ' + list.length + ' vinho(s)?\n\nIsso faz esses dados valerem como gabarito. Só faça se você conferiu as fichas.')) return;
+      UI.busy(btn, true);
+      var i = 0;
+      function next() {
+        if (i >= list.length) { UI.busy(btn, false); UI.toast(list.length + ' vinho(s) confirmado(s).'); P.draw(); return Promise.resolve(); }
+        btn.textContent = 'Confirmando ' + (i + 1) + ' de ' + list.length + '…';
+        return P.confirmOne(list[i++]).then(next);
+      }
+      return next().catch(function (e) { UI.busy(btn, false); P.draw(); throw e; });
+    },
+    'au-ai': function (btn) {
+      var w = Pages.audit.data.wines.filter(function (x) { return x.id === btn.getAttribute('data-id'); })[0];
+      return AiUI.run('ai.wine', { id: w.id }, w.name + (w.vintage ? ' ' + w.vintage : ''));
+    }
+  }
+};
+</script>

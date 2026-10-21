@@ -284,6 +284,18 @@ GitHub Pages (index.html, jogo.html)  ──POST text/plain {method,args,token}�
   o curso é de estudo pessoal, sem ranking.
 - **Cliente:** `pages_course.html` (`#/curso`, `#/curso/licao/ID`, `#/curso/revisao`, `#/curso/desafio/UNIDADE`).
 
+### D14. Auditoria das fichas — ✅ (v10)
+
+- **Por quê:** muitos vinhos apareciam "sem gabarito" nas degustações. As regras (`Tastings.truthFor`) só aceitam como gabarito dados
+  preenchidos e de origem confiável: safra, álcool, país, região, uvas, perfil e aromas. Colunas sensoriais vindas da planilha antiga
+  entram como "IA, não verificada" (foram geradas por IA, ver §1.2) e **não contam** até você confirmar.
+- **Tela** `#/auditoria` (`58_Audit.js`, `pages_audit.html`): por vinho que o usuário pode editar, sete verificações (safra, álcool,
+  país, região, uvas, perfil, aromas) em quatro estados (vale, parcial, não verificado, falta). Ações: editar a ficha, **confirmar**
+  o que está não verificado (por vinho ou em lote; grava origem "usuario" e a data no perfil) e, para a administradora com IA ligada,
+  pesquisar a ficha (sugestões vão para a Revisão da IA, com fonte).
+- **Privacidade:** tudo é calculado na hora, para quem está logado; nenhum dado sai da conta, e nada é confirmado sem o pedido explícito.
+- **API:** `audit.list`, `audit.confirm`.
+
 ## 4. Modelo de dados (abas `db_*`)
 
 Definido em `src/server/00_Config.js` (objeto `SCHEMA`). Toda aba tem as colunas comuns

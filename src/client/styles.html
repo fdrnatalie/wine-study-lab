@@ -435,4 +435,17 @@ a.course-node:hover { background: var(--paper-2); }
 .combo-opt.on { font-weight: 700; color: var(--wine); }
 .combo-none { padding: 10px 12px; color: var(--muted); font-style: italic; }
 .combo-filter { margin-bottom: 6px; width: 100%; }
+
+/* Auditoria das fichas */
+.au-tiles { display: flex; gap: 10px; flex-wrap: wrap; }
+.au-tiles .cs { background: var(--paper-2); border-radius: 8px; padding: 8px 16px; text-align: center; font-size: .72rem; color: var(--muted); letter-spacing: .04em; }
+.au-tiles .cs b { display: block; font-family: var(--serif); font-size: 1.6rem; color: var(--ink); line-height: 1.1; }
+.au-card { margin-bottom: 10px; padding: 14px 18px; }
+.au-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.au-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.au-chip { font-size: .78rem; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--paper); }
+.au-chip.ok { background: var(--hit-soft); border-color: var(--hit); color: var(--hit); }
+.au-chip.parcial { background: var(--near-soft); border-color: var(--near); color: var(--near); }
+.au-chip.nao_verificado { background: var(--gold-soft); border-color: var(--gold); color: var(--gold); }
+.au-chip.falta { background: var(--miss-soft); border-color: var(--miss); color: var(--miss); }
 </style>

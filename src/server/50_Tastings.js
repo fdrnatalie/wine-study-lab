@@ -425,7 +425,7 @@ var Tastings = (function () {
     }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
   }
 
-  return { create: create, getPlay: getPlay, saveAnswers: saveAnswers, reveal: reveal, rescore: rescore, getReport: getReport, cancel: cancel, list: list };
+  return { create: create, getPlay: getPlay, saveAnswers: saveAnswers, reveal: reveal, rescore: rescore, getReport: getReport, truthFor: truthFor_, cancel: cancel, list: list };
 })();
 
 /** Converte ids/chaves em rótulos legíveis para relatórios. */

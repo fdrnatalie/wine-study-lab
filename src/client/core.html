@@ -190,6 +190,7 @@ var Router = {
     [/^\/usuarios$/, 'users'],
     [/^\/quiz$/, 'quiz'],
     [/^\/curso$/, 'course'],
+    [/^\/auditoria$/, 'audit'],
     [/^\/curso\/licao\/([a-z0-9-]+)$/, 'courseLesson', ['id']],
     [/^\/curso\/desafio\/([a-z0-9-]+)$/, 'courseChallenge', ['id']],
     [/^\/curso\/revisao$/, 'courseReview'],
@@ -390,7 +391,7 @@ var Nav = {
   groups: [
     [null, [['#/', 'home', 'Dashboard', /^\/?$|^\/dashboard/]]],
     ['Estudar', [['#/curso', 'target', 'Curso', /^\/curso/], ['#/vinhos', 'wine', 'Vinhos', /^\/vinhos/], ['#/uvas', 'grape', 'Uvas', /^\/uvas(?!\/comparar)/], ['#/regioes', 'map', 'Regiões', /^\/regioes/], ['#/estudar/historia', 'history', 'História do vinho', /^\/estudar\/historia/], ['#/estudar/producao', 'grape', 'Produção de vinho', /^\/estudar\/producao/], ['#/estudar/harmonizacao', 'note', 'Harmonizações', /^\/estudar\/harmonizacao/], ['#/uvas/comparar', 'compare', 'Comparar uvas', /^\/uvas\/comparar/], ['#/genealogia', 'tree', 'Genealogia', /^\/genealogia/], ['#/quiz', 'quiz', 'Quiz', /^\/quiz/], ['#/revisao', 'spark', 'Revisão da IA', /^\/revisao/]]],
-    ['Minha Adega', [['#/adega', 'bottle', 'Garrafinhas', /^\/adega$/], ['#/adega/fracionar', 'split', 'Fracionar garrafa', /^\/adega\/fracionar/]]],
+    ['Minha Adega', [['#/adega', 'bottle', 'Garrafinhas', /^\/adega$/], ['#/auditoria', 'note', 'Auditoria das fichas', /^\/auditoria/], ['#/adega/fracionar', 'split', 'Fracionar garrafa', /^\/adega\/fracionar/]]],
     ['Degustação', [['#/degustacao/nova', 'target', 'Nova degustação', /^\/degustacao\/nova/], ['#/degustacao/historico', 'history', 'Histórico', /^\/degustacao\/(historico|[A-Z])/],
       // Jogo em outra aba (mantém o formato próprio dele); o endereço vem do servidor.
       ['@game', 'eye', 'Degustação às cegas (jogo) ↗', /^$^/]]],

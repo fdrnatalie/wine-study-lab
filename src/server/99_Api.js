@@ -120,6 +120,8 @@ var API_METHODS = {
   'course.challenge': function (a) { return Course.challenge(a.unit); },
   'course.review': function () { return Course.review(); },
   'course.finish': function (a) { return Course.finish(a); },
+  'audit.list': function () { return Audit.list(); },
+  'audit.confirm': function (a) { return Audit.confirm(a); },
   'study.topic': function (a) { return Study.topic(String(a.topic || '')); },
   'study.counts': function () { return Study.counts(); },
   'seed.regions': function (p) { var r = SeedRegions.run(!(p && p.resume)); r.lookups = Catalog.lookups(); return r; },

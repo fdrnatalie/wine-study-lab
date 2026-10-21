@@ -284,6 +284,24 @@ test('curso: trilha, lição, pontos, sequência e revisão — progresso pessoa
   assert.strictEqual(gb.units[0].lessons[0].status, 'open');
   assert.strictEqual(ok(post('course.review', {}, ana.token)).questions.length, 0);
 });
+test('auditoria das fichas: lista o que vale como gabarito e confirma só o que é seu', () => {
+  const a = ok(post('audit.list', {}, owner.token));
+  assert.ok(a.total >= 1 && a.wines.every((w) => Array.isArray(w.checks) && w.checks.length === 7));
+  assert.ok(a.wines.some((w) => w.nao_verificado > 0), 'colunas da planilha antiga aparecem como não verificadas');
+  const w = a.wines.find((x) => x.nao_verificado > 0);
+  // membro não vê nem confirma vinhos da administradora
+  assert.ok(!ok(post('audit.list', {}, ana.token)).wines.some((x) => x.id === w.id));
+  assert.strictEqual(post('audit.confirm', { wine_id: w.id, parts: ['perfil'] }, ana.token).ok, false);
+  assert.strictEqual(post('audit.confirm', { wine_id: w.id, parts: ['nada'] }, owner.token).ok, false);
+  const parts = ['campos', 'uvas', 'perfil', 'aromas'];
+  const done = ok(post('audit.confirm', { wine_id: w.id, parts }, owner.token));
+  assert.ok(done.perfil + done.campos + done.uvas + done.aromas > 0);
+  const after = ok(post('audit.list', {}, owner.token)).wines.find((x) => x.id === w.id);
+  assert.strictEqual(after.nao_verificado, 0);
+  // o gabarito de uma degustação passa a usar o perfil confirmado
+  const full = ok(post('wines.get', { id: w.id }, owner.token));
+  if (full.profile) assert.ok(full.profile_trusted);
+});
 test('IA, sincronização e usuários: só a administradora', () => {
   ['ai.status', 'sync.run', 'users.list', 'seed.grapes'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));
   assert.ok(ok(post('users.list', {}, owner.token)).length >= 3);
