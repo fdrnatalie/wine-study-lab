@@ -219,7 +219,7 @@ var GRAPE_ENCYCLOPEDIA = (function () {
       main_countries: 'Itália; pequenas áreas nos EUA e Austrália',
       main_regions: "Piemonte: Dogliani DOCG, Dolcetto d'Alba, Ovada, Asti, Diano d'Alba; Ligúria (Ormeasco); Oltrepò Pavese",
       description: 'Cor escura, seco, acidez moderada a baixa, tânico e frutado; cereja negra e alcaçuz, com ameixa seca; final amargo característico que lembra amêndoa. Douce Noire e Charbono, antes tidos como sinônimos, são outras variedades (DNA). Em Oltrepò Pavese é chamada de "Nebbiolo". Serviço: 15–20 °C. Guarda: 3–5 anos.',
-      profile: P('seco', 'medio+', 'baixo', 'media-', 'medio'),
+      profile: P('seco', 'medio+', 'medio-', 'media-', 'medio'),
       flavors: 'ameixa, amora, cacau, pimenta-do-reino, violeta',
       aromas_wf: ['Ameixa', 'Amora', 'Cacau', 'Pimenta-do-reino', 'Violeta'], aromas_wiki: ['Cereja negra', 'Alcaçuz', 'Ameixa seca', 'Amêndoa'] },
 
@@ -3424,5 +3424,5 @@ var GRAPE_ENCYCLOPEDIA = (function () {
   grapes = grapes.concat(GRAPES_V10);
   relations = relations.concat(RELATIONS_V10);
 
-  return { version: 11, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
+  return { version: 12, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
 })();

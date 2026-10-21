@@ -262,12 +262,12 @@ var Quiz = (function () {
         if (t.status === 'revelada') {
           var wgList = (wg[w.id] || []).map(function (x) { return c.gById[x.grape_id]; }).filter(Boolean);
           if (wgList.length) {
-            wineQs.push(q('vinho', 'A garrafinha #' + b.number + ' era ' + w.name + (w.vintage ? ' ' + w.vintage : '') + '. Qual era a uva principal?',
+            wineQs.push(q('vinho', 'Qual era a uva principal da garrafinha #' + b.number + '?',
               wgList[0].name, pickN(c.known.filter(function (x) { return x.color === wgList[0].color; }).map(function (x) { return x.name; }), 3, wgList.map(function (x) { return x.name; })),
               wgList[0].origin ? 'Origem da ' + wgList[0].name + ': ' + trim(wgList[0].origin, 200) : '', refOf(wgList[0], 'origin')));
           }
           if (reg) {
-            wineQs.push(q('vinho', 'De qual região era a garrafinha #' + b.number + ' (' + w.name + ')?', reg.name + ' (' + countryName(c, reg) + ')',
+            wineQs.push(q('vinho', 'De qual região era a garrafinha #' + b.number + '?', reg.name + ' (' + countryName(c, reg) + ')',
               pickN(c.regions.filter(function (r) { return !r.parent_id && r.id !== reg.id; }).map(function (r) { return r.name + ' (' + countryName(c, r) + ')'; }), 3),
               trim(reg.climate || reg.description || '', 220), refOf(reg, 'description')));
           }
