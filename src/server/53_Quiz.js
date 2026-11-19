@@ -4,8 +4,9 @@
  *  - depois de uma degustação: perguntas sobre as uvas, regiões e vinhos daquela sessão;
  *  - aleatório (menu Estudar → Quiz): uvas e regiões que têm ficha preenchida.
  * Tipos: país de uma uva, uva principal de uma região, região de uma uva, aroma típico, estrutura típica
- * (acidez, tanino, corpo), uva com que costuma ser confundida (com como diferenciar), pai/mãe por DNA,
- * país de uma região e, no modo degustação, uva/região do vinho provado.
+ * (acidez, tanino, corpo), uva com que costuma ser confundida (com como diferenciar), pai/mãe por DNA e
+ * país de uma região. O quiz ensina sobre a uva, a região e o estilo; não pergunta nada sobre a garrafinha
+ * (número, "qual era a uva da #59"): isso é o gabarito da degustação, não conhecimento de vinho.
  */
 var Quiz = (function () {
   var STRUCT = { acidity: 'acidez', tannin: 'tanino', body: 'corpo' };
@@ -26,6 +27,10 @@ var Quiz = (function () {
     return String(s || '').split(/[,;]| e /).map(function (x) { return x.replace(/\(.*?\)/g, '').trim(); })
       .filter(function (x) { return x && x.length < 30; });
   }
+  /** "Bento Gonçalves – RS" → "Bento Gonçalves": a sigla do estado entregaria a resposta (ou confundiria) nas perguntas. */
+  function plainName_(s) { return String(s || '').replace(/\s*[–—-]\s*[A-Z]{2}\s*$/, '').trim(); }
+  /** Texto (sem acento/maiúscula) em que uma uva é dita presente: países, origem e regiões principais da ficha. */
+  function mentionedText_(g) { return ' ' + Util.normKey([g.main_countries, g.main_regions, g.origin].join(' ')) + ' '; }
   function q(type, text, correct, wrong, explain, ref) {
     if (!correct || wrong.length < 2) return null;
     var options = shuffle([correct].concat(wrong.slice(0, 3)));
@@ -57,7 +62,14 @@ var Quiz = (function () {
   function qCountry(c, g) {
     var mine = splitList(g.main_countries);
     if (!mine.length) return null;
-    var all = Object.keys(c.countries).map(function (k) { return c.countries[k].name; });
+    // Um país onde a uva tem presença importante não pode aparecer como alternativa errada, mesmo que a lista de
+    // "principais países" da ficha esteja incompleta: vale também o que a origem, as regiões e as regiões vinculadas dizem.
+    var said = mentionedText_(g);
+    c.rg.forEach(function (x) {
+      if (x.grape_id === g.id && x.role !== 'secundaria' && c.rById[x.region_id]) said += Util.normKey(countryName(c, c.rById[x.region_id])) + ' ';
+    });
+    var all = Object.keys(c.countries).map(function (k) { return c.countries[k].name; })
+      .filter(function (n) { return said.indexOf(' ' + Util.normKey(n) + ' ') < 0; });
     var wrong = pickN(all, 3, mine);
     return q('pais', 'Em qual destes países a uva ' + g.name + ' tem presença importante?', mine[0], wrong,
       'Principais países: ' + g.main_countries + '. ' + (g.origin ? 'Origem: ' + trim(g.origin, 220) : ''), refOf(g, 'main_countries'));
@@ -70,17 +82,22 @@ var Quiz = (function () {
     var linked = {};
     c.rg.forEach(function (x) { if (x.region_id === region.id) linked[x.grape_id] = true; });
     var wrong = pickN(c.known.filter(function (g) { return !linked[g.id] && (!right.color || g.color === right.color); }).map(function (g) { return g.name; }), 3);
-    return q('regiao-uva', 'Qual destas uvas é uma das principais em ' + region.name + ' (' + countryName(c, region) + ')?', right.name, wrong,
-      'Uvas principais de ' + region.name + ': ' + main.map(function (g) { return g.name; }).join(', ') + '. ' + trim(region.description || region.climate || '', 220), refOf(region, 'description'));
+    return q('regiao-uva', 'Qual destas uvas é uma das principais em ' + plainName_(region.name) + ' (' + countryName(c, region) + ')?', right.name, wrong,
+      'Uvas principais de ' + plainName_(region.name) + ': ' + main.map(function (g) { return g.name; }).join(', ') + '. ' + trim(region.description || region.climate || '', 220), refOf(region, 'description'));
   }
 
   function qRegionOfGrape(c, g) {
     var regs = c.rg.filter(function (x) { return x.grape_id === g.id && x.role !== 'secundaria'; }).map(function (x) { return c.rById[x.region_id]; }).filter(Boolean);
     if (!regs.length) return null;
-    var right = regs[Math.floor(Math.random() * regs.length)];
+    // Só vale como "principal" uma região de país que a própria ficha da uva cita (evita, por exemplo, uma região
+    // marginal cadastrada por um produtor virar a resposta certa para uma uva europeia).
+    var said = mentionedText_(g);
+    var solid = said.trim() ? regs.filter(function (r) { var n = Util.normKey(countryName(c, r)); return n && said.indexOf(' ' + n + ' ') >= 0; }) : regs;
+    if (!solid.length) return null;
+    var right = solid[Math.floor(Math.random() * solid.length)];
     var mine = {};
     c.rg.forEach(function (x) { if (x.grape_id === g.id) mine[x.region_id] = true; });
-    var label = function (r) { return r.name + ' (' + countryName(c, r) + ')'; };
+    var label = function (r) { return plainName_(r.name) + ' (' + countryName(c, r) + ')'; };
     var wrong = pickN(c.regions.filter(function (r) { return !mine[r.id] && !r.parent_id; }).map(label), 3);
     return q('uva-regiao', 'Em qual destas regiões a ' + g.name + ' é uma uva principal?', label(right), wrong,
       'A ' + g.name + ' é uva principal em: ' + regs.slice(0, 6).map(label).join('; ') + '. ' + trim(right.description || '', 180), refOf(right, 'description'));
@@ -92,7 +109,12 @@ var Quiz = (function () {
     var right = mine[Math.floor(Math.random() * mine.length)];
     var names = {};
     mine.forEach(function (a) { names[a.name] = true; });
-    var wrong = pickN(Object.keys(c.aromas).map(function (k) { return c.aromas[k].name; }).filter(function (n) { return !names[n]; }), 3);
+    // Alternativas erradas de outras famílias: "sub-bosque" seria defensável para uma uva que já tem aromas terrosos.
+    var families = {};
+    mine.forEach(function (a) { families[a.subcategory || a.category] = true; });
+    var wrong = pickN(Object.keys(c.aromas).map(function (k) { return c.aromas[k]; })
+      .filter(function (a) { return !names[a.name] && !families[a.subcategory || a.category]; })
+      .map(function (a) { return a.name; }), 3);
     var p = c.profiles[g.id];
     return q('aroma', 'Qual destes aromas é típico da uva ' + g.name + '?', right.name, wrong,
       'Aromas típicos: ' + mine.map(function (a) { return a.name; }).join(', ') + '.' + (p && p.nose_text ? ' ' + p.nose_text : ''),
@@ -128,7 +150,7 @@ var Quiz = (function () {
     if (!other) return null;
     var avoid = rel.map(function (x) { var o = c.gById[x.grape_a_id === g.id ? x.grape_b_id : x.grape_a_id]; return o ? o.name : ''; }).concat([g.name]);
     var wrong = pickN(c.known.filter(function (x) { return x.color === g.color; }).map(function (x) { return x.name; }), 3, avoid);
-    return q('confusao', 'Numa degustação às cegas, a ' + g.name + ' costuma ser confundida com qual uva?', other.name, wrong,
+    return q('confusao', 'Qual destas uvas costuma ser confundida com a ' + g.name + '?', other.name, wrong,
       r.how_to_differentiate || '', r.source_ref || '');
   }
 
@@ -145,7 +167,7 @@ var Quiz = (function () {
     var right = countryName(c, region);
     if (!right) return null;
     var wrong = pickN(Object.keys(c.countries).map(function (k) { return c.countries[k].name; }), 3, [right]);
-    return q('regiao-pais', 'Em que país fica a região ' + region.name + '?', right, wrong, trim(region.description || '', 220), refOf(region, 'description'));
+    return q('regiao-pais', 'Em que país fica a região ' + plainName_(region.name) + '?', right, wrong, trim(region.description || '', 220), refOf(region, 'description'));
   }
 
 
@@ -244,7 +266,7 @@ var Quiz = (function () {
       return { title: 'Quiz do material de aula', level: cleanLevel_(opts.level), questions: shuffle(onlyCards) };
     }
     var c = context();
-    var grapes = [], regions = [], out = [], wineQs = [];
+    var grapes = [], regions = [], out = [];
 
     if (opts.tasting_id) {
       var t = Repo.get('tastings', Validate.id(opts.tasting_id));
@@ -259,20 +281,6 @@ var Quiz = (function () {
         (wg[w.id] || []).forEach(function (x) { if (c.gById[x.grape_id]) grapes.push(c.gById[x.grape_id]); });
         var reg = topRegion(c, c.rById[w.subregion_id] || c.rById[w.region_id]);
         if (reg) regions.push(reg);
-        // Perguntas sobre o próprio vinho (só depois da revelação).
-        if (t.status === 'revelada') {
-          var wgList = (wg[w.id] || []).map(function (x) { return c.gById[x.grape_id]; }).filter(Boolean);
-          if (wgList.length) {
-            wineQs.push(q('vinho', 'Qual era a uva principal da garrafinha #' + b.number + '?',
-              wgList[0].name, pickN(c.known.filter(function (x) { return x.color === wgList[0].color; }).map(function (x) { return x.name; }), 3, wgList.map(function (x) { return x.name; })),
-              wgList[0].origin ? 'Origem da ' + wgList[0].name + ': ' + trim(wgList[0].origin, 200) : '', refOf(wgList[0], 'origin')));
-          }
-          if (reg) {
-            wineQs.push(q('vinho', 'De qual região era a garrafinha #' + b.number + '?', reg.name + ' (' + countryName(c, reg) + ')',
-              pickN(c.regions.filter(function (r) { return !r.parent_id && r.id !== reg.id; }).map(function (r) { return r.name + ' (' + countryName(c, r) + ')'; }), 3),
-              trim(reg.climate || reg.description || '', 220), refOf(reg, 'description')));
-          }
-        }
       });
     }
     var seenG = {}, seenR = {};
@@ -284,7 +292,6 @@ var Quiz = (function () {
     if (!grapes.length) grapes = shuffle(knownPool).slice(0, Math.ceil(n * 0.7));
     if (!regions.length) regions = shuffle(regionPool).slice(0, Math.ceil(n * 0.4));
 
-    wineQs.filter(Boolean).slice(0, Math.ceil(n / 3)).forEach(function (x) { out.push(x); });
     // Rodízio entre tipos e entre uvas/regiões, até completar.
     var tries = 0;
     while (out.length < n && tries < n * 12) {
@@ -293,7 +300,7 @@ var Quiz = (function () {
       var item = useRegion ? regions[tries % regions.length] : grapes[tries % grapes.length];
       var gens = useRegion ? BY_REGION : BY_GRAPE;
       var x = gens[Math.floor(Math.random() * gens.length)](c, item);
-      if (x && !out.some(function (o) { return o.question === x.question; })) out.push(x);
+      if (x && !out.some(function (o) { return o.question === x.question; })) { x.subject = item.name; out.push(x); }
     }
     // Modo aleatório: parte das perguntas vem dos cartões de estudo, quando existem.
     if (!opts.tasting_id) {

@@ -23,6 +23,7 @@
  * v3 (06/10/2026): fichas completas das uvas que só tinham o nome (vindas dos packs de regiões), começando pelas
  *   mais citadas: origem, história, onde se planta, viticultura, aromas e perfil (Wikipedia + Wine Folly; quando
  *   não há artigo próprio, a Wikipedia em outra língua ou o artigo do vinho do país, com o link em `wiki`).
+ * v13 (29/10/2026): cor típica (intensidade e tonalidade) de ~50 uvas tintas, só onde Wine Folly, First Leaf ou a descrição da ficha dizem.
  * v11 (20/10/2026): perfis sensoriais para 18 uvas que tinham ficha sem perfil, só onde Wine Folly ou Wikipedia dizem explicitamente.
  * v10 (08/10/2026): lote 8, mais 21 uvas (Sardenha, Campânia, Douro e Minho, Madeira, Romênia, EUA…; sem ficha por falta de fonte: Granaccia, Batoca, Padeiro, Listrão).
  * v9 (08/10/2026): lote 7, mais 37 uvas (Suíça, Alemanha, Hungria, Rioja, Grécia, Argentina…; sem ficha por falta de fonte: Rumeni Plavec, Granaccia, Tintilla, Vijariego Negro, Maturana Tinta, Caíño Tinto).
@@ -3424,5 +3425,56 @@ var GRAPE_ENCYCLOPEDIA = (function () {
   grapes = grapes.concat(GRAPES_V10);
   relations = relations.concat(RELATIONS_V10);
 
-  return { version: 12, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
+  // ---- Cor (v13, 29/10/2026): intensidade e tonalidade típicas, só onde uma fonte diz explicitamente. ----
+  // Fontes: 'wfchart' = Wine Folly, tabela de cores de vinho tinto (tintos claros, médios, encorpados e escuros);
+  //         'firstleaf' = First Leaf, guia de cor do vinho; 'wiki' = o que a descrição da ficha da uva já cita
+  //         (Wikipedia/Wine Folly, ex.: "cor clara (granada)", "rubi profundo"). Sem fonte → campo vazio.
+  // [uva, intensidade, tonalidade, fontes]. Tonalidade só quando a fonte a atribui à própria uva.
+  var COLOR_DATA = [
+    ['Pinot Noir', 'palido', 'granada', ['wfchart', 'firstleaf', 'wiki']],
+    ['Gamay', 'palido', '', ['wfchart', 'firstleaf']],
+    ['Nebbiolo', 'palido', '', ['firstleaf', 'wiki']],
+    ['St. Laurent', 'palido', '', ['wfchart']],
+    ['Zweigelt', 'palido', '', ['wfchart']],
+    ['Poulsard', 'palido', '', ['wiki']], ['Pelaverga', 'palido', '', ['wiki']], ['Ruché', 'palido', '', ['wiki']],
+    ['Xinomavro', 'palido', '', ['wiki']], ['Manto Negro', 'palido', '', ['wiki']], ['Liatiko', 'palido', '', ['wiki']],
+    ['Freisa', 'palido', 'purpura', ['wiki']],
+    ['Sangiovese', 'palido..medio', '', ['wfchart', 'firstleaf', 'wiki']],
+    ['Grenache', 'palido..medio', 'rubi', ['wfchart', 'firstleaf', 'wiki']],
+    ['Tempranillo', 'medio', 'rubi', ['firstleaf', 'wiki']],
+    ['Merlot', 'medio..profundo', '', ['firstleaf', 'wiki']],
+    ['Areni', 'palido..medio', 'rubi', ['wiki']], ['Kotsifali', 'medio', '', ['wiki']],
+    ['Syrah', 'profundo', '', ['wfchart', 'firstleaf']],
+    ['Malbec', 'profundo', '', ['wfchart', 'firstleaf', 'wiki']],
+    ['Mourvèdre', 'profundo', '', ['wfchart', 'wiki']],
+    ['Cabernet Sauvignon', 'profundo', '', ['wfchart', 'firstleaf']],
+    ['Tannat', 'profundo', '', ['wiki']],
+    ['Barbera', 'profundo', 'rubi', ['wiki']], ['Montepulciano', 'profundo', 'rubi', ['wiki']],
+    ['Dolcetto', 'profundo', '', ['wiki']], ['Touriga Nacional', 'profundo', '', ['wiki']],
+    ['Negroamaro', 'profundo', '', ['wiki']], ['Sagrantino', 'profundo', 'purpura', ['wiki']],
+    ['Teroldego', 'profundo', 'purpura', ['wiki']], ['Mencía', 'profundo', 'purpura', ['wiki']],
+    ['Saperavi', 'profundo', '', ['wiki']], ['Graciano', 'profundo', '', ['wiki']],
+    ['Mavrotragano', 'profundo', '', ['wiki']], ['Trincadeira', 'profundo', '', ['wiki']],
+    ['Pignolo', 'profundo', '', ['wiki']], ['Colorino', 'profundo', '', ['wiki']],
+    ['Boğazkere', 'profundo', 'purpura..rubi', ['wiki']], ['Öküzgözü', 'profundo', 'rubi', ['wiki']],
+    ['Karalahna', 'profundo', '', ['wiki']], ['Marselan', 'profundo', '', ['wiki']],
+    ['Mondeuse Noire', 'profundo', '', ['wiki']], ['Mavrodaphne', 'profundo', '', ['wiki']],
+    ['Fer', 'profundo', 'rubi', ['wiki']], ['Alicante Bouschet', 'profundo', '', ['wiki']],
+    ['Schioppettino', 'profundo', '', ['wiki']], ['Mandilaria', 'profundo', '', ['wiki']],
+    ['Alfrocheiro', 'profundo', '', ['wiki']], ['Petit Rouge', 'profundo', '', ['wiki']],
+    ['Nero d\'Avola', '', 'rubi', ['wiki']], ['Kalecik Karası', '', 'rubi', ['wiki']],
+    ['Nerello Mascalese', '', 'rubi..granada', ['wiki']]
+  ];
+  var COLOR_BY_NAME = {};
+  grapes.forEach(function (g) { COLOR_BY_NAME[g.name] = g; });
+  COLOR_DATA.forEach(function (c) {
+    var g = COLOR_BY_NAME[c[0]];
+    if (!g) throw new Error('Cor: uva fora da enciclopédia: ' + c[0]);
+    g.profile = g.profile || {};
+    if (c[1]) g.profile.color_intensity = c[1];
+    if (c[2]) g.profile.color_hue = c[2];
+    g.color_src = c[3];
+  });
+
+  return { version: 13, WIKI: WIKI, WF: WF, EXTRA_AROMAS: EXTRA_AROMAS, grapes: grapes, relations: relations, removed_relations: REMOVED_V2 };
 })();

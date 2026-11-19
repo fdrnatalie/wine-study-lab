@@ -337,7 +337,8 @@ Pages.tastingReport = {
       function tally(icon, label, c) {
         var a = agg[c];
         if (!a) return '';
-        return '<div>' + icon + ' ' + esc(label) + ': <b>' + a.hit + '/' + a.total + '</b>' + (a.near ? ' <span class="muted small">(+' + a.near + ' próx.)</span>' : '') + '</div>';
+        return '<div>' + icon + ' ' + esc(label) + ': <b>' + a.hit + '/' + a.total + '</b>' + (a.near ? ' <span class="muted small">(+' + a.near + ' próx.)</span>' : '') +
+          (a.total < r.samples.length ? ' <span class="muted small">· só ' + a.total + ' de ' + r.samples.length + ' vinhos tinham gabarito</span>' : '') + '</div>';
       }
       var html = '<div class="page-head"><div><div class="eyebrow"><a href="#/degustacao/historico">Histórico</a> · ' + fmtDate(r.date) + ' · ' + esc(DIFFICULTY[r.difficulty] ? DIFFICULTY[r.difficulty][0] : '') + '</div>' +
         '<h1>Resultado da degustação</h1><p class="sub">' + esc(r.title) + '</p></div><div class="btn-row"><button class="btn" data-action="rescore" title="Recalcula o gabarito e a nota com os dados atuais dos vinhos">Recalcular resultado</button><a class="btn" href="#/quiz?degustacao=' + esc(r.id) + '">Fazer o quiz destes vinhos</a><a class="btn primary" href="#/degustacao/nova">Nova degustação</a></div></div>' +
@@ -371,6 +372,7 @@ Pages.tastingReport = {
               '<td>' + (x.state === 'no_ref' ? '<span class="missing">sem gabarito</span>' : esc(x.expected)) + '</td><td>' + Components.state(x.state) + '</td>' +
               '<td style="text-align:right" class="nowrap">' + (x.max_points ? fmtNum(x.points) + ' / ' + x.max_points : '—') + '</td></tr>';
           }).join('') + '</tbody></table></div>' +
+          (w.grape_profiles && w.grape_profiles.length ? '<details style="margin:12px 0"><summary><b>Perfil aromático das uvas deste vinho</b></summary><div style="margin-top:10px">' + Components.grapeProfiles(w.grape_profiles) + '</div></details>' : '') +
           (s.free.conclusion ? '<p class="small"><b>Sua conclusão:</b> ' + esc(s.free.conclusion) + '</p>' : '') +
           (s.lessons && s.lessons.length ? '<div class="lessons"><div class="eyebrow">O que aprender com esta garrafa</div>' + s.lessons.map(function (l) {
             return '<div class="lesson ' + esc(l.kind) + '"><b>' + esc(l.title) + '</b><p>' + esc(l.text) + '</p></div>';
@@ -381,7 +383,12 @@ Pages.tastingReport = {
       if (r.samples.length > 1) {
         var rows = [['Uva', function (w) { return w.grapes.map(function (g) { return g.name; }).join(', '); }],
           ['Acidez', prof('acidity')], ['Tanino', prof('tannin')], ['Corpo', prof('body')],
-          ['Aromas', function (w) { return w.aromas.slice(0, 5).join(', '); }],
+          ['Aromas', function (w) {
+            if (w.aromas.length) return w.aromas.slice(0, 5).join(', ');
+            var seen = {}, names = [];
+            (w.grape_profiles || []).forEach(function (g) { g.aromas.forEach(function (a) { if (!seen[a.name]) { seen[a.name] = 1; names.push(a.name); } }); });
+            return names.length ? names.slice(0, 5).join(', ') + ' (das uvas)' : '';
+          }],
           ['Álcool', function (w) { return w.abv ? fmtNum(w.abv) + '%' : ''; }]];
         html += '<h2>Comparação entre os vinhos</h2><div class="panel tbl-wrap"><table class="tbl cmp"><thead><tr><th></th>' +
           r.samples.map(function (s) { return '<th>#' + s.number + ' · ' + esc(s.wine.name) + '</th>'; }).join('') + '</tr></thead><tbody>' +
@@ -390,12 +397,19 @@ Pages.tastingReport = {
             var differ = vals.some(function (v) { return v !== vals[0]; });
             return '<tr><td class="muted">' + row[0] + '</td>' + vals.map(function (v) { return '<td class="' + (differ ? 'hl' : '') + '">' + (v ? esc(v) : '<span class="missing">—</span>') + '</td>'; }).join('') + '</tr>';
           }).join('') + '</tbody></table>' +
-          '<p class="small muted">Em negrito: características que diferem entre os vinhos. Valores vêm do perfil de referência de cada vinho' +
+          '<p class="small muted">Em negrito: características que diferem entre os vinhos. Valores vêm do perfil de referência de cada vinho; quando ele não existe, aparece o perfil típico da uva, com o nome dela' +
           (r.samples.some(function (s) { return s.wine.profile && !s.wine.profile_trusted; }) ? ' (alguns ainda <b>não verificados</b>)' : '') + '.</p></div>';
       }
       Pages.tastingReport.data = r;
       return html;
-      function prof(k) { return function (w) { return w.profile && w.profile[k] ? Store.scaleLabel(k, w.profile[k]) + (w.profile_trusted ? '' : ' *') : ''; }; }
+      // Sem perfil próprio, mostra o perfil típico da uva principal, marcado "(da uva)", em vez de "—".
+      function prof(k) {
+        return function (w) {
+          if (w.profile && w.profile[k]) return Store.scaleLabel(k, w.profile[k]) + (w.profile_trusted ? '' : ' *');
+          var gp = (w.grape_profiles || []).filter(function (g) { return g.profile && g.profile[k]; })[0];
+          return gp ? String(gp.profile[k]).split('..').map(function (v) { return Store.scaleLabel(k, v); }).join(' a ') + ' (' + gp.name + ')' : '';
+        };
+      }
     });
   },
   actions: {

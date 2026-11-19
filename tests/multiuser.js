@@ -222,7 +222,7 @@ test('garrafinha só acaba quando você decide: em uso continua disponível', ()
   assert.ok(post('bottles.fractionate', { wine_id: w.id, numbering: 'manual', numbers: String(bottles[0].number), original_volume_ml: 750, bottle_volume_ml: 30 }, owner.token).ok);
 });
 test('funcionalidades em construção: escondidas dos membros até a dona liberar', () => {
-  ['course.get', 'features.list'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));
+  ['course.get', 'features.list', 'grapes.map'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));
   ['historia', 'producao', 'harmonizacao'].forEach((t) => assert.strictEqual(post('study.topic', { topic: t }, ana.token).ok, false, t));
   assert.deepStrictEqual(ok(post('study.counts', {}, ana.token)), {});
   const lk0 = ok(post('lookups', {}, ana.token));
@@ -234,8 +234,27 @@ test('funcionalidades em construção: escondidas dos membros até a dona libera
   assert.strictEqual(post('features.set', { id: 'curso', value: 'todos' }, ana.token).ok, false);
   assert.strictEqual(post('features.set', { id: 'xyz', value: 'todos' }, owner.token).ok, false);
   assert.strictEqual(post('features.set', { id: 'curso', value: 'qualquer' }, owner.token).ok, false);
-  ['curso', 'historia', 'producao', 'harmonizacao', 'cartoes'].forEach((id) => ok(post('features.set', { id, value: 'todos' }, owner.token)));
+  ['curso', 'historia', 'producao', 'harmonizacao', 'cartoes', 'mapa'].forEach((id) => ok(post('features.set', { id, value: 'todos' }, owner.token)));
   assert.ok(Object.values(ok(post('lookups', {}, ana.token)).features).every((v) => v === true));
+});
+test('mapa de uvas: lista só o catálogo (perfil e aromas), com a cor típica onde há fonte', () => {
+  const list = ok(post('grapes.map', {}, ana.token));
+  assert.ok(list.length > 0);
+  list.forEach((g) => { assert.ok(g.id && g.name && g.profile && Array.isArray(g.aromas)); });
+  list.forEach((g) => assert.deepStrictEqual(Object.keys(g).sort(), ['aromas', 'color', 'id', 'name', 'profile', 'source']), 'só campos do catálogo');
+  const owner_ = ok(post('grapes.map', {}, owner.token));
+  assert.strictEqual(owner_.length, list.length);
+});
+test('cor das uvas: o dado da enciclopédia usa só valores das escalas e sempre traz a fonte', () => {
+  const E = JSON.parse(run_('JSON.stringify(GRAPE_ENCYCLOPEDIA)'));
+  const withColor = E.grapes.filter((g) => g.profile && (g.profile.color_intensity || g.profile.color_hue));
+  assert.ok(withColor.length >= 40, 'poucas uvas com cor: ' + withColor.length);
+  const INT = ['palido', 'medio', 'profundo'], HUE = ['purpura', 'rubi', 'granada'];
+  withColor.forEach((g) => {
+    (g.profile.color_intensity || '').split('..').filter(Boolean).forEach((v) => assert.ok(INT.includes(v), g.name + ': ' + v));
+    (g.profile.color_hue || '').split('..').filter(Boolean).forEach((v) => assert.ok(HUE.includes(v), g.name + ': ' + v));
+    assert.ok(g.color_src && g.color_src.length, g.name + ' sem fonte de cor');
+  });
 });
 test('cartões de estudo: membro lê, aparecem em país/região e no quiz', () => {
   const hist = ok(post('study.topic', { topic: 'historia' }, ana.token));
@@ -317,6 +336,61 @@ test('auditoria das fichas: lista o que vale como gabarito e confirma só o que 
   // o gabarito de uma degustação passa a usar o perfil confirmado
   const full = ok(post('wines.get', { id: w.id }, owner.token));
   if (full.profile) assert.ok(full.profile_trusted);
+});
+test('quiz ensina sobre uva, região e estilo: nada de "qual era a garrafinha #N"', () => {
+  const w = ok(post('wines.list', {}, owner.token))[0];
+  const tastings = ok(post('tastings.list', {}, owner.token));
+  const qs = [];
+  for (let i = 0; i < 12; i++) qs.push(...ok(post('quiz.generate', { n: 20 }, owner.token)).questions);
+  if (tastings.length) for (const t of tastings) qs.push(...ok(post('quiz.generate', { n: 20, tasting_id: t.id }, owner.token)).questions);
+  assert.ok(qs.length > 0);
+  qs.forEach((q) => {
+    assert.ok(!/garrafinha|garrafa|#\d/i.test(q.question), 'pergunta sobre a garrafa: ' + q.question);
+    assert.ok(q.type !== 'vinho', 'tipo "vinho" não existe mais');
+    assert.ok(q.answer >= 0 && q.options.length >= 3 && new Set(q.options).size === q.options.length, 'opções repetidas: ' + q.question);
+  });
+  assert.ok(qs.every((q) => q.type === 'cartao' || q.subject), 'perguntas de uva/região levam o assunto (para "Revise: …")');
+});
+test('quiz: país errado nunca é um país citado na ficha da uva; sigla do estado não aparece', () => {
+  const grapes = ok(post('grapes.list', {}, owner.token));
+  const bySubject = {};
+  grapes.forEach((g) => { bySubject[g.name] = g; });
+  for (let i = 0; i < 30; i++) {
+    ok(post('quiz.generate', { n: 20 }, owner.token)).questions.filter((q) => q.type === 'pais').forEach((q) => {
+      const g = bySubject[q.subject]; if (!g) return;
+      const said = ' ' + [g.main_countries, g.main_regions, g.origin].join(' ').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ') + ' ';
+      q.options.forEach((o, k) => { if (k !== q.answer) {
+        const n = o.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        assert.ok(said.indexOf(' ' + n + ' ') < 0, q.subject + ': "' + o + '" é citado na ficha e aparece como errado');
+      } });
+    });
+    ok(post('quiz.generate', { n: 20 }, owner.token)).questions.forEach((q) => assert.ok(!/ [–-] [A-Z]{2}[?)]/.test(q.question), q.question));
+  }
+});
+test('ficha do vinho traz o perfil aromático das uvas, com a origem de cada dado', () => {
+  const list = ok(post('wines.list', {}, owner.token));
+  const withGrapes = list.find((x) => x.grapes.length);
+  assert.ok(withGrapes, 'fixture sem vinho com uva');
+  const w = ok(post('wines.get', { id: withGrapes.id }, owner.token));
+  assert.strictEqual(w.grape_profiles.length, w.grapes.length);
+  w.grape_profiles.forEach((g) => { assert.ok(g.name); assert.ok(Array.isArray(g.aromas)); if (g.profile) assert.ok(g.source); });
+  // membro vê o mesmo catálogo, sem acesso a nada pessoal
+  assert.strictEqual(ok(post('wines.get', { id: withGrapes.id }, ana.token)).grape_profiles.length, w.grape_profiles.length);
+});
+test('busca ignora espaço a mais ou a menos (ditado: "Montepul ciano")', () => {
+  const grapes = ok(post('grapes.list', {}, owner.token));
+  const g = grapes.find((x) => /^[A-Za-zÀ-ú]{9,}$/.test(x.name));
+  const broken = g.name.slice(0, 4) + ' ' + g.name.slice(4);
+  const found = ok(post('search', { q: broken }, owner.token));
+  assert.ok(found.some((r) => r.title === g.name), broken);
+});
+test('resultado: dado da ficha lido por IA e não confirmado é dito como tal, não como "faltando"', () => {
+  const w = ok(post('wines.list', {}, owner.token)).find((x) => x.country_id);
+  run_(`Ctx.asSystem(function(){ var w = Repo.get('wines', ${JSON.stringify(w.id)}); var fs = Object.assign({}, w.field_sources || {}); fs.country_id = 'ia_nao_verificada'; Repo.update('wines', [{ id: w.id, field_sources: fs }]); })`);
+  const gaps = JSON.parse(run_(`JSON.stringify(Tastings.gaps(${JSON.stringify(w.id)}))`));
+  assert.ok(gaps.some((g) => /^país \(da ficha, mas lido por IA e ainda não confirmado\)$/.test(g)), JSON.stringify(gaps));
+  run_(`Ctx.asSystem(function(){ var w = Repo.get('wines', ${JSON.stringify(w.id)}); var fs = Object.assign({}, w.field_sources || {}); fs.country_id = 'usuario'; Repo.update('wines', [{ id: w.id, field_sources: fs }]); })`);
+  assert.ok(!JSON.parse(run_(`JSON.stringify(Tastings.gaps(${JSON.stringify(w.id)}))`)).some((g) => /^país/.test(g)));
 });
 test('IA, sincronização e usuários: só a administradora', () => {
   ['ai.status', 'sync.run', 'users.list', 'seed.grapes'].forEach((m) => assert.strictEqual(post(m, {}, ana.token).ok, false, m));

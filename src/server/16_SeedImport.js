@@ -104,7 +104,7 @@ var SeedEncyclopedia = (function () {
         if (hasProfile && (!prof || prof.source === 'ia_nao_verificada' || prof.source === 'pesquisado')) {
           var data = Object.assign({}, s.profile, {
             source: 'pesquisado',
-            source_ref: wfUrl ? 'Wine Folly: ' + wfUrl + (/\.\./.test(s.profile.sweetness) ? ' · dulçor: ' + wikiUrl : '') : wikiUrl,
+            source_ref: (wfUrl ? 'Wine Folly: ' + wfUrl + (/\.\./.test(s.profile.sweetness) ? ' · dulçor: ' + wikiUrl : '') : wikiUrl) + colorRef_(s, wikiUrl),
             nose_text: s.flavors ? 'Sabores principais (Wine Folly): ' + s.flavors + '.' : ''
           });
           if (prof) ['intensity', 'finish', 'color_intensity', 'color_hue', 'oak', 'texture', 'visual_text', 'palate_text'].forEach(function (k) { if (prof[k]) data[k] = prof[k]; });
@@ -176,6 +176,13 @@ var SeedEncyclopedia = (function () {
     } finally {
       Repo.unlock();
     }
+  }
+
+  /** Fontes da cor típica (só quando a uva tem cor cadastrada na enciclopédia). */
+  var COLOR_URLS = { wfchart: 'https://winefolly.com/deep-dive/wine-color-chart/', firstleaf: 'https://www.firstleaf.com/blogs/wine-school/guide-wine-color' };
+  function colorRef_(s, wikiUrl) {
+    if (!s.color_src || !s.color_src.length) return '';
+    return ' · cor: ' + s.color_src.map(function (k) { return k === 'wiki' ? wikiUrl : COLOR_URLS[k]; }).filter(Boolean).join(' ; ');
   }
 
   function exactByName_(name) {

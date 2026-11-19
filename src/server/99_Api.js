@@ -64,6 +64,7 @@ var API_METHODS = {
   'routine.run': function () { return Routine.run(true); },
 
   'grapes.list': function () { return Grapes.list(); },
+  'grapes.map': function () { Features.require('mapa'); return GrapeMap.list(); },
   'grapes.get': function (a) { return Grapes.get(a.id); },
   'grapes.save': function (a) { return Grapes.save(a.grape); },
   'grapes.photoAdd': function (a) { return GrapePhotos.add(a); },

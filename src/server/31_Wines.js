@@ -38,6 +38,20 @@ var Wines = (function () {
     };
   }
 
+  /**
+   * Perfil típico (aromas e estrutura) das uvas do vinho, vindo da enciclopédia de uvas, com a origem de cada dado.
+   * Complementa o perfil do vinho (que é o gabarito) e nunca o substitui; uva sem perfil cadastrado vem com perfil nulo.
+   */
+  function grapeProfiles_(wineId, c) {
+    return (c.wineGrapes[wineId] || []).map(function (x) {
+      var g = c.grapes[x.grape_id];
+      if (!g) return null;
+      var p = Catalog.profileOf('grape', g.id);
+      return { id: g.id, name: g.name, color: g.color, percent: x.percent, aromas: Catalog.aromasOf('grape', g.id),
+        profile: p, source: p ? p.source : '', source_ref: p ? p.source_ref : '' };
+    }).filter(Boolean);
+  }
+
   function list() {
     var c = context_();
     return Repo.all('wines').map(function (w) { return summarize_(w, c); })
@@ -55,6 +69,7 @@ var Wines = (function () {
     out.profile = Catalog.profileOf('wine', id);
     out.profile_trusted = out.profile ? Catalog.isTrusted(out.profile.source) : false;
     out.aromas = Catalog.aromasOf('wine', id);
+    out.grape_profiles = grapeProfiles_(id, c);
     out.notes = Catalog.notesFor('wine', id);
     var bottles = (c.bottles[id] || []).slice().sort(function (a, b) { return a.number - b.number; });
     out.bottles = bottles.map(function (b) { return { id: b.id, number: b.number, status: b.status }; });

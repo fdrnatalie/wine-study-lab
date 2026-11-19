@@ -11,7 +11,8 @@ var Features = (function () {
     { id: 'historia', label: 'História do vinho' },
     { id: 'producao', label: 'Produção de vinho' },
     { id: 'harmonizacao', label: 'Harmonizações' },
-    { id: 'cartoes', label: 'Cartões de estudo nas páginas de país e região' }
+    { id: 'cartoes', label: 'Cartões de estudo nas páginas de país e região' },
+    { id: 'mapa', label: 'Mapa de uvas (descobrir a uva de um vinho por cor, aroma e boca)' }
   ];
   var BY_TOPIC = { historia: 'historia', producao: 'producao', harmonizacao: 'harmonizacao', pais: 'cartoes', regiao: 'cartoes' };
 

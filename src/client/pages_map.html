@@ -1,0 +1,204 @@
+<script>
+/* ============================================================
+   Mapa de uvas (#/uvas/mapa): descobrir a uva de um vinho por camadas, na ordem da degustação.
+   1 Visual (intensidade e tonalidade da cor) · 2 Nariz (família de aroma) · 3 Boca (acidez, tanino, corpo, álcool, dulçor).
+   Cada escolha mantém as uvas que combinam, deixa "parecidas" as que ficam a um passo e descarta as demais.
+   Uva SEM dado numa camada escolhida não é descartada: vai para a lista "sem dado nesta camada".
+   O perfil é o típico da uva; o vinho muda com safra, clima e vinificação. Tudo calculado aqui, com a lista do servidor.
+   ============================================================ */
+var GrapeMapUI = {
+  // [chave, rótulo, escala do app]. Escalas de 5 níveis viram 3 faixas (baixa, média, alta); as de 3 níveis ficam como estão.
+  LAYERS: [
+    ['color_intensity', 'Intensidade da cor', 'visual'], ['color_hue', 'Tonalidade', 'visual'],
+    ['aroma', 'Família de aroma', 'nariz'],
+    ['acidity', 'Acidez', 'boca'], ['tannin', 'Tanino', 'boca'], ['body', 'Corpo', 'boca'], ['alcohol', 'Álcool', 'boca'], ['sweetness', 'Dulçor', 'boca']
+  ],
+  STEP: { visual: '1 · Visual', nariz: '2 · Nariz', boca: '3 · Boca' },
+  HUE_ORDER: ['purpura', 'rubi', 'granada'],
+  HUE_COLOR: { purpura: '#8f7ae0', rubi: '#d9606a', granada: '#d9835a', none: '#8a8186' },
+
+  levels: function (k) { return Store.scale(k).slice().sort(function (a, b) { return a.position - b.position; }); },
+  /** Posições (0-based) que um valor ocupa; "a..b" ocupa a faixa toda. */
+  span: function (k, v) {
+    if (!v) return null;
+    var keys = GrapeMapUI.levels(k).map(function (l) { return l.key; });
+    var parts = String(v).split('..');
+    var a = keys.indexOf(parts[0]), b = keys.indexOf(parts[parts.length - 1]);
+    if (a < 0 || b < 0) return null;
+    return [Math.min(a, b), Math.max(a, b)];
+  },
+  /** Tonalidade: posições na lista púrpura, rubi, granada ("a..b" ocupa a faixa; outros tons de vinho tinto não entram). */
+  hueSpan: function (v) {
+    if (!v) return null;
+    var ix = String(v).split('..').map(function (x) { return GrapeMapUI.HUE_ORDER.indexOf(x); }).filter(function (i) { return i >= 0; });
+    return ix.length ? [Math.min.apply(null, ix), Math.max.apply(null, ix)] : null;
+  },
+  /** Faixa grosseira (0 baixa, 1 média, 2 alta) de uma posição numa escala de n níveis. */
+  band: function (pos, n) { return n >= 5 ? [0, 0, 1, 2, 2][Math.min(pos, 4)] : Math.min(pos, 2); },
+  bandSpan: function (k, v) {
+    var s = GrapeMapUI.span(k, v), n = GrapeMapUI.levels(k).length;
+    return s ? [GrapeMapUI.band(s[0], n), GrapeMapUI.band(s[1], n)] : null;
+  },
+  /** Distância entre a faixa pedida e o que a uva tem: 0 combina, 1 parecida, 2+ não combina. */
+  dist: function (want, sp) { return want < sp[0] ? sp[0] - want : want > sp[1] ? want - sp[1] : 0; },
+
+  /** Resultado de uma uva: {state: match|near|unknown|out, score, missing: [camadas sem dado]} */
+  evaluate: function (g, sel) {
+    var score = 0, near = false, bad = false, missing = [];
+    GrapeMapUI.LAYERS.forEach(function (L) {
+      var k = L[0], want = sel[k];
+      if (k === 'aroma') {
+        if (!sel.aroma.length) return;
+        if (!g.aromas.length) { missing.push(L[1]); return; }
+        var hit = g.aromas.some(function (a) { return sel.aroma.indexOf(a.family) >= 0; });
+        if (hit) score += 1; else bad = true;
+        return;
+      }
+      if (want === null || want === undefined) return;
+      var v = g.profile[k];
+      if (k === 'color_hue') {
+        var sp = GrapeMapUI.hueSpan(v);
+        if (!sp) { missing.push(L[1]); return; }
+        var d = want < sp[0] ? sp[0] - want : want > sp[1] ? want - sp[1] : 0;
+        if (d === 0) score += 1; else if (d === 1) { score += .5; near = true; } else bad = true;
+        return;
+      }
+      var bs = GrapeMapUI.bandSpan(k, v);
+      if (!bs) { missing.push(L[1]); return; }
+      var dd = GrapeMapUI.dist(want, bs);
+      if (dd === 0) score += 1; else if (dd === 1) { score += .5; near = true; } else bad = true;
+    });
+    return { state: bad ? 'out' : (missing.length ? 'unknown' : (near ? 'near' : 'match')), score: score, missing: missing };
+  }
+};
+
+Pages.grapeMap = {
+  render: function () {
+    return API.call('grapes.map').then(function (list) {
+      var fam = {};
+      list.forEach(function (g) { g.aromas.forEach(function (a) { fam[a.family] = a.category; }); });
+      Pages.grapeMap.state = {
+        grapes: list, color: 'tinta', sel: { color_intensity: null, color_hue: null, aroma: [], acidity: null, tannin: null, body: null, alcohol: null, sweetness: null },
+        families: Object.keys(fam).sort(function (a, b) { return String(fam[a]).localeCompare(String(fam[b]), 'pt') || a.localeCompare(b, 'pt'); })
+      };
+      return '<div class="page-head"><div><div class="eyebrow">Estudar</div><h1>Mapa de uvas</h1>' +
+        '<p class="sub">Descreva o vinho na ordem da degustação e veja quais uvas combinam. O perfil é o típico da uva: o vinho muda com safra, clima e vinificação.</p></div></div>' +
+        '<div id="gm-layers"></div><div id="gm-sum" style="margin:14px 0"></div><section class="panel"><div id="gm-map"></div></section><div id="gm-list" style="margin-top:16px"></div>';
+    });
+  },
+  mount: function () { Pages.grapeMap.draw(); },
+
+  draw: function () {
+    var S = Pages.grapeMap.state, U = GrapeMapUI;
+    // Camadas
+    var html = '<div class="panel" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px 24px">' +
+      '<div style="grid-column:1/-1"><label class="f">Cor da uva</label><div class="chips">' + [['tinta', 'Tintas'], ['branca', 'Brancas']].map(function (c) {
+        return '<button type="button" class="chip' + (S.color === c[0] ? ' on' : '') + '" data-action="gm-color" data-v="' + c[0] + '">' + c[1] + '</button>'; }).join('') + '</div></div>';
+    U.LAYERS.forEach(function (L) {
+      var k = L[0], opts;
+      if (k === 'aroma') opts = S.families.map(function (f) { return [f, f, S.sel.aroma.indexOf(f) >= 0]; });
+      else if (k === 'color_hue') opts = U.HUE_ORDER.map(function (h, i) { var lv = U.levels(k).filter(function (x) { return x.key === h; })[0]; return [i, lv ? lv.label : h, S.sel[k] === i]; });
+      else {
+        var n = U.levels(k).length, names = n >= 5 ? ['Baixa', 'Média', 'Alta'] : U.levels(k).map(function (l) { return l.label; });
+        if (k === 'tannin') names = n >= 5 ? ['Baixo', 'Médio', 'Alto'] : names;
+        if (k === 'body') names = n >= 5 ? ['Leve', 'Médio', 'Encorpado'] : names;
+        opts = names.slice(0, 3).map(function (t, i) { return [i, t, S.sel[k] === i]; });
+      }
+      html += '<div><label class="f">' + U.STEP[L[2]] + ': ' + L[1] + '</label><div class="chips">' + opts.map(function (o) {
+        return '<button type="button" class="chip' + (o[2] ? ' on' : '') + '" data-action="gm-pick" data-k="' + k + '" data-v="' + esc(o[0]) + '" aria-pressed="' + (o[2] ? 'true' : 'false') + '">' + esc(o[1]) + '</button>'; }).join('') + '</div></div>';
+    });
+    html += '</div>';
+    document.getElementById('gm-layers').innerHTML = html;
+
+    // Avaliação
+    var pool = S.grapes.filter(function (g) { return g.color === S.color; });
+    var R = pool.map(function (g) { return { g: g, r: U.evaluate(g, S.sel) }; });
+    var any = S.sel.aroma.length || ['color_intensity', 'color_hue', 'acidity', 'tannin', 'body', 'alcohol', 'sweetness'].some(function (k) { return S.sel[k] !== null; });
+    var cnt = { match: 0, near: 0, unknown: 0, out: 0 };
+    R.forEach(function (x) { cnt[x.r.state]++; });
+    document.getElementById('gm-sum').innerHTML = '<div class="chips"><span class="chip" style="background:var(--hit-soft);color:var(--hit)">' + cnt.match + ' combinam</span>' +
+      '<span class="chip" style="background:var(--near-soft);color:var(--near)">' + cnt.near + ' parecidas</span>' +
+      (cnt.unknown ? '<span class="chip">' + cnt.unknown + ' sem dado em alguma camada</span>' : '') +
+      '<span class="chip">' + cnt.out + ' descartadas</span>' + (any ? '<button type="button" class="btn small ghost" data-action="gm-clear">Limpar escolhas</button>' : '') + '</div>';
+    Pages.grapeMap.drawMap(R, any);
+    Pages.grapeMap.drawList(R, any);
+  },
+
+  drawMap: function (R, any) {
+    var U = GrapeMapUI, X0 = 70, Y0 = 16, W = 590, H = 290, s = '';
+    var nT = Math.max(2, U.levels('tannin').length), nA = Math.max(2, U.levels('acidity').length);
+    for (var i = 0; i <= nT; i++) s += '<line x1="' + (X0 + i * W / nT) + '" y1="' + Y0 + '" x2="' + (X0 + i * W / nT) + '" y2="' + (Y0 + H) + '" stroke="var(--line)"/>';
+    for (var j = 0; j <= nA; j++) s += '<line x1="' + X0 + '" y1="' + (Y0 + j * H / nA) + '" x2="' + (X0 + W) + '" y2="' + (Y0 + j * H / nA) + '" stroke="var(--line)"/>';
+    U.levels('tannin').forEach(function (l, i) { s += '<text x="' + (X0 + (i + .5) * W / nT) + '" y="' + (Y0 + H + 17) + '" text-anchor="middle" font-size="12" fill="var(--muted)">' + esc(l.label) + '</text>'; });
+    U.levels('acidity').forEach(function (l, i) { s += '<text x="' + (X0 - 8) + '" y="' + (Y0 + H - (i + .5) * H / nA + 4) + '" text-anchor="end" font-size="12" fill="var(--muted)">' + esc(l.label) + '</text>'; });
+    s += '<text x="' + (X0 + W / 2) + '" y="' + (Y0 + H + 38) + '" text-anchor="middle" font-size="13" fill="var(--ink)">Tanino</text>' +
+      '<text transform="rotate(-90)" x="' + (-(Y0 + H / 2)) + '" y="14" text-anchor="middle" font-size="13" fill="var(--ink)">Acidez</text>';
+    var cells = {}, hidden = 0;
+    R.forEach(function (x) {
+      var t = U.span('tannin', x.g.profile.tannin), a = U.span('acidity', x.g.profile.acidity);
+      if (!t || !a) { hidden++; return; }
+      var key = Math.round((t[0] + t[1]) / 2) + '_' + Math.round((a[0] + a[1]) / 2);
+      (cells[key] = cells[key] || []).push(x);
+    });
+    Object.keys(cells).forEach(function (key) {
+      var arr = cells[key], tp = +key.split('_')[0], ap = +key.split('_')[1];
+      var cx = X0 + (tp + .5) * W / nT, cy = Y0 + H - (ap + .5) * H / nA;
+      var rad = arr.length > 1 ? Math.min(46, 14 + arr.length * 3) : 0;
+      arr.forEach(function (x, i) {
+        var ang = arr.length > 1 ? i / arr.length * Math.PI * 2 - Math.PI / 2 : 0;
+        var px = cx + Math.cos(ang) * rad * 1.5, py = cy + Math.sin(ang) * rad * .75;
+        var st = !any ? 'idle' : x.r.state, hp = U.hueSpan(x.g.profile.color_hue);
+        var fill = U.HUE_COLOR[hp ? U.HUE_ORDER[hp[0]] : 'none'];
+        var op = st === 'out' ? .15 : st === 'near' || st === 'unknown' ? .55 : st === 'idle' ? .75 : 1;
+        s += '<a href="#/uvas/' + esc(x.g.id) + '"><title>' + esc(x.g.name) + '</title><circle cx="' + px.toFixed(1) + '" cy="' + py.toFixed(1) + '" r="' + (st === 'match' ? 8 : 6) + '" fill="' + fill + '" fill-opacity="' + op + '" stroke="' + (st === 'match' ? 'var(--ink)' : hp ? 'none' : 'var(--muted)') + '" stroke-width="1.4"' + (!hp && st !== 'match' ? ' stroke-dasharray="2 2"' : '') + '/>';
+        if (st === 'match' || (!any && arr.length <= 3)) s += '<text x="' + px.toFixed(1) + '" y="' + (py - 11).toFixed(1) + '" text-anchor="middle" font-size="11" fill="var(--ink)">' + esc(x.g.name) + '</text>';
+        s += '</a>';
+      });
+    });
+    var legend = '<div class="chips small muted" style="margin-top:6px;gap:14px">' + U.HUE_ORDER.map(function (h) {
+      var lv = U.levels('color_hue').filter(function (x) { return x.key === h; })[0];
+      return '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + U.HUE_COLOR[h] + ';margin-right:5px"></span>' + esc(lv ? lv.label : h) + '</span>'; }).join('') +
+      '<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:1px dashed var(--muted);margin-right:5px"></span>tonalidade sem dado</span></div>';
+    document.getElementById('gm-map').innerHTML = '<svg viewBox="0 0 680 370" style="width:100%;height:auto" role="img" aria-label="Mapa das uvas: tanino na horizontal, acidez na vertical">' + s + '</svg>' + legend +
+      (hidden ? '<p class="small muted">' + hidden + ' uvas não aparecem no mapa por falta de dado de tanino ou acidez; elas continuam na lista quando combinam.</p>' : '');
+  },
+
+  drawList: function (R, any) {
+    var el = document.getElementById('gm-list');
+    if (!any) { el.innerHTML = '<p class="muted">Escolha uma ou mais camadas acima para ver as uvas candidatas.</p>'; return; }
+    function rows(arr) {
+      return arr.map(function (x) {
+        var g = x.g;
+        return '<div class="row" style="align-items:flex-start"><div><div class="t"><a href="#/uvas/' + esc(g.id) + '">' + esc(g.name) + '</a></div>' +
+          '<div class="small muted">' + esc(g.aromas.slice(0, 5).map(function (a) { return a.name; }).join(', ') || 'aromas não cadastrados') + '</div>' +
+          (x.r.missing.length ? '<div class="small" style="color:var(--near)">Sem dado: ' + esc(x.r.missing.join(', ')) + '</div>' : '') + '</div></div>';
+      }).join('');
+    }
+    var by = function (st) { return R.filter(function (x) { return x.r.state === st; }).sort(function (a, b) { return b.r.score - a.r.score || a.g.name.localeCompare(b.g.name, 'pt'); }); };
+    var m = by('match'), n = by('near'), u = by('unknown');
+    var top = m.concat(n).slice(0, 4).map(function (x) { return x.g.id; });
+    var html = '';
+    if (m.length) html += '<h3>Combinam</h3><div class="panel list">' + rows(m.slice(0, 12)) + '</div>' + (m.length > 12 ? '<p class="small muted">E mais ' + (m.length - 12) + ' no mapa.</p>' : '');
+    if (n.length) html += '<h3>Parecidas</h3><div class="panel list">' + rows(n.slice(0, 12)) + '</div>' + (n.length > 12 ? '<p class="small muted">E mais ' + (n.length - 12) + ' no mapa.</p>' : '');
+    if (u.length) html += '<h3>Sem dado numa camada escolhida</h3><p class="small muted">Estas uvas não foram descartadas: o dado que falta é o da camada indicada.</p><div class="panel list">' + rows(u.slice(0, 12)) + '</div>' + (u.length > 12 ? '<p class="small muted">E mais ' + (u.length - 12) + '.</p>' : '');
+    if (!m.length && !n.length && !u.length) html += '<div class="callout">Nenhuma uva combina com todas as camadas. Tire uma escolha: o perfil da uva é típico, não exato.</div>';
+    if (top.length >= 2) html += '<div class="btn-row" style="margin-top:14px"><a class="btn" href="#/uvas/comparar?ids=' + top.join(',') + '">Comparar as ' + top.length + ' primeiras lado a lado</a></div>';
+    el.innerHTML = html;
+  },
+
+  actions: {
+    'gm-color': function (btn) { var S = Pages.grapeMap.state; S.color = btn.getAttribute('data-v'); Pages.grapeMap.draw(); },
+    'gm-pick': function (btn) {
+      var S = Pages.grapeMap.state, k = btn.getAttribute('data-k'), v = btn.getAttribute('data-v');
+      if (k === 'aroma') { var p = S.sel.aroma.indexOf(v); if (p < 0) S.sel.aroma.push(v); else S.sel.aroma.splice(p, 1); }
+      else { var n = Number(v); S.sel[k] = S.sel[k] === n ? null : n; }
+      Pages.grapeMap.draw();
+    },
+    'gm-clear': function () {
+      var S = Pages.grapeMap.state;
+      Object.keys(S.sel).forEach(function (k) { S.sel[k] = k === 'aroma' ? [] : null; });
+      Pages.grapeMap.draw();
+    }
+  }
+};
+</script>

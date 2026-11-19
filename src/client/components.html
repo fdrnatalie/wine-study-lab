@@ -95,6 +95,24 @@ var Components = {
       sec(4, 'Conclusão', concl || '<p>' + Components.missing('Conclusão não cadastrada') + '</p>') + '</div>';
   },
 
+  /**
+   * Perfil típico de cada uva do vinho (aromas e estrutura), da enciclopédia: ajuda a estudar o vinho quando ele ainda
+   * não tem perfil próprio. É só referência da uva; o gabarito da degustação continua sendo o perfil do vinho.
+   */
+  grapeProfiles: function (list) {
+    if (!list || !list.length) return '<p>' + Components.missing('Este vinho ainda não tem uvas cadastradas') + '</p>';
+    return '<div class="grid two">' + list.map(function (g) {
+      var pr = g.profile, order = [['acidity', 'Acidez'], ['tannin', 'Tanino'], ['body', 'Corpo'], ['alcohol', 'Álcool']];
+      return '<div class="panel" style="margin:0"><div class="eyebrow">Uva' + (g.percent ? ' · ' + fmtNum(g.percent, 0) + '%' : '') + '</div>' +
+        '<h4 style="margin:2px 0 10px"><a href="#/uvas/' + esc(g.id) + '">' + esc(g.name) + '</a></h4>' +
+        Components.aromaGroups(g.aromas) +
+        (pr ? '<div class="scales" style="margin-top:10px">' + order.map(function (o) { return Components.scaleRow(o[1], o[0], pr[o[0]]); }).join('') + '</div>' +
+          (pr.nose_text ? '<p class="small">' + esc(pr.nose_text) + '</p>' : '') : '<p class="small">' + Components.missing('Estrutura da uva não cadastrada') + '</p>') +
+        '<div class="small muted" style="margin-top:8px">' + (pr ? 'Origem: ' + Components.src(pr.source) + (pr.source_ref ? ' · ' + esc(pr.source_ref) : '') + ' · ' : '') +
+        '<a href="#/uvas/' + esc(g.id) + '">Ficha da uva e comparação com outras</a></div></div>';
+    }).join('') + '</div>';
+  },
+
   /** Aromas agrupados por categoria (somente leitura). */
   aromaGroups: function (aromas) {
     if (!aromas || !aromas.length) return '<p>' + Components.missing('Aromas não cadastrados') + '</p>';

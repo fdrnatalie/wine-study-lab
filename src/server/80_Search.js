@@ -7,7 +7,9 @@ var Search = (function () {
   function run(query) {
     var q = Util.normKey(Validate.str(query, 100, 'busca'));
     if (q.length < 2) return [];
-    function has(s) { return Util.normKey(s).indexOf(q) >= 0; }
+    // Espaço a mais ou a menos não impede a busca (o ditado costuma gerar "Montepul ciano").
+    var q2 = q.replace(/\s+/g, '');
+    function has(s) { var n = Util.normKey(s); return n.indexOf(q) >= 0 || (q2.length >= 2 && n.replace(/\s+/g, '').indexOf(q2) >= 0); }
     var out = [];
     var grapes = Repo.all('grapes'), regions = Repo.all('regions'), countries = Repo.all('countries');
     var gIdx = Util.indexBy(grapes, 'id'), rIdx = Util.indexBy(regions, 'id');

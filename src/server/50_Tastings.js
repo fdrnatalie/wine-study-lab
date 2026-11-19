@@ -300,11 +300,18 @@ var Tastings = (function () {
   /** O que falta na ficha do vinho para haver gabarito (com os dados de agora). */
   function gapsFor_(wineId) {
     var tr = truthFor_(wineId), gaps = [];
-    if (tr.vintage === '' || tr.vintage === undefined || tr.vintage === null) gaps.push('safra');
-    if (tr.abv === '' || tr.abv === undefined || tr.abv === null) gaps.push('teor alcoólico');
+    var w = Repo.get('wines', wineId) || {}, fs = w.field_sources || {};
+    // O cabeçalho do resultado mostra o dado da ficha mesmo quando ele veio de IA sem revisão; nesse caso o gabarito
+    // fica de fora de propósito. Dizer isso (e não "faltando") evita a impressão de que o app ignorou a ficha.
+    function why(missing, filled, label, unverifiedCol) {
+      if (!missing) return;
+      gaps.push(filled && fs[unverifiedCol] === 'ia_nao_verificada' ? label + ' (da ficha, mas lido por IA e ainda não confirmado)' : label);
+    }
+    why(tr.vintage === '' || tr.vintage === undefined || tr.vintage === null, !Util.isBlank(w.vintage), 'safra', 'vintage');
+    why(tr.abv === '' || tr.abv === undefined || tr.abv === null, !Util.isBlank(w.abv), 'teor alcoólico', 'abv');
     if (!tr.grape_ids.length) gaps.push('uvas');
-    if (!tr.country_id) gaps.push('país');
-    if (!tr.region_id) gaps.push('região');
+    why(!tr.country_id, !!w.country_id, 'país', 'country_id');
+    why(!tr.region_id, !!(w.region_id || w.subregion_id), 'região', w.subregion_id ? 'subregion_id' : 'region_id');
     if (!tr.profile) gaps.push('perfil (acidez, tanino, corpo, intensidade…)');
     else if (!tr.profile_trusted) gaps.push('perfil verificado (o atual é de IA ainda não revisada)');
     if (!tr.aroma_ids.length) gaps.push('aromas');
@@ -363,7 +370,7 @@ var Tastings = (function () {
         id: s.id, position: s.position, number: b.number, score: s.score, bottle_id: b.id, bottle_status: b.status,
         wine: {
           id: w.id, name: w.name, producer: w.producer, vintage: w.vintage, country: w.country, region: w.region,
-          abv: w.abv, grapes: w.grapes, profile: w.profile, profile_trusted: w.profile_trusted,
+          abv: w.abv, grapes: w.grapes, profile: w.profile, profile_trusted: w.profile_trusted, grape_profiles: w.grape_profiles,
           aromas: w.aromas.map(function (a) { return a.name; })
         },
         gaps: gapsFor_(b.wine_id),
@@ -425,7 +432,7 @@ var Tastings = (function () {
     }).sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
   }
 
-  return { create: create, getPlay: getPlay, saveAnswers: saveAnswers, reveal: reveal, rescore: rescore, getReport: getReport, truthFor: truthFor_, cancel: cancel, list: list };
+  return { create: create, getPlay: getPlay, saveAnswers: saveAnswers, reveal: reveal, rescore: rescore, getReport: getReport, truthFor: truthFor_, gaps: gapsFor_, cancel: cancel, list: list };
 })();
 
 /** Converte ids/chaves em rótulos legíveis para relatórios. */

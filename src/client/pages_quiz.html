@@ -7,7 +7,7 @@ Pages.quiz = {
     var tid = p.query && p.query.degustacao;
     var cards = (p.query && p.query.cartoes) || '', cty = (p.query && p.query.pais) || '', lvl = (p.query && p.query.nivel) || '';
     return API.raw_('quiz.generate', { tasting_id: tid || '', n: 10, cards: cards, country_id: cty, level: lvl }).then(function (r) {
-      Pages.quiz.state = { data: r, i: 0, score: 0, answered: false, tid: tid || '' };
+      Pages.quiz.state = { data: r, i: 0, score: 0, answered: false, tid: tid || '', missed: [] };
       var params = [['degustacao', tid || ''], ['cartoes', cards], ['pais', cty]].filter(function (x) { return x[1]; });
       function lvHref(l) { return '#/quiz' + (params.concat(l ? [['nivel', l]] : []).map(function (x, i) { return (i ? '&' : '?') + x[0] + '=' + encodeURIComponent(x[1]); }).join('')); }
       var chips = !tid ? '<div class="chips" style="margin:0 0 6px">' + [['', 'Misto'], ['medio', 'Médio'], ['avancado', 'Avançado'], ['expert', 'Expert']].map(function (l) {
@@ -28,7 +28,7 @@ Pages.quiz = {
     if (S.i >= qs.length) {
       var pct = Math.round(S.score / qs.length * 100);
       box.innerHTML = '<section class="panel score-hero"><div class="eyebrow">Resultado</div><div class="big">' + S.score + '<small>/' + qs.length + '</small></div>' +
-        '<p class="muted">' + (pct >= 80 ? 'Excelente! Você domina estes vinhos.' : pct >= 50 ? 'Bom caminho — revise as explicações das que errou.' : 'Vale estudar as fichas destas uvas e regiões e tentar de novo.') + '</p>' +
+        '<p class="muted">' + (S.missed.length ? 'Revise: <b>' + esc(S.missed.join(', ')) + '</b>.' : pct >= 80 ? 'Excelente! Você domina estes assuntos.' : 'Vale estudar as fichas e tentar de novo.') + '</p>' +
         '<div class="btn-row" style="justify-content:center"><button class="btn primary" data-action="restart">Fazer outro quiz</button>' +
         '<a class="btn" href="#/uvas">Ver fichas das uvas</a></div></section>';
       return;
@@ -47,6 +47,7 @@ Pages.quiz = {
       S.answered = true;
       var q = S.data.questions[S.i], k = Number(btn.getAttribute('data-k')), ok = k === q.answer;
       if (ok) S.score++;
+      else if (q.subject && S.missed.indexOf(q.subject) < 0) S.missed.push(q.subject);
       document.querySelectorAll('.quiz-opt').forEach(function (b, idx) {
         b.disabled = true;
         if (idx === q.answer) b.classList.add('right');

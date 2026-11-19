@@ -510,3 +510,12 @@ Treinar (quiz, adivinhe a uva/região, revisão), Wine World (mapa com Leaflet +
 Áreas em construção (curso, história, produção, harmonizações, cartões de estudo em país/região) começam visíveis só para a administradora. `Features` (14_Features.js) lê a configuração `feature_<id>` (`admin` ou `todos`); a regra vale no **servidor** (API, cartões em país/região, quiz) e o menu apenas a reflete (`lookups.features`). A administradora liga/desliga em Configurações → "O que os outros usuários veem", sem novo deploy. Nova funcionalidade em construção = uma linha em `DEFS` + `Features.require` no método.
 
 Já era assim e permanece: login Google com cadastro aberto (membro); catálogo de vinhos comum (só o autor e a administradora editam a ficha; qualquer membro cadastra e edita os próprios); garrafinhas, degustações, notas e curso são pessoais (começam vazios para cada usuário).
+
+## D16 — Mapa de uvas (identificar a uva de um vinho por camadas)
+
+Página `#/uvas/mapa`, atrás da funcionalidade `mapa` (D15; começa só para a administradora). O servidor entrega **uma lista só** (`grapes.map` → `GrapeMap.list`, 32_GrapeMap.js: uva, perfil típico, aromas, em lote, só catálogo comum, nada pessoal) e o aparelho filtra e desenha, para o mapa reagir a cada toque sem chamar a API.
+
+- **Camadas na ordem da degustação:** visual (intensidade e tonalidade da cor), nariz (família de aroma = subcategoria do vocabulário), boca (acidez, tanino, corpo, álcool, dulçor). Escalas de 5 níveis viram 3 faixas; uma escolha a uma faixa de distância deixa a uva "parecida", duas ou mais a descartam.
+- **Falta de dado não elimina.** Uva sem valor numa camada escolhida vai para "sem dado nesta camada", com a camada indicada. As poucas sem tanino ou acidez não aparecem no mapa, mas aparecem na lista.
+- **Cor (v13 da enciclopédia):** `color_intensity` e `color_hue` ficam no perfil típico da uva, só onde uma fonte diz (Wine Folly, tabela de cores; First Leaf; ou o texto da própria ficha). Tonalidade só quando a fonte a atribui à uva, não à categoria. A origem aparece em `source_ref` ("· cor: …"). Uva sem fonte fica sem cor.
+- O perfil é o **típico** da uva: o resultado é uma lista ordenada de candidatas, não uma resposta única.

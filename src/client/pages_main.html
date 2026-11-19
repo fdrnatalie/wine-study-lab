@@ -14,6 +14,7 @@ Pages.dashboard = {
         '<p class="sub">' + (c.tastings ? 'Seu caderno de degustação tem ' + plural(c.tastings, 'sessão revelada', 'sessões reveladas') + '.' : 'Seu laboratório está pronto para a primeira degustação às cegas.') + '</p></div>' +
         '<div class="btn-row"><a class="btn primary" href="#/degustacao/nova">Nova degustação às cegas</a></div></div>';
 
+      if (!c.tastings) html += '<div class="callout" style="margin-bottom:22px">Primeira vez por aqui? Veja o <a href="#/comecar"><b>passo a passo de primeiros passos</b></a>: leva cerca de dez minutos.</div>';
       if (d.in_progress.length) {
         var t = d.in_progress[0];
         html += '<div class="callout" style="margin-bottom:22px">Degustação em andamento: <b>' + esc(t.title) + '</b> · ' + fmtDate(t.date) +
