@@ -1829,7 +1829,7 @@ Pages.wine = {
         (pr ? '<div class="small muted" style="margin-top:12px">Origem: ' + Components.src(pr.source) + (pr.source_ref ? ' · ' + esc(pr.source_ref) : '') + '</div>' : '') +
         '</section>';
 
-      html += '<section class="panel" style="margin-top:16px"><h3 style="margin-top:0">Perfil aromático das uvas deste vinho</h3>' +
+      if (Array.isArray(w.grape_profiles)) html += '<section class="panel" style="margin-top:16px"><h3 style="margin-top:0">Perfil aromático das uvas deste vinho</h3>' +
         '<div class="muted small" style="margin-bottom:12px">O que a enciclopédia diz de cada uva, com a fonte. Ajuda a estudar o vinho; o gabarito das degustações continua sendo o perfil de referência acima.</div>' +
         Components.grapeProfiles(w.grape_profiles) + '</section>';
 
