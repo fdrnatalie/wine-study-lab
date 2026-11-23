@@ -39,7 +39,7 @@ Pages.course = {
         });
         var ch = u.challenge;
         html += '<' + (ch.status === 'open' ? 'a href="#/curso/desafio/' + esc(u.id) + '"' : 'div') + ' class="course-node ' + (ch.status === 'open' ? 'open' : 'locked') + '"><span class="dot">★</span><span class="txt"><span class="nm">Desafio da unidade</span><span class="sub">' +
-          (ch.status === 'open' ? '10 perguntas de tudo o que você viu' + (ch.pending_review ? ' · ' + plural(ch.pending_review, 'erro pendente', 'erros pendentes') : '') : 'Termine as 6 lições para abrir') + '</span></span></' + (ch.status === 'open' ? 'a' : 'div') + '></div></section>';
+          (ch.status === 'open' ? '10 perguntas de tudo o que você viu' + (ch.pending_review ? ' · ' + plural(ch.pending_review, 'erro pendente', 'erros pendentes') : '') : 'Termine ' + (u.lessons.length === 1 ? 'a lição' : 'as ' + u.lessons.length + ' lições') + ' para abrir') + '</span></span></' + (ch.status === 'open' ? 'a' : 'div') + '></div></section>';
       });
       return html;
     });

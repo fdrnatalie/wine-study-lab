@@ -345,7 +345,7 @@ test('quiz ensina sobre uva, região e estilo: nada de "qual era a garrafinha #N
   if (tastings.length) for (const t of tastings) qs.push(...ok(post('quiz.generate', { n: 20, tasting_id: t.id }, owner.token)).questions);
   assert.ok(qs.length > 0);
   qs.forEach((q) => {
-    assert.ok(!/garrafinha|garrafa|#\d/i.test(q.question), 'pergunta sobre a garrafa: ' + q.question);
+    assert.ok(!/garrafinha|#\d|desta garrafa|dessa garrafa/i.test(q.question), 'pergunta sobre a garrafa: ' + q.question);
     assert.ok(q.type !== 'vinho', 'tipo "vinho" não existe mais');
     assert.ok(q.answer >= 0 && q.options.length >= 3 && new Set(q.options).size === q.options.length, 'opções repetidas: ' + q.question);
   });

@@ -3,10 +3,26 @@
  * "conferir" não entram. Tipos: mc (múltipla escolha), match (ligar pares), order (ordenar).
  * Unidade-piloto: Bordeaux (França). Para criar outra unidade basta acrescentar um objeto em COURSE_UNITS.
  */
+/**
+ * Ferramentas para escrever unidades. Os módulos do curso ficam em arquivos próprios (58_Course*.js, carregados depois
+ * deste) e chamam CourseKit.add([...unidades]): o kit numera as perguntas (id = lição-N) e acrescenta à trilha.
+ * Unidade: { id, title, country (rótulo acima do título; para módulos temáticos use o nome do módulo), region (opcional,
+ * liga ao cartão da região), lessons: [{ id, title, level, tip, questions }] }. Regra do conteúdo: só fatos de aula
+ * reescritos com palavras próprias; o que a apostila deixou duvidoso NÃO vira pergunta.
+ */
+var CourseKit = {
+  mc: function (q, right, wrong, why) { return { t: 'mc', q: q, options: [right].concat(wrong), a: 0, why: why }; },
+  match: function (q, pairs, why) { return { t: 'match', q: q, pairs: pairs, why: why }; },
+  order: function (q, items, why) { return { t: 'order', q: q, items: items, why: why }; },
+  finalize: function (units) {
+    units.forEach(function (u) { u.lessons.forEach(function (l) { l.unit = u.id; l.questions.forEach(function (q, i) { q.id = l.id + '-' + (i + 1); }); }); });
+    return units;
+  },
+  add: function (units) { Array.prototype.push.apply(COURSE_UNITS, CourseKit.finalize(units)); }
+};
+
 var COURSE_UNITS = (function () {
-  function mc(q, right, wrong, why) { return { t: 'mc', q: q, options: [right].concat(wrong), a: 0, why: why }; }
-  function match(q, pairs, why) { return { t: 'match', q: q, pairs: pairs, why: why }; }
-  function order(q, items, why) { return { t: 'order', q: q, items: items, why: why }; }
+  var mc = CourseKit.mc, match = CourseKit.match, order = CourseKit.order;
 
   var bordeaux = {
     id: 'bordeaux', title: 'Bordeaux', country: 'França', region: 'Bordeaux',
@@ -75,6 +91,5 @@ var COURSE_UNITS = (function () {
     ]
   };
   var units = [bordeaux];
-  units.forEach(function (u) { u.lessons.forEach(function (l) { l.unit = u.id; l.questions.forEach(function (q, i) { q.id = l.id + '-' + (i + 1); }); }); });
-  return units;
+  return CourseKit.finalize(units);
 })();
